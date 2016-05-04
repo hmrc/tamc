@@ -39,7 +39,7 @@ trait MicroService {
     Seq(
       // Semicolon-separated list of regexs matching classes to exclude
       ScoverageKeys.coverageExcludedPackages := "<empty>;Reverse.*;.*AuthService.*;models/.data/..*;view.*;app.*;prod.*;uk.gov.hmrc.BuildInfo",
-      ScoverageKeys.coverageMinimum := 80,
+      ScoverageKeys.coverageMinimum := 65,
       ScoverageKeys.coverageFailOnMinimum := true,
       ScoverageKeys.coverageHighlighting := true
     )
