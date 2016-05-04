@@ -1,0 +1,2 @@
+1000:com.kenshoo.play.metrics.MetricsPlugin
+2000:uk.gov.hmrc.play.health.HealthPlugin
