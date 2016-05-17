@@ -230,14 +230,6 @@ trait MarriageAllowanceService {
 
   }
 
-  private def convertRequest(request: CreateRelationshipRequest): Future[DesCreateRelationshipRequest] = {
-    Future.successful(DesCreateRelationshipRequest(
-      CID1 = request.recipient_cid.toString(),
-      CID1Timestamp = request.recipient_timestamp,
-      CID2 = request.transferor_cid.toString(),
-      CID2Timestamp = request.transferor_timestamp))
-  }
-
   private def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     emailConnector.sendEmail(sendEmailRequest) map {
       case _ =>
@@ -427,11 +419,4 @@ trait MarriageAllowanceService {
       year = year,
       isCurrent = if (currentTaxYear) Some(true) else None)
 
-  private def journeyVerfication(journey: String)(implicit ec: ExecutionContext): Future[String] = {
-    journey match {
-      case "PTA" => Future.successful(ApplicationConfig.EMAIL_PTA_TEMPLATE_ID)
-      case "GDS" => Future.successful(ApplicationConfig.EMAIL_GDS_TEMPLATE_ID)
-      case _     => Future.failed(new IllegalArgumentException)
-    }
-  }
 }

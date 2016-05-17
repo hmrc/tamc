@@ -349,6 +349,47 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
       testUserRecord(userRecord, expectedOutput)
 
     }
+
+    "return TRANSFEROR-NOT-FOUND when transferor is deceased" in new WithApplication(FakeApplication()) {
+      val controller = makeFakeController()
+      val request = FakeRequest()
+
+      val testData = TestData.Lists.deceased
+      val testNino = Nino(testData.user.nino)
+      val testCid = testData.user.cid.cid
+      val testTs = testData.user.timestamp.toString()
+
+      val participiant0 = testData.counterparties(0)
+      val participiant0Cid: String = participiant0.partner.cid.cid.toString
+      val participiant0Ts = participiant0.partner.timestamp.toString()
+
+      val result = controller.listRelationship(testNino)(request)
+      status(result) shouldBe OK
+
+      val json = Json.parse(contentAsString(result))
+      (json \ "status" \ "status_code").toString() shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
+    }
+
+    "return TRANSFEROR-NOT-FOUND when transferor not found" in new WithApplication(FakeApplication()) {
+      val controller = makeFakeController()
+      val request = FakeRequest()
+
+      val testData = TestData.Lists.tansfrorNotFound
+      val testNino = Nino(testData.user.nino)
+      val testCid = testData.user.cid.cid
+      val testTs = testData.user.timestamp.toString()
+
+      val participiant0 = testData.counterparties(0)
+      val participiant0Cid: String = participiant0.partner.cid.cid.toString
+      val participiant0Ts = participiant0.partner.timestamp.toString()
+
+      val result = controller.listRelationship(testNino)(request)
+      status(result) shouldBe OK
+
+      val json = Json.parse(contentAsString(result))
+      (json \ "status" \ "status_code").toString() shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
+    }
+
   }
 
   private def testStubDataFromAPI(result: TestRelationshipRecord, expectedOutputMap: Map[String, Any]) = {

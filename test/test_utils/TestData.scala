@@ -45,7 +45,7 @@ object TestData {
     private lazy val ninos = {
       val randomizer = new Generator()
       var ninos: Set[String] = Set()
-      while (ninos.size <= 10) {
+      while (ninos.size <= 15) {
         ninos += randomizer.nextNino.nino
       }
       ninos.toList
@@ -61,6 +61,8 @@ object TestData {
     val ninoP1C: String = ninos(7)
     val ninoP3C: String = ninos(8)
     val ninoP5C: String = ninos(9)
+    val ninoDeceased: String = ninos(10)
+    val ninoTransferorNotFound: String = ninos(11)
   }
 
   case class ListItem(partner: FindCitizenDummy, participant: Int, endReason: Option[String] = None) {
@@ -125,6 +127,14 @@ object TestData {
       mappedNino2FindCitizen(Ninos.ninoP5A),
       Array[ListItem](
         ListItem(mappedNino2FindCitizen(Ninos.ninoP2A), 1)))
+    val deceased = ListDummy(
+      mappedNino2FindCitizen(Ninos.ninoDeceased),
+      Array[ListItem](
+        ListItem(mappedNino2FindCitizen(Ninos.ninoP2A), 1, Some("Ended by Participant 2"))))
+    val tansfrorNotFound = ListDummy(
+      mappedNino2FindCitizen(Ninos.ninoTransferorNotFound),
+      Array[ListItem](
+        ListItem(mappedNino2FindCitizen(Ninos.ninoP2A), 1, Some("Ended by Participant 2"))))
   }
 
   lazy val mappedLists = {
@@ -132,7 +142,9 @@ object TestData {
       Lists.oneActiveOneHistoric.key -> Lists.oneActiveOneHistoric,
       Lists.oneHistoric.key -> Lists.oneHistoric,
       Lists.oneActive.key -> Lists.oneActive,
-      Lists.noRelationsAlt.key -> Lists.noRelationsAlt)
+      Lists.noRelationsAlt.key -> Lists.noRelationsAlt,
+      Lists.deceased.key -> Lists.deceased,
+      Lists.tansfrorNotFound.key -> Lists.tansfrorNotFound)
   }
 
   case class CreateRelationshipDummy(returnCode: Int, reasonCode: Int, transferor: FindCitizenDummy, recipient: FindCitizenDummy) {
@@ -352,7 +364,25 @@ object TestData {
       firstName = null,
       lastName = null,
       deceased = "N",
-      nino = Ninos.ninoP7A))
+      nino = Ninos.ninoP7A),
+    Ninos.ninoDeceased -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidOkP2.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "Y",
+      nino = Ninos.ninoDeceased),
+    Ninos.ninoTransferorNotFound -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 3,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidOkP2.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "N",
+      nino = Ninos.ninoTransferorNotFound))
 
   lazy val mappedCid2CheckAllowanceRelationship = Map(
     Cids.cidOkP1.toString() -> CheckAllowanceRelationshipDummy(
@@ -441,11 +471,11 @@ object TestData {
     MultiYearCreate.happyScenarioStep2.key -> MultiYearCreate.happyScenarioStep2)
 
   case class CreateAllowanceTransferRelationshipResponse(
-      status: String,
-      transferor: FindCitizenDummy,
-      recipient: FindCitizenDummy,
-      transferorOutTimestamp: Option[Timestamp] = None,
-      recipientOutTimestamp: Option[Timestamp] = None) {
+    status: String,
+    transferor: FindCitizenDummy,
+    recipient: FindCitizenDummy,
+    transferorOutTimestamp: Option[Timestamp] = None,
+    recipientOutTimestamp: Option[Timestamp] = None) {
 
     def key = s"trcid-${transferor.cid.cid}_trts-${transferor.timestamp}_rccid-${recipient.cid.cid}_rcts-${recipient.timestamp}"
 
