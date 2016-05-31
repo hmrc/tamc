@@ -23,6 +23,7 @@ case class CreateRelationshipError(returnCode: Int, reasonCode: Int) extends Ser
 
 sealed abstract class ServiceError(returnCode: Int, reasonCode: Int) extends RuntimeException(s"(return_code:${returnCode},reason_code:${reasonCode})")
 case class TransferorDeceasedError(message: String) extends RuntimeException(s"error message :${message}")
+case class RecipientDeceasedError(message: String) extends RuntimeException(s"error message :${message}")
 case class UpdateRelationshipError(message: String) extends RuntimeException(s"error message :${message}")
 case class MultiYearCreateRelationshipError(message: String) extends RuntimeException(s"error message :${message}")
 
