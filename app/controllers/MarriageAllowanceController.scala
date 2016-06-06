@@ -44,6 +44,7 @@ import scala.concurrent.Future
 import models.EligibleTaxYearListResponse
 import models.EligibleTaxYearListStatusResponse
 import models.TaxYear
+import errors.RecipientDeceasedError
 
 object MarriageAllowanceController extends MarriageAllowanceController {
   override val marriageAllowanceService = MarriageAllowanceService
@@ -83,6 +84,13 @@ trait MarriageAllowanceController extends BaseController {
           case _ =>
             Ok(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = "OK"))))
+        } recover {
+          case error =>
+            error match {
+              case recipientDeceased: RecipientDeceasedError =>
+                Logger.warn("Create Relationship failed with 400 recipient deceased", error)
+                Ok(Json.toJson(CreateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
+            }
         }
       }
   }
@@ -131,15 +139,15 @@ trait MarriageAllowanceController extends BaseController {
           } recover {
             case error =>
               error match {
+                case recipientDeceased: RecipientDeceasedError =>
+                  Logger.warn("Update Relationship failed with 400 recipient deceased", error)
+                  Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
                 case relationshipError: UpdateRelationshipError =>
                   Logger.warn("Update Relationship failed with UpdateRelationshipError(runtime) error", error)
                   Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.CANNOT_UPDATE_RELATIONSHIP))))
                 case notFound: NotFoundException =>
                   Logger.warn("Update Relationship failed with 404 not found error", error)
                   Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.CITIZEN_NOT_FOUND))))
-                case badRequest: BadRequestException =>
-                  Logger.warn("Update Relationship failed with 400 bad request error", error)
-                  Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
                 case internalServerError: InternalServerException =>
                   Logger.warn("Update Relationship failed with 500 internal server error", error)
                   Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.SERVER_ERROR))))

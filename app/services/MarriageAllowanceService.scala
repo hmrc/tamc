@@ -40,6 +40,7 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.play.http.HeaderCarrier
 import errors.TransferorDeceasedError
+import errors.RecipientDeceasedError
 import models.RelationshipRecord
 import play.api.libs.json.Json
 import models.RelationshipRecordWrapper
@@ -158,6 +159,8 @@ trait MarriageAllowanceService {
                 MultiYearCreateRelationshipResponse(
                   CID1Timestamp = (json \ "CID1Timestamp").as[Timestamp],
                   CID2Timestamp = (json \ "CID2Timestamp").as[Timestamp])
+              case error if httpResponse.status == 400  =>
+                 throw RecipientDeceasedError("Service returned response with 400 - recipient deceased")                  
               case error =>
                 throw MultiYearCreateRelationshipError(error)
             }
@@ -204,7 +207,7 @@ trait MarriageAllowanceService {
     (relationship.relationshipEndReason, role) match {
       case (ApplicationConfig.REASON_CANCEL, _) => (ApplicationConfig.EMAIL_UPDATE_CANCEL_TEMPLATE_ID, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
       case (ApplicationConfig.REASON_REJECT, ApplicationConfig.ROLE_RECIPIENT) =>
-        if (relationship.actualEndDate.contains(taxYearResolver.currentTaxYear.toString())) (ApplicationConfig.EMAIL_UPDATE_REJECT_TEMPLATE_ID, "", "")// TODO fix if its more than 1 year
+        if (relationship.actualEndDate.contains(taxYearResolver.currentTaxYear.toString())) (ApplicationConfig.EMAIL_UPDATE_REJECT_TEMPLATE_ID, "", "") // TODO fix if its more than 1 year
         else (ApplicationConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR, "", "")
       case (ApplicationConfig.REASON_DIVORCE, ApplicationConfig.ROLE_TRANSFEROR) =>
         if (relationship.actualEndDate == getDateInRequiredFormat(true)) (ApplicationConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
@@ -361,6 +364,8 @@ trait MarriageAllowanceService {
                 case recievedResponse if httpResponse.status == 200 =>
                   metrics.incrementSuccessCounter(ApiType.UpdateRelationship)
                   Future.successful(Unit)
+                case recievedResponse if httpResponse.status == 400 =>
+                  throw RecipientDeceasedError("Service returned response with 400 - recipient deceased")
                 case _ => throw UpdateRelationshipError("An unexpected error has occured while updating the relationship")
               }
     }
