@@ -97,21 +97,31 @@ trait MarriageAllowanceService {
 
   def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder, journey: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     for {
-      templateId <- getEmailTemplateId(createRelationshipRequestHolder.request.taxYears)
+      templateId <- getEmailTemplateId(createRelationshipRequestHolder.request.taxYears, createRelationshipRequestHolder.notification.welsh)
       _ <- handleMultiYearRequests(createRelationshipRequestHolder.request)
       sendEmailRequest <- transformEmailRequest(createRelationshipRequestHolder.notification, templateId)
       _ <- sendEmail(sendEmailRequest)
     } yield { Unit }
   }
 
-  private def getEmailTemplateId(taxYears: List[Int])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] = {
+  private def getEmailTemplateId(taxYears: List[Int], isWelsh: Boolean)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] = {
     Future {
-      if (taxYears.size == 1 && taxYears.contains(TaxYearResolver.currentTaxYear))
-        ApplicationConfig.EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID
-      else if (taxYears.size > 1 && taxYears.contains(TaxYearResolver.currentTaxYear))
-        ApplicationConfig.EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID
-      else
-        ApplicationConfig.EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID
+      isWelsh match {
+        case true =>
+          if (taxYears.size == 1 && taxYears.contains(TaxYearResolver.currentTaxYear))
+            ApplicationConfig.EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID
+          else if (taxYears.size > 1 && taxYears.contains(TaxYearResolver.currentTaxYear))
+            ApplicationConfig.EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID
+          else
+            ApplicationConfig.EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID
+        case _ =>
+          if (taxYears.size == 1 && taxYears.contains(TaxYearResolver.currentTaxYear))
+            ApplicationConfig.EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID
+          else if (taxYears.size > 1 && taxYears.contains(TaxYearResolver.currentTaxYear))
+            ApplicationConfig.EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID
+          else
+            ApplicationConfig.EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID
+      }
     }
   }
 
@@ -159,8 +169,8 @@ trait MarriageAllowanceService {
                 MultiYearCreateRelationshipResponse(
                   CID1Timestamp = (json \ "CID1Timestamp").as[Timestamp],
                   CID2Timestamp = (json \ "CID2Timestamp").as[Timestamp])
-              case error if httpResponse.status == 400  =>
-                 throw RecipientDeceasedError("Service returned response with 400 - recipient deceased")                  
+              case error if httpResponse.status == 400 =>
+                throw RecipientDeceasedError("Service returned response with 400 - recipient deceased")
               case error =>
                 throw MultiYearCreateRelationshipError(error)
             }
@@ -196,24 +206,36 @@ trait MarriageAllowanceService {
 
   private def transformEmailForUpdateRequest(updateRelationshipRequestHolder: UpdateRelationshipRequestHolder): Future[SendEmailRequest] = {
     val emailRecipients: List[EmailAddress] = List(updateRelationshipRequestHolder.notification.email)
-    val startDate = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role)._2
-    val endDate = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role)._3
+    val startDate = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role, updateRelationshipRequestHolder.notification.welsh)._2
+    val endDate = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role, updateRelationshipRequestHolder.notification.welsh)._3
+    val emailTemplateId = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role, updateRelationshipRequestHolder.notification.welsh)._1
     val emailParameters: Map[String, String] = Map("full_name" -> updateRelationshipRequestHolder.notification.full_name, "startDate" -> startDate, "endDate" -> endDate)
-    val emailTemplateId = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role)._1
     Future.successful(SendEmailRequest(templateId = emailTemplateId, to = emailRecipients, parameters = emailParameters, force = false))
   }
 
-  private def getEmailTemplateId(relationship: DesRelationshipInformation, role: String): (String, String, String) = {
-    (relationship.relationshipEndReason, role) match {
-      case (ApplicationConfig.REASON_CANCEL, _) => (ApplicationConfig.EMAIL_UPDATE_CANCEL_TEMPLATE_ID, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
-      case (ApplicationConfig.REASON_REJECT, ApplicationConfig.ROLE_RECIPIENT) =>
-        if (relationship.actualEndDate.contains(taxYearResolver.currentTaxYear.toString())) (ApplicationConfig.EMAIL_UPDATE_REJECT_TEMPLATE_ID, "", "") // TODO fix if its more than 1 year
+  private def getEmailTemplateId(relationship: DesRelationshipInformation, role: String, isWelsh: Boolean): (String, String, String) = {
+    (relationship.relationshipEndReason, role, isWelsh) match {
+      case (ApplicationConfig.REASON_CANCEL, _, true) => (ApplicationConfig.EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
+      case (ApplicationConfig.REASON_REJECT, ApplicationConfig.ROLE_RECIPIENT, true) =>
+        if (relationship.actualEndDate.contains(taxYearResolver.currentTaxYear.toString())) (ApplicationConfig.EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID, "", "")
+        else (ApplicationConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH, "", "")
+      case (ApplicationConfig.REASON_DIVORCE, ApplicationConfig.ROLE_TRANSFEROR, true) =>
+        if (relationship.actualEndDate == getDateInRequiredFormat(true)) (ApplicationConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
+        else if (relationship.actualEndDate == getDateInRequiredFormat(false)) (ApplicationConfig.EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_WELSH_TEMPLATE_ID, ApplicationConfig.START_DATE + taxYearResolver.currentTaxYear, "") else
+          (ApplicationConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH, ApplicationConfig.START_DATE + taxYearResolver.currentTaxYear, ApplicationConfig.END_DATE + taxYearResolver.currentTaxYear)
+      case (ApplicationConfig.REASON_DIVORCE, ApplicationConfig.ROLE_RECIPIENT, true) =>
+        if (relationship.actualEndDate == getDateInRequiredFormat(true)) (ApplicationConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
+        else (ApplicationConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH, "", ApplicationConfig.END_DATE + taxYearResolver.currentTaxYear)
+      
+      case (ApplicationConfig.REASON_CANCEL, _, _) => (ApplicationConfig.EMAIL_UPDATE_CANCEL_TEMPLATE_ID, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
+      case (ApplicationConfig.REASON_REJECT, ApplicationConfig.ROLE_RECIPIENT, _) =>
+        if (relationship.actualEndDate.contains(taxYearResolver.currentTaxYear.toString())) (ApplicationConfig.EMAIL_UPDATE_REJECT_TEMPLATE_ID, "", "")
         else (ApplicationConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR, "", "")
-      case (ApplicationConfig.REASON_DIVORCE, ApplicationConfig.ROLE_TRANSFEROR) =>
+      case (ApplicationConfig.REASON_DIVORCE, ApplicationConfig.ROLE_TRANSFEROR, _) =>
         if (relationship.actualEndDate == getDateInRequiredFormat(true)) (ApplicationConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
         else if (relationship.actualEndDate == getDateInRequiredFormat(false)) (ApplicationConfig.EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID, ApplicationConfig.START_DATE + taxYearResolver.currentTaxYear, "") else
           (ApplicationConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR, ApplicationConfig.START_DATE + taxYearResolver.currentTaxYear, ApplicationConfig.END_DATE + taxYearResolver.currentTaxYear)
-      case (ApplicationConfig.REASON_DIVORCE, ApplicationConfig.ROLE_RECIPIENT) =>
+      case (ApplicationConfig.REASON_DIVORCE, ApplicationConfig.ROLE_RECIPIENT, _) =>
         if (relationship.actualEndDate == getDateInRequiredFormat(true)) (ApplicationConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
         else (ApplicationConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR, "", ApplicationConfig.END_DATE + taxYearResolver.currentTaxYear)
     }
