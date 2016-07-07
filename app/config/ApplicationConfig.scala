@@ -52,7 +52,8 @@ trait ApplicationConfig {
   val EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH: String
   val EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID: String
   val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID: String
-  val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID: String  
+  val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID: String 
+  val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH: String
 }
 
 object ApplicationConfig extends ApplicationConfig with ServicesConfig {
@@ -67,6 +68,10 @@ object ApplicationConfig extends ApplicationConfig with ServicesConfig {
   override val EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR = "tamc_transferor_divorce_previous_yr"
   override val EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR = "tamc_recipient_divorce_previous_yr"
   override val EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR = "tamc_recipient_rejects_retro_yr"
+  override val EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID = "tamc_current_year"
+  override val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID = "tamc_retro_year"
+  override val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID = "tamc_current_retro_year"
+  override val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR = "tamc_transferor_divorce_current_yr"
   
   override val EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID = "tamc_update_cancel_cy"  
   override val EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID = "tamc_update_reject_cy"
@@ -75,16 +80,11 @@ object ApplicationConfig extends ApplicationConfig with ServicesConfig {
   override val EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH = "tamc_transferor_divorce_previous_yr_cy"
   override val EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH = "tamc_recipient_divorce_previous_yr_cy"
   override val EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH = "tamc_recipient_rejects_retro_yr_cy"  
-
-  
-  override val EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID = "tamc_current_year"
-  override val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID = "tamc_retro_year"
-  override val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID = "tamc_current_retro_year"
   override val EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID = "tamc_current_year_cy"
   override val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID = "tamc_retro_year_cy"
   override val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID = "tamc_current_retro_year_cy"
+  override val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH = "tamc_transferor_divorce_current_yr_cy"
   
-  override val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR = "tamc_transferor_divorce_current_yr"
   override val ROLE_TRANSFEROR = "Transferor"
   override val ROLE_RECIPIENT = "Recipient"
 

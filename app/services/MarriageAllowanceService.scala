@@ -220,7 +220,7 @@ trait MarriageAllowanceService {
         if (relationship.actualEndDate.contains(taxYearResolver.currentTaxYear.toString())) (ApplicationConfig.EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID, "", "")
         else (ApplicationConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH, "", "")
       case (ApplicationConfig.REASON_DIVORCE, ApplicationConfig.ROLE_TRANSFEROR, true) =>
-        if (relationship.actualEndDate == getDateInRequiredFormat(true)) (ApplicationConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
+        if (relationship.actualEndDate == getDateInRequiredFormat(true)) (ApplicationConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH, ApplicationConfig.START_DATE + (taxYearResolver.currentTaxYear + 1), ApplicationConfig.END_DATE + (taxYearResolver.currentTaxYear + 1))
         else if (relationship.actualEndDate == getDateInRequiredFormat(false)) (ApplicationConfig.EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_WELSH_TEMPLATE_ID, ApplicationConfig.START_DATE + taxYearResolver.currentTaxYear, "") else
           (ApplicationConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH, ApplicationConfig.START_DATE + taxYearResolver.currentTaxYear, ApplicationConfig.END_DATE + taxYearResolver.currentTaxYear)
       case (ApplicationConfig.REASON_DIVORCE, ApplicationConfig.ROLE_RECIPIENT, true) =>
