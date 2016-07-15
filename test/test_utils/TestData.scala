@@ -16,9 +16,9 @@
 
 package test_utils
 
-import models.Cid
-import models.Timestamp
+import models._
 import java.net.URLDecoder
+
 import uk.gov.hmrc.domain.Generator
 
 object TestData {
@@ -495,5 +495,43 @@ object TestData {
     }
 
   }
+
+  def findMockData[T](url: String, body: Option[T] = None): String = {
+
+    val findCitizenByNinoUrl = """^GET-foo/marriage-allowance/citizen/((?!BG|GB|NK|KN|TN|NT|ZZ)[ABCEGHJ-PRSTW-Z][ABCEGHJ-NPRSTW-Z]\d{6}[A-D]$)""".r
+    val findRecipientByNinoUrl = """^GET-foo/marriage-allowance/citizen/((?!BG|GB|NK|KN|TN|NT|ZZ)[ABCEGHJ-PRSTW-Z][ABCEGHJ-NPRSTW-Z]\d{6}[A-D])/check\?surname=(.*)\&forename1=(.*)\&gender=(.*)""".r
+    val checkAllowanceRelationshipUrl = """^GET-foo/marriage-allowance/citizen/(\d+)/relationship""".r
+    val listRelationshipUrl = """^GET-foo/marriage-allowance/citizen/(\d+)/relationships\?includeHistoric=true""".r
+    val createAllowanceRelationshipUrl = """^POST-foo/marriage-allowance/citizen/(\d+)/relationship""".r
+    val multiYearCreateAllowanceRelationshipUrl = """^POST-foo/marriage-allowance/02.00.00/citizen/(\d+)/relationship/([a-zA-Z]+)""".r
+    val updateAllowanceRelationshipUrl = """^PUT-foo/marriage-allowance/citizen/(\d+)/relationship""".r
+
+    (url, body) match {
+      case (checkAllowanceRelationshipUrl(cid), None) =>
+        TestData.mappedCid2CheckAllowanceRelationship(cid).json
+      case (createAllowanceRelationshipUrl(recipientCid), Some(body: DesCreateRelationshipRequest)) =>
+        val bodyToText = s"trcid-${body.CID2}_trts-${body.CID2Timestamp}_rccid-${body.CID1}_rcts-${body.CID1Timestamp}"
+        TestData.mappedCreations(bodyToText).json
+      case (multiYearCreateAllowanceRelationshipUrl(recipientCid, reqType: String), Some(body: MultiYearDesCreateRelationshipRequest)) =>
+        val bodyToText = s"trcid-${body.transferorCid}_trts-${body.transferorTimestamp}_rccid-${body.recipientCid}_rcts-${body.recipientTimestamp}"
+        TestData.mappedMultiYearCreate(bodyToText).json
+      case (findCitizenByNinoUrl(nino), None) =>
+        TestData.mappedNino2FindCitizen(nino).json
+      case (findRecipientByNinoUrl(nino, surname, forename1, gender), None) =>
+        val filePath = s"/data/findRecipient/nino-${nino}_surname-${decodeQueryStringValue(surname)}_forename1-${decodeQueryStringValue(forename1)}_gender-${decodeQueryStringValue(gender)}.json"
+        TestData.mappedFindRecipient(filePath).json
+      case (listRelationshipUrl(cid), None) =>
+        val filePath = s"usercid-${cid}"
+        TestData.mappedLists(filePath).json
+      case (updateAllowanceRelationshipUrl(recipientCid), Some(body: DesUpdateRelationshipRequest)) =>
+        val bodyToText = s"cid1-${body.participant1.instanceIdentifier}_part2ts-${body.participant2.updateTimestamp}_endReason-${body.relationship.relationshipEndReason}"
+        TestData.mappedUpdates(bodyToText).json
+      case _ =>
+        throw new IllegalArgumentException("url not supported:" + url)
+    }
+  }
+
+  def decodeQueryStringValue(value: String) =
+    URLDecoder.decode(value, "UTF-8")
 
 }

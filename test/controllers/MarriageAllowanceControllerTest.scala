@@ -16,41 +16,15 @@
 
 package controllers
 
-import models.CitizenName
-import models.DesCreateRelationshipRequest
-import models.SendEmailRequest
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import play.api.test.FakeApplication
-import play.api.test.FakeRequest
-import play.api.test.Helpers.OK
-import play.api.test.Helpers.contentAsString
-import play.api.test.Helpers.defaultAwaitTimeout
-import play.api.test.WithApplication
-import test_utils.HttpGETCallWithHeaders
-import test_utils.HttpPOSTCallWithHeaders
-import test_utils.TestUtility
+import play.api.test.{FakeApplication, FakeRequest, WithApplication}
+import play.api.test.Helpers.{OK, contentAsString, defaultAwaitTimeout}
+import test_utils.{HttpGETCallWithHeaders, TestUtility, TestRelationshipRecordStatusWrapper, TestRelationshipRecord, TestData}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.play.http.logging.Authorization
 import uk.gov.hmrc.play.test.UnitSpec
-import models.RelationshipRecordStatusWrapper
-import models.RelationshipRecordWrapper
-import models.RelationshipRecord
-import play.api.libs.json.JsObject
-import models.UpdateRelationshipRequestHolder
-import models.CreateRelationshipRequestHolder
-import models.UpdateRelationshipResponse
-import test_utils.TestRelationshipRecordStatusWrapper
-import test_utils.TestRelationshipRecord
-import models.UserRecord
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import test_utils.TestData
-import models.EligibleTaxYearListResponse
-import models.EligibleTaxYearListStatusResponse
-import uk.gov.hmrc.time.TaxYearResolver
+import models.{UpdateRelationshipResponse, UserRecord}
 
 class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
 
