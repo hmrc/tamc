@@ -22,30 +22,97 @@ import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import controllers.MarriageAllowanceController
 import metrics.Metrics
 import models.ApiType.ApiType
-import models.{Cid, DesCreateRelationshipRequest, DesUpdateRelationshipRequest, FindRecipientRequest}
+import models._
 import org.joda.time._
 import org.scalatest.mock.MockitoSugar
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsValue, Writes}
 import services.MarriageAllowanceService
-import test_utils.FakeHttpVerbs._
+import test_utils.TestData.findMockData
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.{HttpGet, HttpPost, HttpPut, HttpResponse}
+import uk.gov.hmrc.play.http._
 import uk.gov.hmrc.time.TaxYearResolver
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DummyHttpResponse(override val body: String, override val status: Int, override val allHeaders: Map[String, Seq[String]] = Map.empty) extends HttpResponse {
-  override def json: JsValue = Json.parse(body)
-}
-
 trait TestUtility {
 
-
-  def makeFakeErrorController() = {
-    makeFakeController()
-  }
-
   def makeFakeController(testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London"))) = {
+
+    val fakeHttpGet = new HttpGet {
+      override val hooks = NoneRequired
+      var httpGetCallsToTest: List[HttpGETCallWithHeaders] = List()
+
+      override def doGet(url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+        val adjustedUrl = s"GET-${url}"
+        httpGetCallsToTest = httpGetCallsToTest :+ HttpGETCallWithHeaders(url = adjustedUrl, env = hc.extraHeaders, bearerToken = hc.authorization)
+        var responseBody = findMockData(adjustedUrl)
+        val response = new DummyHttpResponse(responseBody, 200)
+        return Future.successful(response)
+      }
+    }
+
+    val fakeHttpPost = new HttpPost {
+      override val hooks = NoneRequired
+      var httpPostCallsToTest: List[HttpPOSTCallWithHeaders] = List()
+
+      protected def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = {
+        val adjustedUrl = s"POST-${url}"
+        httpPostCallsToTest = httpPostCallsToTest :+ HttpPOSTCallWithHeaders(url = adjustedUrl, body = body, env = hc.extraHeaders, bearerToken = hc.authorization)
+        var responseBody = findMockData(adjustedUrl, Some(body))
+        val response = new DummyHttpResponse(responseBody, 200)
+        Future.successful(response)
+      }
+
+      protected def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+      protected def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+      protected def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+    }
+
+    val fakeHttpPut = new HttpPut {
+      override val hooks = NoneRequired
+      var httpPutCallsToTest: List[HttpPUTCallWithHeaders] = List()
+
+      protected def doPut[A](url: String, body: A)(implicit rds: Writes[A], hc: HeaderCarrier): Future[uk.gov.hmrc.play.http.HttpResponse] = {
+        val adjustedUrl = s"PUT-${url}"
+        val adjustedBody = body.asInstanceOf[DesUpdateRelationshipRequest]
+        httpPutCallsToTest = httpPutCallsToTest :+ HttpPUTCallWithHeaders(url = adjustedUrl, body = adjustedBody, env = hc.extraHeaders, bearerToken = hc.authorization)
+        var responseBody = findMockData(adjustedUrl, Some(adjustedBody))
+        val response = new DummyHttpResponse(responseBody, 200)
+        Future.successful(response)
+      }
+
+      protected def doPutString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+      protected def doEmptyPut[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+      protected def doFormPut(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+    }
+
+    val fakeHttpEmailPost = new HttpPost {
+      override val hooks = NoneRequired
+
+      var checkEmailCallCount = 0
+      var checkEmailCallData: Option[SendEmailRequest] = None
+
+      protected def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = {
+        checkEmailCallCount = checkEmailCallCount + 1
+        checkEmailCallData = Some(body.asInstanceOf[SendEmailRequest])
+        body.asInstanceOf[SendEmailRequest] match {
+          case SendEmailRequest(addressList, _, _, _) if (addressList.exists { address => address.value.equals("bad-request@example.com") }) =>
+            Future.failed(new BadRequestException("throwing error for:" + addressList))
+          case _ =>
+            Future.successful(new DummyHttpResponse("", 200))
+        }
+      }
+
+      protected def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+      protected def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+      protected def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+    }
 
     val fakeEmailConnector = new EmailConnector {
       override val httpPost = fakeHttpEmailPost
@@ -92,12 +159,15 @@ trait TestUtility {
 
     val fakeMetrics = new Metrics {
       val fakeTimerContext = MockitoSugar.mock[Timer.Context]
+
       override def startTimer(api: ApiType): Context = fakeTimerContext
+
       override def incrementSuccessCounter(api: ApiType): Unit = {}
+
       override def incrementTotalCounter(api: ApiType): Unit = {}
     }
 
-    val fakeTaxYearResolver = new TaxYearResolver{
+    val fakeTaxYearResolver = new TaxYearResolver {
       override lazy val now = () => testingTime
     }
 
@@ -105,25 +175,39 @@ trait TestUtility {
       override val dataConnector = fakeMarriageAllowanceDataConnector
       override val emailConnector = fakeEmailConnector
       override val metrics = fakeMetrics
-      override val taxYearResolver =fakeTaxYearResolver
+      override val taxYearResolver = fakeTaxYearResolver
       override val startTaxYear = 2015
     }
 
     val debugObject = new Object {
       def findCitizenNinoToTest = fakeMarriageAllowanceDataConnector.findCitizenNinoToTest
+
       def findRecipientNinoToTest = fakeMarriageAllowanceDataConnector.findRecipientNinoToTest
+
       def findCitizenNinoToTestCount = fakeMarriageAllowanceDataConnector.findCitizenNinoToTestCount
+
       def findRecipientNinoToTestCount = fakeMarriageAllowanceDataConnector.findRecipientNinoToTestCount
+
       def checkAllowanceRelationshipCidToTest = fakeMarriageAllowanceDataConnector.checkAllowanceRelationshipCidToTest
+
       def checkAllowanceRelationshipCidToTestCount = fakeMarriageAllowanceDataConnector.checkAllowanceRelationshipCidToTestCount
+
       def createAllowanceRelationshipDataToTest = fakeMarriageAllowanceDataConnector.createAllowanceRelationshipDataToTest
+
       def createAllowanceRelationshipDataToTestCount = fakeMarriageAllowanceDataConnector.createAllowanceRelationshipDataToTestCount
+
       def updateAllowanceRelationshipDataToTest = fakeMarriageAllowanceDataConnector.updateAllowanceRelationshipDataToTest
+
       def updateAllowanceRelationshipDataToTestCount = fakeMarriageAllowanceDataConnector.updateAllowanceRelationshipDataToTestCount
+
       def httpGetCallsToTest = fakeHttpGet.httpGetCallsToTest
+
       def httpPostCallsToTest = fakeHttpPost.httpPostCallsToTest
+
       def checkEmailCallCount = fakeHttpEmailPost.checkEmailCallCount
+
       def checkEmailCallData = fakeHttpEmailPost.checkEmailCallData
+
       def httpPutCallsToTest = fakeHttpPut.httpPutCallsToTest
     }
 
@@ -133,4 +217,3 @@ trait TestUtility {
     }
   }
 }
-
