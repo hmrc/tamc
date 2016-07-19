@@ -180,11 +180,17 @@ trait MarriageAllowanceService {
   }
 
   private def getEmailTemplateId(relationship: DesRelationshipInformation, role: String, isWelsh: Boolean): (String, String, String) = {
+
     val pickTemp = pickTemplate(isWelsh)(_,_)
-    val startDateNextYear = START_DATE + (taxYearResolver.currentTaxYear + 1)
-    val endDateNextYear = END_DATE + (taxYearResolver.currentTaxYear + 1)
-    val startDateCurrYear = START_DATE + taxYearResolver.currentTaxYear
-    val endDateCurrYear = END_DATE + taxYearResolver.currentTaxYear
+    val (startDate, endDate) = isWelsh match {
+      case true => (START_DATE_CY, END_DATE_CY)
+      case _ => (START_DATE, END_DATE)
+    }
+
+    val startDateNextYear = startDate + (taxYearResolver.currentTaxYear + 1)
+    val endDateNextYear = endDate + (taxYearResolver.currentTaxYear + 1)
+    val startDateCurrYear = startDate + taxYearResolver.currentTaxYear
+    val endDateCurrYear = endDate + taxYearResolver.currentTaxYear
 
     (relationship.relationshipEndReason, role) match {
       case (REASON_CANCEL, _) =>
