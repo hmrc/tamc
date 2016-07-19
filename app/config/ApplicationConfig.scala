@@ -42,6 +42,8 @@ trait ApplicationConfig {
   val START_TAX_YEAR: Int
   val START_DATE: String
   val END_DATE: String
+  val START_DATE_CY: String
+  val END_DATE_CY: String
   
   val EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID: String
   val EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID: String
@@ -94,6 +96,9 @@ object ApplicationConfig extends ApplicationConfig with ServicesConfig {
   
   override val START_DATE = "6 April "
   override val END_DATE = "5 April "
+
+  val START_DATE_CY = "6 Ebrill"
+  val END_DATE_CY = "5 Ebrill"
   
   override val START_TAX_YEAR = configuration.getInt("ma-start-tax-year").getOrElse(2015)
 }
