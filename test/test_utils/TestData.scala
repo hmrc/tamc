@@ -405,16 +405,7 @@ object TestData {
       nino = Ninos.ninoTransferorNotFound),
     Ninos.ninoBadRequest -> FindCitizenDummy(
       returnCode = 1,
-      reasonCode = 3,
-      cid = mappedCid2CheckAllowanceRelationship(Cids.cidBadRequest.toString),
-      timestamp = "333222333",
-      firstName = "Firstnamefourz",
-      lastName = "Lastnamefourz",
-      deceased = "N",
-      nino = Ninos.ninoBadRequest),
-    Ninos.ninoBadRequest -> FindCitizenDummy(
-      returnCode = 1,
-      reasonCode = 3,
+      reasonCode = 1,
       cid = mappedCid2CheckAllowanceRelationship(Cids.cidBadRequest.toString),
       timestamp = "333222333",
       firstName = "Firstnamefourz",
@@ -423,7 +414,7 @@ object TestData {
       nino = Ninos.ninoBadRequest),
     Ninos.ninoCitizenNotFound -> FindCitizenDummy(
       returnCode = 1,
-      reasonCode = 3,
+      reasonCode = 1,
       cid = mappedCid2CheckAllowanceRelationship(Cids.cidCitizenNotFound.toString),
       timestamp = "333222333",
       firstName = "Firstnamefourz",
@@ -432,7 +423,7 @@ object TestData {
       nino = Ninos.ninoCitizenNotFound),
     Ninos.ninoServerError -> FindCitizenDummy(
       returnCode = 1,
-      reasonCode = 3,
+      reasonCode = 1,
       cid = mappedCid2CheckAllowanceRelationship(Cids.cidServerError.toString),
       timestamp = "333222333",
       firstName = "Firstnamefourz",
@@ -441,7 +432,7 @@ object TestData {
       nino = Ninos.ninoServerError),
     Ninos.ninoServiceUnavailable -> FindCitizenDummy(
       returnCode = 1,
-      reasonCode = 3,
+      reasonCode = 1,
       cid = mappedCid2CheckAllowanceRelationship(Cids.cidServiceUnavailable.toString),
       timestamp = "333222333",
       firstName = "Firstnamefourz",

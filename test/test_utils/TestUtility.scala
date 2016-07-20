@@ -27,10 +27,11 @@ import org.joda.time._
 import org.scalatest.mock.MockitoSugar
 import play.api.libs.json.{JsValue, Writes}
 import services.MarriageAllowanceService
-import test_utils.TestData.findMockData
+import test_utils.TestData.{Cids, findMockData}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http._
 import uk.gov.hmrc.time.TaxYearResolver
+import errors.ErrorResponseStatus._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -158,7 +159,14 @@ trait TestUtility {
 
       override def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue] = {
         isErrorController match {
-          case true => throw new BadRequestException("Nino not found")
+          case true =>
+            cid match {
+              case Cids.cidBadRequest => throw new BadRequestException(BAD_REQUEST)
+              case Cids.cidCitizenNotFound => throw new NotFoundException(CITIZEN_NOT_FOUND)
+              case Cids.cidServerError => throw new InternalServerException(SERVER_ERROR)
+              case Cids.cidServiceUnavailable => throw new ServiceUnavailableException(SERVICE_UNAVILABLE)
+              case _ => throw new Exception("exception should nto be thrown")
+            }
           case _ => super.listRelationship(cid, includeHistoric)
         }
       }

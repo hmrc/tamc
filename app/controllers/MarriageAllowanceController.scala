@@ -117,7 +117,7 @@ trait MarriageAllowanceController extends BaseController {
           case internalServerError: InternalServerException =>
             Logger.warn("List Relationship failed with 500 internal server error", error)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVER_ERROR))))
-          case serviceUnavailable: uk.gov.hmrc.play.http.ServiceUnavailableException =>
+          case serviceUnavailable: ServiceUnavailableException =>
             Logger.warn("List Relationship failed with 503 service unavailable error", error)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVICE_UNAVILABLE))))
           case otherError =>

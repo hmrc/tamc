@@ -72,29 +72,68 @@ class ErrorTest extends UnitSpec with TestUtility {
       status(result) shouldBe BAD_REQUEST
     }
 
-    "return BadRequest" in new WithApplication(FakeApplication()) {
+    "return bad request should be handled" in new WithApplication(FakeApplication()) {
 
       val controller = makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
-      val testData = TestData.Lists.oneActiveOneHistoric
+      val testData = TestData.Lists.badRequest
       val testNino = Nino(testData.user.nino)
       val testCid = testData.user.cid.cid
-      val testTs = testData.user.timestamp.toString()
-
-      val participiant0 = testData.counterparties(0)
-      val participiant0Cid: String = participiant0.partner.cid.cid.toString
-      val participiant0Ts = participiant0.partner.timestamp.toString()
-
-      val participiant1 = testData.counterparties(1)
-      val participiant1Cid: String = participiant1.partner.cid.cid.toString
-      val participiant1Ts = participiant1.partner.timestamp.toString()
 
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
 
       val json = Json.parse(contentAsString(result))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:BAD-REQUEST"
+    }
+
+    "return NotFound should be handled" in new WithApplication(FakeApplication()) {
+
+      val controller = makeFakeController(isErrorController = true)
+      val request = FakeRequest()
+
+      val testData = TestData.Lists.citizenNotFound
+      val testNino = Nino(testData.user.nino)
+      val testCid = testData.user.cid.cid
+
+      val result = controller.listRelationship(testNino)(request)
+      status(result) shouldBe OK
+
+      val json = Json.parse(contentAsString(result))
+      (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:CITIZEN-NOT-FOUND"
+    }
+
+    "return InternalServerException should be handled" in new WithApplication(FakeApplication()) {
+
+      val controller = makeFakeController(isErrorController = true)
+      val request = FakeRequest()
+
+      val testData = TestData.Lists.serverError
+      val testNino = Nino(testData.user.nino)
+      val testCid = testData.user.cid.cid
+
+      val result = controller.listRelationship(testNino)(request)
+      status(result) shouldBe OK
+
+      val json = Json.parse(contentAsString(result))
+      (json \ "status" \ "status_code").as[String] shouldBe "ERROR:500"
+    }
+
+    "return Service unavailable should be handled" in new WithApplication(FakeApplication()) {
+
+      val controller = makeFakeController(isErrorController = true)
+      val request = FakeRequest()
+
+      val testData = TestData.Lists.serviceUnavailable
+      val testNino = Nino(testData.user.nino)
+      val testCid = testData.user.cid.cid
+
+      val result = controller.listRelationship(testNino)(request)
+      status(result) shouldBe OK
+
+      val json = Json.parse(contentAsString(result))
+      (json \ "status" \ "status_code").as[String] shouldBe "ERROR:503"
     }
   }
 }
