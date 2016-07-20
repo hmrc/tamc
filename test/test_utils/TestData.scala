@@ -27,7 +27,7 @@ object TestData {
     private lazy val cids = {
       val randomizer = new java.util.Random
       var cids: Set[Cid] = Set()
-      while (cids.size <= 6) {
+      while (cids.size <= 10) {
         cids += randomizer.nextLong().abs
       }
       cids.toList
@@ -39,6 +39,10 @@ object TestData {
     val cidRecDoesNotExistP2: Cid = cids(3)
     val cidNonApi: Cid = cids(4)
     val cidLong: Cid = cids(5)
+    val cidBadRequest: Cid = cids(6)
+    val cidCitizenNotFound: Cid = cids(7)
+    val cidServerError: Cid = cids(8)
+    val cidServiceUnavailable: Cid = cids(9)
   }
 
   object Ninos {
@@ -63,6 +67,10 @@ object TestData {
     val ninoP5C: String = ninos(9)
     val ninoDeceased: String = ninos(10)
     val ninoTransferorNotFound: String = ninos(11)
+    val ninoBadRequest: String = ninos(12)
+    val ninoCitizenNotFound: String = ninos(13)
+    val ninoServerError: String = ninos(14)
+    val ninoServiceUnavailable: String = ninos(15)
   }
 
   case class ListItem(partner: FindCitizenDummy, participant: Int, endReason: Option[String] = None) {
@@ -135,6 +143,18 @@ object TestData {
       mappedNino2FindCitizen(Ninos.ninoTransferorNotFound),
       Array[ListItem](
         ListItem(mappedNino2FindCitizen(Ninos.ninoP2A), 1, Some("Ended by Participant 2"))))
+    val badRequest = ListDummy(
+      mappedNino2FindCitizen(Ninos.ninoBadRequest),
+      Array[ListItem]())
+    val citizenNotFound = ListDummy(
+      mappedNino2FindCitizen(Ninos.ninoCitizenNotFound),
+      Array[ListItem]())
+    val serverError = ListDummy(
+      mappedNino2FindCitizen(Ninos.ninoServerError),
+      Array[ListItem]())
+    val serviceUnavailable = ListDummy(
+      mappedNino2FindCitizen(Ninos.ninoServiceUnavailable),
+      Array[ListItem]())
   }
 
   lazy val mappedLists = {
@@ -382,7 +402,52 @@ object TestData {
       firstName = "Firstnamefourz",
       lastName = "Lastnamefourz",
       deceased = "N",
-      nino = Ninos.ninoTransferorNotFound))
+      nino = Ninos.ninoTransferorNotFound),
+    Ninos.ninoBadRequest -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 3,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidBadRequest.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "N",
+      nino = Ninos.ninoBadRequest),
+    Ninos.ninoBadRequest -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 3,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidBadRequest.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "N",
+      nino = Ninos.ninoBadRequest),
+    Ninos.ninoCitizenNotFound -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 3,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidCitizenNotFound.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "N",
+      nino = Ninos.ninoCitizenNotFound),
+    Ninos.ninoServerError -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 3,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidServerError.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "N",
+      nino = Ninos.ninoServerError),
+    Ninos.ninoServiceUnavailable -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 3,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidServiceUnavailable.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "N",
+      nino = Ninos.ninoServiceUnavailable))
 
   lazy val mappedCid2CheckAllowanceRelationship = Map(
     Cids.cidOkP1.toString() -> CheckAllowanceRelationshipDummy(
@@ -408,7 +473,23 @@ object TestData {
     Cids.cidLong.toString() -> CheckAllowanceRelationshipDummy(
       returnCode = 1,
       reasonCode = 1,
-      cid = Cids.cidLong))
+      cid = Cids.cidLong),
+    Cids.cidBadRequest.toString() -> CheckAllowanceRelationshipDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = Cids.cidBadRequest),
+    Cids.cidCitizenNotFound.toString() -> CheckAllowanceRelationshipDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = Cids.cidCitizenNotFound),
+    Cids.cidServerError.toString() -> CheckAllowanceRelationshipDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = Cids.cidServerError),
+    Cids.cidServiceUnavailable.toString() -> CheckAllowanceRelationshipDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = Cids.cidServiceUnavailable))
 
   case class CheckAllowanceRelationshipDummy(returnCode: Int, reasonCode: Int, cid: Cid) {
     def json = s"""

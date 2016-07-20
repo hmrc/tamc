@@ -36,7 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait TestUtility {
 
-  def makeFakeController(testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London"))) = {
+  def makeFakeController(testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")), isErrorController: Boolean = false) = {
 
     val fakeHttpGet = new HttpGet {
       override val hooks = NoneRequired
@@ -154,6 +154,13 @@ trait TestUtility {
         updateAllowanceRelationshipDataToTest = Some(data)
         updateAllowanceRelationshipDataToTestCount = updateAllowanceRelationshipDataToTestCount + 1
         super.updateAllowanceRelationship(data)
+      }
+
+      override def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue] = {
+        isErrorController match {
+          case true => throw new BadRequestException("Nino not found")
+          case _ => super.listRelationship(cid, includeHistoric)
+        }
       }
     }
 
