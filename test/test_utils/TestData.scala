@@ -207,13 +207,22 @@ object TestData {
     val reject: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoP2A), mappedNino2FindCitizen(Ninos.ninoP4A), "Rejected by Recipient")
     val divorceRec: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoP2A), mappedNino2FindCitizen(Ninos.ninoP4A), "Divorce/Separation")
     val divorceTr: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoP2A), mappedNino2FindCitizen(Ninos.ninoP4A), "Divorce/Separation")
+
+    val badRequest: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoBadRequest), mappedNino2FindCitizen(Ninos.ninoBadRequest), "Cancelled by Transferor")
+    val citizenNotFound: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoCitizenNotFound), mappedNino2FindCitizen(Ninos.ninoCitizenNotFound), "Cancelled by Transferor")
+    val serverError: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoServerError), mappedNino2FindCitizen(Ninos.ninoServerError), "Cancelled by Transferor")
+    val serviceUnavailable: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoServiceUnavailable), mappedNino2FindCitizen(Ninos.ninoServiceUnavailable), "Cancelled by Transferor")
   }
 
   lazy val mappedUpdates = {
     Map(Updates.cancel.key -> Updates.cancel,
       Updates.reject.key -> Updates.reject,
       Updates.divorceRec.key -> Updates.divorceRec,
-      Updates.divorceTr.key -> Updates.divorceTr)
+      Updates.divorceTr.key -> Updates.divorceTr,
+      Updates.badRequest.key -> Updates.badRequest,
+      Updates.citizenNotFound.key -> Updates.citizenNotFound,
+      Updates.serverError.key -> Updates.serverError,
+      Updates.serviceUnavailable.key -> Updates.serviceUnavailable)
   }
 
   object Creations {

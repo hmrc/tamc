@@ -32,6 +32,7 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http._
 import uk.gov.hmrc.time.TaxYearResolver
 import errors.ErrorResponseStatus._
+import errors.UpdateRelationshipError
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -152,6 +153,20 @@ trait TestUtility {
       }
 
       override def updateAllowanceRelationship(data: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
+        isErrorController match {
+          case true =>
+            data.participant1.instanceIdentifier.toLong match {
+              case Cids.cidBadRequest => throw UpdateRelationshipError(BAD_REQUEST)
+              case Cids.cidCitizenNotFound => throw new NotFoundException(CITIZEN_NOT_FOUND)
+              case Cids.cidServerError => throw new InternalServerException(SERVER_ERROR)
+              case Cids.cidServiceUnavailable => throw new ServiceUnavailableException(SERVICE_UNAVILABLE)
+              case _ => throw new Exception("this exception should not be thrown")
+            }
+          case false => updateAllowanceRelationshipDataToTest = Some(data)
+            updateAllowanceRelationshipDataToTestCount = updateAllowanceRelationshipDataToTestCount + 1
+            super.updateAllowanceRelationship(data)
+        }
+
         updateAllowanceRelationshipDataToTest = Some(data)
         updateAllowanceRelationshipDataToTestCount = updateAllowanceRelationshipDataToTestCount + 1
         super.updateAllowanceRelationship(data)
@@ -165,7 +180,7 @@ trait TestUtility {
               case Cids.cidCitizenNotFound => throw new NotFoundException(CITIZEN_NOT_FOUND)
               case Cids.cidServerError => throw new InternalServerException(SERVER_ERROR)
               case Cids.cidServiceUnavailable => throw new ServiceUnavailableException(SERVICE_UNAVILABLE)
-              case _ => throw new Exception("exception should nto be thrown")
+              case _ => throw new Exception("this exception should not be thrown")
             }
           case _ => super.listRelationship(cid, includeHistoric)
         }
