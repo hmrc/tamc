@@ -27,12 +27,12 @@ Post code changes check
 -----------
 
 Once you are done with the changes make sure that:
-* all test cases successfull. Use below command to run the testcases
+* all test cases successful. Use below command to run the testcases
  
   ```$ sbt test```
 
-* all your changes are covered by unit test cases. If not, please write more testcases.
-* code coverage does not go below alread existing code coverage. Use below commad to run coverage report
+* all your changes are covered by unit test cases. If not, please write more test cases.
+* code coverage does not go below already existing code coverage. Use below command to run coverage report
  
   ```$ sbt clean converage test```
 
@@ -43,7 +43,7 @@ Once you are done with the changes make sure that:
 What happens next
 ------------
 
-Once you have raised pull request for the changes, tamc-frontend owner team will recieve an email. The team will review these changes and will advice you further. They will:
+Once you have raised pull request for the changes, tamc-frontend owner team will recieve an email. The team will review these changes and will advise you further. They will:
 * check for unit test code coverage for the changes.
 * check the overall test coverage for the whole project.
 * review the changes and may ask you for further enhancements.
