@@ -27,7 +27,7 @@ Post code changes check
 -----------
 
 Once you are done with the changes make sure that:
-* all test cases successful. Use below command to run the testcases
+* all test cases successful. Use below command to run the test cases
  
   ```$ sbt test```
 
@@ -37,7 +37,7 @@ Once you are done with the changes make sure that:
   ```$ sbt clean converage test```
 
 * you have taken latest code from master before you raise 
-* there are no mrege conflicts in your pull request.
+* there are no merege conflicts in your pull request.
 * you have provided relavant comments while comitting changes and while raising pull request. 
  
 What happens next
