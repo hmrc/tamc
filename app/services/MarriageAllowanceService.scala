@@ -54,7 +54,6 @@ trait MarriageAllowanceService {
   def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(UserRecord, List[TaxYear])] = {
     for {
       recipientRecord <- getRecipientRecord(findRecipientRequest)
-      //recipientRecordWithRelationship <- getRelationshipRecord(recipientRecord)
       recipientRelationshipList <- listRelationship(recipientRecord.cid)
       transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
       transferorRelationshipList <- listRelationship(transferorRecord.cid)
@@ -172,9 +171,7 @@ trait MarriageAllowanceService {
 
   private def transformEmailForUpdateRequest(updateRelationshipRequestHolder: UpdateRelationshipRequestHolder): Future[SendEmailRequest] = {
     val emailRecipients: List[EmailAddress] = List(updateRelationshipRequestHolder.notification.email)
-    val startDate = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role, updateRelationshipRequestHolder.notification.welsh)._2
-    val endDate = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role, updateRelationshipRequestHolder.notification.welsh)._3
-    val emailTemplateId = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role, updateRelationshipRequestHolder.notification.welsh)._1
+    val (emailTemplateId, startDate, endDate) = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role, updateRelationshipRequestHolder.notification.welsh)
     val emailParameters: Map[String, String] = Map("full_name" -> updateRelationshipRequestHolder.notification.full_name, "startDate" -> startDate, "endDate" -> endDate)
     Future.successful(SendEmailRequest(templateId = emailTemplateId, to = emailRecipients, parameters = emailParameters, force = false))
   }
@@ -339,23 +336,12 @@ trait MarriageAllowanceService {
     dataConnector.updateAllowanceRelationship(updateRelationshipRequest).map {
       httpResponse =>
         timer.stop()
-        val json = httpResponse.json
-        ((json
-          \ "participant1"
-          \ "endDate").as[String],
-          (json
-            \ "participant2"
-            \ "endDate").as[String],
-            (json
-              \ "relationship"
-              \ "actualEndDate").as[String]) match {
-                case recievedResponse if httpResponse.status == 200 =>
-                  metrics.incrementSuccessCounter(ApiType.UpdateRelationship)
-                  Future.successful(Unit)
-                case recievedResponse if httpResponse.status == 400 =>
-                  throw RecipientDeceasedError("Service returned response with 400 - recipient deceased")
-                case _ => throw UpdateRelationshipError("An unexpected error has occured while updating the relationship")
-              }
+        httpResponse.status match {
+          case 200  => metrics.incrementSuccessCounter(ApiType.UpdateRelationship)
+                      Future.successful(Unit)
+          case 400  => throw RecipientDeceasedError("Service returned response with 400 - recipient deceased")
+          case _    => throw UpdateRelationshipError("An unexpected error has occured while updating the relationship")
+        }
     }
   }
 
@@ -371,7 +357,7 @@ trait MarriageAllowanceService {
   }
 
   private def convertToAvailedYears(relationshipRecordWrapper: RelationshipRecordWrapper)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Int]] = {
-    val format = DateTimeFormat.forPattern("yyyyMMdd");
+    val format = DateTimeFormat.forPattern("yyyyMMdd")
     val relationships = relationshipRecordWrapper.relationshipRecordList
     var availedYears: List[Int] = List()
     for (record <- relationships) {

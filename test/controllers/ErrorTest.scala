@@ -32,6 +32,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import test_utils.TestData
 
 class ErrorTest extends UnitSpec with TestUtility {
+
   "Checking user record" should {
 
     "return BadRequest if there is an error while finding cid for recipient" in new WithApplication(FakeApplication()) {
@@ -136,7 +137,11 @@ class ErrorTest extends UnitSpec with TestUtility {
       (json \ "status" \ "status_code").as[String] shouldBe "ERROR:503"
     }
 
-    "check if update (cancel) relationship for transferor then response is successfull" in new WithApplication(FakeApplication()) {
+  }
+
+  "Update Relationship " should {
+
+    "handle Bad request and show transferor is deceased" in new WithApplication(FakeApplication()) {
 
       val testInput = TestData.Updates.badRequest
       val recipientNino = Nino(testInput.transferor.nino)
@@ -146,15 +151,34 @@ class ErrorTest extends UnitSpec with TestUtility {
       val recipientTs  = testInput.transferor.timestamp.toString()
       val transferorTs = testInput.recipient.timestamp.toString()
 
-      println(s"transferor is $transferorCid, reciepient is $recipientCid")
       val controller = makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
-      //status(result) shouldBe OK
+      status(result) shouldBe OK
 
-      //val json = Json.parse(contentAsString(result))
-      //println("\n\n\n"+json)
+      val json = Json.parse(contentAsString(result))
+      (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:BAD-REQUEST"
+    }
+
+    "handle Update relationship error" in new WithApplication(FakeApplication()) {
+
+      val testInput = TestData.Updates.citizenNotFound
+      val recipientNino = Nino(testInput.transferor.nino)
+      val recipientCid  = testInput.transferor.cid.cid
+      val transferorNino = Nino(testInput.recipient.nino)
+      val transferorCid = testInput.recipient.cid.cid
+      val recipientTs  = testInput.transferor.timestamp.toString()
+      val transferorTs = testInput.recipient.timestamp.toString()
+
+      val controller = makeFakeController(isErrorController = true)
+      val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false}}"""
+      val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
+      val result = controller.updateRelationship(transferorNino)(request)
+      status(result) shouldBe OK
+
+      val json = Json.parse(contentAsString(result))
+      (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:CANNOT-UPDATE-RELATIONSHIP"
     }
   }
 }

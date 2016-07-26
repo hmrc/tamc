@@ -153,23 +153,18 @@ trait TestUtility {
       }
 
       override def updateAllowanceRelationship(data: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
+        def errorResponse(reason: String, code: Int) = Future{new DummyHttpResponse(reason, code)}
         isErrorController match {
           case true =>
             data.participant1.instanceIdentifier.toLong match {
-              case Cids.cidBadRequest => throw UpdateRelationshipError(BAD_REQUEST)
-              case Cids.cidCitizenNotFound => throw new NotFoundException(CITIZEN_NOT_FOUND)
-              case Cids.cidServerError => throw new InternalServerException(SERVER_ERROR)
-              case Cids.cidServiceUnavailable => throw new ServiceUnavailableException(SERVICE_UNAVILABLE)
+              case Cids.cidBadRequest => errorResponse ("""{"Reason":"Cannot update as Participant 1 update time stamp has changed since last view of data"}""", 400)
+              case Cids.cidCitizenNotFound => errorResponse("""{"Reason":"Person Instance identifier not found"}""", 404)
               case _ => throw new Exception("this exception should not be thrown")
             }
           case false => updateAllowanceRelationshipDataToTest = Some(data)
             updateAllowanceRelationshipDataToTestCount = updateAllowanceRelationshipDataToTestCount + 1
             super.updateAllowanceRelationship(data)
         }
-
-        updateAllowanceRelationshipDataToTest = Some(data)
-        updateAllowanceRelationshipDataToTestCount = updateAllowanceRelationshipDataToTestCount + 1
-        super.updateAllowanceRelationship(data)
       }
 
       override def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue] = {
