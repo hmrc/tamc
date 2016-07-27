@@ -18,7 +18,6 @@ package controllers
 
 import errors.ServiceError
 import errors.TransferorDeceasedError
-import models.CreateRelationshipRequestHolder
 import models.CreateRelationshipResponse
 import models.FindRecipientRequest
 import models.GetRelationshipResponse
@@ -36,13 +35,9 @@ import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.microservice.controller.BaseController
 import errors.UpdateRelationshipError
-import uk.gov.hmrc.play.http.ServiceUnavailableException
 import uk.gov.hmrc.play.http.{ NotFoundException, BadRequestException, InternalServerException, ServiceUnavailableException }
 import errors.ErrorResponseStatus
 import models.MultiYearCreateRelationshipRequestHolder
-import scala.concurrent.Future
-import models.EligibleTaxYearListResponse
-import models.EligibleTaxYearListStatusResponse
 import models.TaxYear
 import errors.RecipientDeceasedError
 
@@ -117,7 +112,7 @@ trait MarriageAllowanceController extends BaseController {
           case internalServerError: InternalServerException =>
             Logger.warn("List Relationship failed with 500 internal server error", error)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVER_ERROR))))
-          case serviceUnavailable: uk.gov.hmrc.play.http.ServiceUnavailableException =>
+          case serviceUnavailable: ServiceUnavailableException =>
             Logger.warn("List Relationship failed with 503 service unavailable error", error)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVICE_UNAVILABLE))))
           case otherError =>
@@ -145,15 +140,6 @@ trait MarriageAllowanceController extends BaseController {
                 case relationshipError: UpdateRelationshipError =>
                   Logger.warn("Update Relationship failed with UpdateRelationshipError(runtime) error", error)
                   Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.CANNOT_UPDATE_RELATIONSHIP))))
-                case notFound: NotFoundException =>
-                  Logger.warn("Update Relationship failed with 404 not found error", error)
-                  Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.CITIZEN_NOT_FOUND))))
-                case internalServerError: InternalServerException =>
-                  Logger.warn("Update Relationship failed with 500 internal server error", error)
-                  Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.SERVER_ERROR))))
-                case serviceUnavailable: ServiceUnavailableException =>
-                  Logger.warn("Update Relationship failed with 503 service unavailable error", error)
-                  Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.SERVICE_UNAVILABLE))))
                 case otherError =>
                   Logger.error("updateRelationship failed with unhandled error", error)
                   throw otherError

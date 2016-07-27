@@ -16,9 +16,9 @@
 
 package test_utils
 
-import models.Cid
-import models.Timestamp
+import models._
 import java.net.URLDecoder
+
 import uk.gov.hmrc.domain.Generator
 
 object TestData {
@@ -27,7 +27,7 @@ object TestData {
     private lazy val cids = {
       val randomizer = new java.util.Random
       var cids: Set[Cid] = Set()
-      while (cids.size <= 6) {
+      while (cids.size <= 10) {
         cids += randomizer.nextLong().abs
       }
       cids.toList
@@ -39,6 +39,10 @@ object TestData {
     val cidRecDoesNotExistP2: Cid = cids(3)
     val cidNonApi: Cid = cids(4)
     val cidLong: Cid = cids(5)
+    val cidBadRequest: Cid = cids(6)
+    val cidCitizenNotFound: Cid = cids(7)
+    val cidServerError: Cid = cids(8)
+    val cidServiceUnavailable: Cid = cids(9)
   }
 
   object Ninos {
@@ -63,6 +67,10 @@ object TestData {
     val ninoP5C: String = ninos(9)
     val ninoDeceased: String = ninos(10)
     val ninoTransferorNotFound: String = ninos(11)
+    val ninoBadRequest: String = ninos(12)
+    val ninoCitizenNotFound: String = ninos(13)
+    val ninoServerError: String = ninos(14)
+    val ninoServiceUnavailable: String = ninos(15)
   }
 
   case class ListItem(partner: FindCitizenDummy, participant: Int, endReason: Option[String] = None) {
@@ -135,6 +143,18 @@ object TestData {
       mappedNino2FindCitizen(Ninos.ninoTransferorNotFound),
       Array[ListItem](
         ListItem(mappedNino2FindCitizen(Ninos.ninoP2A), 1, Some("Ended by Participant 2"))))
+    val badRequest = ListDummy(
+      mappedNino2FindCitizen(Ninos.ninoBadRequest),
+      Array[ListItem]())
+    val citizenNotFound = ListDummy(
+      mappedNino2FindCitizen(Ninos.ninoCitizenNotFound),
+      Array[ListItem]())
+    val serverError = ListDummy(
+      mappedNino2FindCitizen(Ninos.ninoServerError),
+      Array[ListItem]())
+    val serviceUnavailable = ListDummy(
+      mappedNino2FindCitizen(Ninos.ninoServiceUnavailable),
+      Array[ListItem]())
   }
 
   lazy val mappedLists = {
@@ -187,13 +207,22 @@ object TestData {
     val reject: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoP2A), mappedNino2FindCitizen(Ninos.ninoP4A), "Rejected by Recipient")
     val divorceRec: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoP2A), mappedNino2FindCitizen(Ninos.ninoP4A), "Divorce/Separation")
     val divorceTr: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoP2A), mappedNino2FindCitizen(Ninos.ninoP4A), "Divorce/Separation")
+
+    val badRequest: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoBadRequest), mappedNino2FindCitizen(Ninos.ninoBadRequest), "Cancelled by Transferor")
+    val citizenNotFound: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoCitizenNotFound), mappedNino2FindCitizen(Ninos.ninoCitizenNotFound), "Cancelled by Transferor")
+    val serverError: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoServerError), mappedNino2FindCitizen(Ninos.ninoServerError), "Cancelled by Transferor")
+    val serviceUnavailable: UpdateRelationshipDummy = UpdateRelationshipDummy(mappedNino2FindCitizen(Ninos.ninoServiceUnavailable), mappedNino2FindCitizen(Ninos.ninoServiceUnavailable), "Cancelled by Transferor")
   }
 
   lazy val mappedUpdates = {
     Map(Updates.cancel.key -> Updates.cancel,
       Updates.reject.key -> Updates.reject,
       Updates.divorceRec.key -> Updates.divorceRec,
-      Updates.divorceTr.key -> Updates.divorceTr)
+      Updates.divorceTr.key -> Updates.divorceTr,
+      Updates.badRequest.key -> Updates.badRequest,
+      Updates.citizenNotFound.key -> Updates.citizenNotFound,
+      Updates.serverError.key -> Updates.serverError,
+      Updates.serviceUnavailable.key -> Updates.serviceUnavailable)
   }
 
   object Creations {
@@ -382,7 +411,43 @@ object TestData {
       firstName = "Firstnamefourz",
       lastName = "Lastnamefourz",
       deceased = "N",
-      nino = Ninos.ninoTransferorNotFound))
+      nino = Ninos.ninoTransferorNotFound),
+    Ninos.ninoBadRequest -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidBadRequest.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "N",
+      nino = Ninos.ninoBadRequest),
+    Ninos.ninoCitizenNotFound -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidCitizenNotFound.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "N",
+      nino = Ninos.ninoCitizenNotFound),
+    Ninos.ninoServerError -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidServerError.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "N",
+      nino = Ninos.ninoServerError),
+    Ninos.ninoServiceUnavailable -> FindCitizenDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = mappedCid2CheckAllowanceRelationship(Cids.cidServiceUnavailable.toString),
+      timestamp = "333222333",
+      firstName = "Firstnamefourz",
+      lastName = "Lastnamefourz",
+      deceased = "N",
+      nino = Ninos.ninoServiceUnavailable))
 
   lazy val mappedCid2CheckAllowanceRelationship = Map(
     Cids.cidOkP1.toString() -> CheckAllowanceRelationshipDummy(
@@ -408,7 +473,23 @@ object TestData {
     Cids.cidLong.toString() -> CheckAllowanceRelationshipDummy(
       returnCode = 1,
       reasonCode = 1,
-      cid = Cids.cidLong))
+      cid = Cids.cidLong),
+    Cids.cidBadRequest.toString() -> CheckAllowanceRelationshipDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = Cids.cidBadRequest),
+    Cids.cidCitizenNotFound.toString() -> CheckAllowanceRelationshipDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = Cids.cidCitizenNotFound),
+    Cids.cidServerError.toString() -> CheckAllowanceRelationshipDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = Cids.cidServerError),
+    Cids.cidServiceUnavailable.toString() -> CheckAllowanceRelationshipDummy(
+      returnCode = 1,
+      reasonCode = 1,
+      cid = Cids.cidServiceUnavailable))
 
   case class CheckAllowanceRelationshipDummy(returnCode: Int, reasonCode: Int, cid: Cid) {
     def json = s"""
@@ -495,5 +576,43 @@ object TestData {
     }
 
   }
+
+  def findMockData[T](url: String, body: Option[T] = None): String = {
+
+    val findCitizenByNinoUrl = """^GET-foo/marriage-allowance/citizen/((?!BG|GB|NK|KN|TN|NT|ZZ)[ABCEGHJ-PRSTW-Z][ABCEGHJ-NPRSTW-Z]\d{6}[A-D]$)""".r
+    val findRecipientByNinoUrl = """^GET-foo/marriage-allowance/citizen/((?!BG|GB|NK|KN|TN|NT|ZZ)[ABCEGHJ-PRSTW-Z][ABCEGHJ-NPRSTW-Z]\d{6}[A-D])/check\?surname=(.*)\&forename1=(.*)\&gender=(.*)""".r
+    val checkAllowanceRelationshipUrl = """^GET-foo/marriage-allowance/citizen/(\d+)/relationship""".r
+    val listRelationshipUrl = """^GET-foo/marriage-allowance/citizen/(\d+)/relationships\?includeHistoric=true""".r
+    val createAllowanceRelationshipUrl = """^POST-foo/marriage-allowance/citizen/(\d+)/relationship""".r
+    val multiYearCreateAllowanceRelationshipUrl = """^POST-foo/marriage-allowance/02.00.00/citizen/(\d+)/relationship/([a-zA-Z]+)""".r
+    val updateAllowanceRelationshipUrl = """^PUT-foo/marriage-allowance/citizen/(\d+)/relationship""".r
+
+    (url, body) match {
+      case (checkAllowanceRelationshipUrl(cid), None) =>
+        TestData.mappedCid2CheckAllowanceRelationship(cid).json
+      case (createAllowanceRelationshipUrl(recipientCid), Some(body: DesCreateRelationshipRequest)) =>
+        val bodyToText = s"trcid-${body.CID2}_trts-${body.CID2Timestamp}_rccid-${body.CID1}_rcts-${body.CID1Timestamp}"
+        TestData.mappedCreations(bodyToText).json
+      case (multiYearCreateAllowanceRelationshipUrl(recipientCid, reqType: String), Some(body: MultiYearDesCreateRelationshipRequest)) =>
+        val bodyToText = s"trcid-${body.transferorCid}_trts-${body.transferorTimestamp}_rccid-${body.recipientCid}_rcts-${body.recipientTimestamp}"
+        TestData.mappedMultiYearCreate(bodyToText).json
+      case (findCitizenByNinoUrl(nino), None) =>
+        TestData.mappedNino2FindCitizen(nino).json
+      case (findRecipientByNinoUrl(nino, surname, forename1, gender), None) =>
+        val filePath = s"/data/findRecipient/nino-${nino}_surname-${decodeQueryStringValue(surname)}_forename1-${decodeQueryStringValue(forename1)}_gender-${decodeQueryStringValue(gender)}.json"
+        TestData.mappedFindRecipient(filePath).json
+      case (listRelationshipUrl(cid), None) =>
+        val filePath = s"usercid-${cid}"
+        TestData.mappedLists(filePath).json
+      case (updateAllowanceRelationshipUrl(recipientCid), Some(body: DesUpdateRelationshipRequest)) =>
+        val bodyToText = s"cid1-${body.participant1.instanceIdentifier}_part2ts-${body.participant2.updateTimestamp}_endReason-${body.relationship.relationshipEndReason}"
+        TestData.mappedUpdates(bodyToText).json
+      case _ =>
+        throw new IllegalArgumentException("url not supported:" + url)
+    }
+  }
+
+  def decodeQueryStringValue(value: String) =
+    URLDecoder.decode(value, "UTF-8")
 
 }
