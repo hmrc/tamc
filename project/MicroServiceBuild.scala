@@ -15,15 +15,12 @@
  */
 
 import sbt._
-import play.PlayImport._
 import play.PlayImport.PlayKeys._
-import scala.util.Properties._
 import play.core.PlayVersion
 
 object MicroServiceBuild extends Build with MicroService {
 
   val appName = "tamc"
-  val appVersion = envOrElse("TAMC_VERSION", "999-SNAPSHOT")
 
   override lazy val appDependencies: Seq[ModuleID] = AppDependencies()
   override lazy val playSettings = Seq(routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._"))
@@ -58,5 +55,5 @@ private object AppDependencies {
     }.test
   }
 
-  def apply() = compile ++ Test()
+  def apply(): Seq[ModuleID] = compile ++ Test()
 }
