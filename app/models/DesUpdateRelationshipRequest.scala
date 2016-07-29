@@ -22,4 +22,4 @@ object DesUpdateRelationshipRequest {
   implicit val formats = Json.format[DesUpdateRelationshipRequest]
 }
 
-case class DesUpdateRelationshipRequest(participant1: DesRecipientInformation, participant2: DesTransferorInformation, relationship: DesRelationshipInformation, isRetrospective: Boolean = false)
+case class DesUpdateRelationshipRequest(participant1: DesRecipientInformation, participant2: DesTransferorInformation, relationship: DesRelationshipInformation)

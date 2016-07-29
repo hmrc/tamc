@@ -171,7 +171,8 @@ trait MarriageAllowanceService {
 
   private def transformEmailForUpdateRequest(updateRelationshipRequestHolder: UpdateRelationshipRequestHolder): Future[SendEmailRequest] = {
     val emailRecipients: List[EmailAddress] = List(updateRelationshipRequestHolder.notification.email)
-    val (emailTemplateId, startDate, endDate) = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role, updateRelationshipRequestHolder.notification.welsh, updateRelationshipRequestHolder.request.isRetrospective)
+    val (emailTemplateId, startDate, endDate) = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role,
+        updateRelationshipRequestHolder.notification.welsh, updateRelationshipRequestHolder.notification.isRetrospective)
     val emailParameters: Map[String, String] = Map("full_name" -> updateRelationshipRequestHolder.notification.full_name, "startDate" -> startDate, "endDate" -> endDate)
     Future.successful(SendEmailRequest(templateId = emailTemplateId, to = emailRecipients, parameters = emailParameters, force = false))
   }
@@ -188,7 +189,7 @@ trait MarriageAllowanceService {
         val template = pickTemp(EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID, EMAIL_UPDATE_CANCEL_TEMPLATE_ID)
         (template, startDateNextYear, endDateNextYear)
       case (REASON_REJECT, ROLE_RECIPIENT) =>
-        if (relationship.actualEndDate.contains(taxYearResolver.currentTaxYear.toString))
+        if (relationship.actualEndDate.contains(taxYearResolver.currentTaxYear.toString) && !isRetrospective)
           (pickTemp(EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID, EMAIL_UPDATE_REJECT_TEMPLATE_ID), "", "")
         else (pickTemp(EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH, EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR), "", "")
       case (REASON_DIVORCE, ROLE_TRANSFEROR) =>
