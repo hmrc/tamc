@@ -171,13 +171,13 @@ trait MarriageAllowanceService {
 
   private def transformEmailForUpdateRequest(updateRelationshipRequestHolder: UpdateRelationshipRequestHolder): Future[SendEmailRequest] = {
     val emailRecipients: List[EmailAddress] = List(updateRelationshipRequestHolder.notification.email)
-    val (emailTemplateId, startDate, endDate) = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role, updateRelationshipRequestHolder.notification.welsh)
+    val (emailTemplateId, startDate, endDate) = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role,
+        updateRelationshipRequestHolder.notification.welsh, updateRelationshipRequestHolder.notification.isRetrospective)
     val emailParameters: Map[String, String] = Map("full_name" -> updateRelationshipRequestHolder.notification.full_name, "startDate" -> startDate, "endDate" -> endDate)
     Future.successful(SendEmailRequest(templateId = emailTemplateId, to = emailRecipients, parameters = emailParameters, force = false))
   }
 
-  private def getEmailTemplateId(relationship: DesRelationshipInformation, role: String, isWelsh: Boolean): (String, String, String) = {
-
+  private def getEmailTemplateId(relationship: DesRelationshipInformation, role: String, isWelsh: Boolean, isRetrospective: Boolean): (String, String, String) = {
     val pickTemp = pickTemplate(isWelsh)(_,_)
     val (startDate, endDate) = isWelsh match {
       case true => (START_DATE_CY, END_DATE_CY)
@@ -194,27 +194,26 @@ trait MarriageAllowanceService {
         val template = pickTemp(EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID, EMAIL_UPDATE_CANCEL_TEMPLATE_ID)
         (template, startDateNextYear, endDateNextYear)
       case (REASON_REJECT, ROLE_RECIPIENT) =>
-        if (relationship.actualEndDate.contains(taxYearResolver.currentTaxYear.toString))
-          (pickTemp(EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID, EMAIL_UPDATE_REJECT_TEMPLATE_ID), "", "")
+        if (!isRetrospective) (pickTemp(EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID, EMAIL_UPDATE_REJECT_TEMPLATE_ID), "", "")
         else (pickTemp(EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH, EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR), "", "")
       case (REASON_DIVORCE, ROLE_TRANSFEROR) =>
-        if (relationship.actualEndDate == getDateInRequiredFormat(true))
+        if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(isCurrent = true))
           (pickTemp(EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH, EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR), startDateNextYear, endDateNextYear)
-        else if (relationship.actualEndDate == getDateInRequiredFormat(false))
+        else if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(isCurrent = false))
           (pickTemp(EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_WELSH_TEMPLATE_ID, EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID),startDateCurrYear, "")
         else (pickTemp(EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH, EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR), startDateCurrYear, endDateCurrYear)
       case (REASON_DIVORCE, ROLE_RECIPIENT) =>
-        if (relationship.actualEndDate == getDateInRequiredFormat(true))
+        if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(isCurrent = true))
           (pickTemp(EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID, EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID), startDateNextYear, endDateNextYear)
         else (pickTemp(EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH, EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR), "", endDateCurrYear)
     }
   }
 
-  private def getDateInRequiredFormat(current: Boolean): String = {
+  private def getCurrentElseRetroYearDateInFormat(isCurrent: Boolean): String = {
     val DATE_FORMAT = "yyyyMMdd"
     val sdf = new SimpleDateFormat(DATE_FORMAT)
     val currentdate = Calendar.getInstance()
-    current match {
+    isCurrent match {
       case true => sdf.format(currentdate.getTime())
       case false => {
         currentdate.add(Calendar.YEAR, -1)
