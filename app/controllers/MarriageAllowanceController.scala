@@ -66,7 +66,8 @@ trait MarriageAllowanceController extends BaseController {
                 status = ResponseStatus(status_code = "TAMC:ERROR:RECIPIENT-NOT-FOUND"))))
             case otherError =>
               Logger.error("getRecipientRelationship failed with unhandled error", error)
-              throw otherError
+              Ok(Json.toJson(GetRelationshipResponse(
+                status = ResponseStatus(status_code = "TAMC:ERROR:OTHER-ERROR"))))
           }
       }
     }
