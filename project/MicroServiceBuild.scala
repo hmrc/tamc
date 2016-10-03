@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import sbt._
 import play.PlayImport.PlayKeys._
-import play.core.PlayVersion
+import sbt._
 
 object MicroServiceBuild extends Build with MicroService {
 
@@ -31,9 +30,9 @@ private object AppDependencies {
   val compile = Seq(
     "uk.gov.hmrc" %% "domain" % "3.3.0",
     "uk.gov.hmrc" %% "emailaddress" % "1.1.0",
-    "uk.gov.hmrc" %% "http-verbs" % "3.3.0",
-    "uk.gov.hmrc" %% "microservice-bootstrap" % "4.2.0",
-    "uk.gov.hmrc" %% "play-authorisation" % "3.1.0",
+    "uk.gov.hmrc" %% "http-verbs" % "5.0.0",
+    "uk.gov.hmrc" %% "microservice-bootstrap" % "4.4.0",
+    "uk.gov.hmrc" %% "play-authorisation" % "3.3.0",
     "uk.gov.hmrc" %% "play-config" % "2.0.1",
     "uk.gov.hmrc" %% "play-health" % "1.1.0",
     "uk.gov.hmrc" %% "play-json-logger" % "2.1.0",
