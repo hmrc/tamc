@@ -26,7 +26,7 @@ import metrics.Metrics
 import models._
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
-import play.api.Logger
+import play.Logger
 import play.api.libs.json.Json
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.emailaddress.EmailAddress
@@ -229,7 +229,7 @@ trait MarriageAllowanceService {
         Logger.info("Sending email")
     } recover {
       case error =>
-        Logger.warn("Cannot send email", error)
+        Logger.warn("Cannot send email", error.getMessage)
     }
   }
 
@@ -329,7 +329,7 @@ trait MarriageAllowanceService {
     dataConnector.listRelationship(userRecord.cid).map {
       json =>
         timer.stop()
-        Logger.debug("ListRelationship Json >> " + json) //TODO remove after E2E testing
+        //Logger.debug("ListRelationship Json >> " + json) //TODO remove after E2E testing
         metrics.incrementSuccessCounter(ApiType.ListRelationship)
         Json.parse("" + json + "").as[RelationshipRecordWrapper].copy(userRecord = Some(userRecord))
     }
