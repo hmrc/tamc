@@ -61,11 +61,11 @@ trait MarriageAllowanceController extends BaseController {
         case error =>
           error match {
             case serviceError: ServiceError =>
-              Logger.warn("getRecipientRelationship failed with handled error", error)
+              Logger.warn("getRecipientRelationship failed with handled error", error.getMessage)
               Ok(Json.toJson(GetRelationshipResponse(
                 status = ResponseStatus(status_code = "TAMC:ERROR:RECIPIENT-NOT-FOUND"))))
             case otherError =>
-              Logger.error("getRecipientRelationship failed with unhandled error", error)
+              Logger.error("getRecipientRelationship failed with unhandled error", error.getMessage)
               Ok(Json.toJson(GetRelationshipResponse(
                 status = ResponseStatus(status_code = "TAMC:ERROR:OTHER-ERROR"))))
           }
@@ -84,7 +84,7 @@ trait MarriageAllowanceController extends BaseController {
           case error =>
             error match {
               case recipientDeceased: RecipientDeceasedError =>
-                Logger.warn("Create Relationship failed with 400 recipient deceased", error)
+                Logger.warn("Create Relationship failed with 400 recipient deceased", error.getMessage)
                 Ok(Json.toJson(CreateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
             }
         }
@@ -99,25 +99,25 @@ trait MarriageAllowanceController extends BaseController {
       case error =>
         error match {
           case deceasedError: TransferorDeceasedError =>
-            Logger.warn("listRelationship failed with deceased case error", error)
+            Logger.warn("listRelationship failed with deceased case error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = "TAMC:ERROR:TRANSFEROR-NOT-FOUND"))))
           case serviceError: ServiceError =>
-            Logger.warn("listRelationship failed with transferor not found error", error)
+            Logger.warn("listRelationship failed with transferor not found error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = "TAMC:ERROR:TRANSFEROR-NOT-FOUND"))))
           case notFound: NotFoundException =>
-            Logger.warn("List Relationship failed with 404 not found error", error)
+            Logger.warn("List Relationship failed with 404 not found error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.CITIZEN_NOT_FOUND))))
           case badRequest: BadRequestException =>
-            Logger.warn("List Relationship failed with 400 bad request error", error)
+            Logger.warn("List Relationship failed with 400 bad request error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
           case internalServerError: InternalServerException =>
-            Logger.warn("List Relationship failed with 500 internal server error", error)
+            Logger.warn("List Relationship failed with 500 internal server error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVER_ERROR))))
           case serviceUnavailable: ServiceUnavailableException =>
-            Logger.warn("List Relationship failed with 503 service unavailable error", error)
+            Logger.warn("List Relationship failed with 503 service unavailable error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVICE_UNAVILABLE))))
           case otherError =>
-            Logger.error("List Relationship failed with unhandled error", error)
+            Logger.error("List Relationship failed with unhandled error", error.getMessage)
             throw otherError
         }
     }
@@ -136,13 +136,13 @@ trait MarriageAllowanceController extends BaseController {
             case error =>
               error match {
                 case recipientDeceased: RecipientDeceasedError =>
-                  Logger.warn("Update Relationship failed with 400 recipient deceased", error)
+                  Logger.warn("Update Relationship failed with 400 recipient deceased", error.getMessage)
                   Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
                 case relationshipError: UpdateRelationshipError =>
-                  Logger.warn("Update Relationship failed with UpdateRelationshipError(runtime) error", error)
+                  Logger.warn("Update Relationship failed with UpdateRelationshipError(runtime) error", error.getMessage)
                   Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.CANNOT_UPDATE_RELATIONSHIP))))
                 case otherError =>
-                  Logger.error("updateRelationship failed with unhandled error", error)
+                  Logger.error("updateRelationship failed with unhandled error", error.getMessage)
                   throw otherError
               }
           }
