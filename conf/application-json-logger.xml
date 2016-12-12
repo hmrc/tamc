@@ -6,13 +6,19 @@
             <pattern>%date{ISO8601} level=[%level] logger=[%logger] thread=[%thread] message=[%replace(%message){'([A-Z]{2})([0-9]{6})([A-D]{1})|(([surname|forename1]=)(.*?)(&amp;))|((gender=)([M|F])(:))','$1******$3'}] %replace(exception=[%xException]){'^exception=\[\]$',''}%n</pattern>
         </encoder>
     </appender>
+
     <appender name="ACCESS_LOG_FILE" class="ch.qos.logback.core.FileAppender">
         <file>logs/access.log</file>
         <encoder>
             <pattern>%replace(%message){'([A-Z]{2})([0-9]{6})([A-D]{1})|(([surname|forename1]=)(.*?)(&amp;))|((gender=)([M|F])(:))','$1******$3'}%n</pattern>
         </encoder>
     </appender>
+
     <logger name="uk.gov" level="DEBUG"/>
+
+    <logger name="accesslog" level="INFO" additivity="false">
+        <appender-ref ref="ACCESS_LOG_FILE" />
+    </logger>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
