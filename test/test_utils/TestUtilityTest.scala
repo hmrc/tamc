@@ -16,30 +16,27 @@
 
 package test_utils
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.math.BigDecimal.int2bigDecimal
-import scala.math.BigDecimal.long2bigDecimal
+import models.{Cid, FindRecipientRequest, Gender, Timestamp}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
-import models.Cid
-import models.DesCreateRelationshipRequest
-import models.FindRecipientRequest
-import models.Gender
-import models.Timestamp
-import play.api.libs.json.JsNumber
-import play.api.libs.json.JsString
-import play.api.test.FakeApplication
+import org.scalatestplus.play.OneAppPerSuite
+import play.api.Application
+import play.api.libs.json.{JsNumber, JsString}
 import play.api.test.FakeRequest
-import play.api.test.WithApplication
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
-class TestUtilityTest extends UnitSpec with TestUtility {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.math.BigDecimal.long2bigDecimal
+
+class TestUtilityTest extends UnitSpec with TestUtility with OneAppPerSuite {
+
+  override implicit lazy val app: Application = fakeApplication
 
   "TestUtilityTest" should {
 
-    "sanity check for findCitizen" in new WithApplication(FakeApplication()) {
+    "sanity check for findCitizen" in {
 
       val user = TestData.mappedNino2FindCitizen(TestData.Ninos.ninoP5A)
       val userNino = user.nino
@@ -62,7 +59,7 @@ class TestUtilityTest extends UnitSpec with TestUtility {
       })
     }
 
-    "sanity check for findRecipient" in new WithApplication(FakeApplication()) {
+    "sanity check for findRecipient" in {
       val controller = makeFakeController()
       val request = FakeRequest()
       implicit val hc = HeaderCarrier()
@@ -77,7 +74,7 @@ class TestUtilityTest extends UnitSpec with TestUtility {
         (json \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutItpr1Person" \ "InstanceIdentifier") shouldBe JsNumber(recipientCid))
     }
 
-    "sanity check for listRelationship" in new WithApplication(FakeApplication()) {
+    "sanity check for listRelationship" in {
       val testData = TestData.Lists.oneActiveOneHistoric
       val testNino = Nino(testData.user.nino)
       val testCid = testData.user.cid.cid
@@ -94,8 +91,8 @@ class TestUtilityTest extends UnitSpec with TestUtility {
       implicit val hc = HeaderCarrier()
       val result = controller.marriageAllowanceService.dataConnector.listRelationship(testCid)
       ScalaFutures.whenReady(result)(json => {
-        ((json \ "relationships")(0) \ "otherParticipantUpdateTimestamp") shouldBe JsString(participiant0Ts)
-        ((json \ "relationships")(1) \ "otherParticipantUpdateTimestamp") shouldBe JsString(participiant1Ts)
+        ((json \ "relationships") (0) \ "otherParticipantUpdateTimestamp") shouldBe JsString(participiant0Ts)
+        ((json \ "relationships") (1) \ "otherParticipantUpdateTimestamp") shouldBe JsString(participiant1Ts)
       })
     }
   }

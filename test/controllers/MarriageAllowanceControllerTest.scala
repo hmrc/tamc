@@ -16,21 +16,25 @@
 
 package controllers
 
+import models.{UpdateRelationshipResponse, UserRecord}
+import org.scalatestplus.play.OneAppPerSuite
+import play.api.Application
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import play.api.test.{FakeApplication, FakeRequest, WithApplication}
+import play.api.test.FakeRequest
 import play.api.test.Helpers.{OK, contentAsString, defaultAwaitTimeout}
-import test_utils.{HttpGETCallWithHeaders, TestUtility, TestRelationshipRecordStatusWrapper, TestRelationshipRecord, TestData}
+import test_utils._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http.logging.Authorization
 import uk.gov.hmrc.play.test.UnitSpec
-import models.{UpdateRelationshipResponse, UserRecord}
 
-class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
+class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with OneAppPerSuite {
+
+  override implicit lazy val app: Application = fakeApplication
 
   "Calling hasMarriageAllowance for Recipient" should {
 
-    "return OK if cid is founds" in new WithApplication(FakeApplication()) {
+    "return OK if cid is founds" in {
 
       val transferorNinoObject = TestData.mappedNino2FindCitizen(TestData.Ninos.ninoP2A)
       val transferorNino = Nino(transferorNinoObject.nino)
@@ -80,7 +84,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
         checkTransferorHistoricAllowanceRelationshipCall)
     }
 
-    "return OK if cid is found and allowance relationship exists and surname has space in between" in new WithApplication(FakeApplication()) {
+    "return OK if cid is found and allowance relationship exists and surname has space in between" in {
 
       val transferorNinoObject = TestData.mappedNino2FindCitizen(TestData.Ninos.ninoP2A)
       val transferorNino = Nino(transferorNinoObject.nino)
@@ -130,7 +134,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
         checkTransferorHistoricAllowanceRelationshipCall)
     }
 
-    "return false if cid is found and allowance relationship does not exist" in new WithApplication(FakeApplication()) {
+    "return false if cid is found and allowance relationship does not exist" in {
 
       val transferorNinoObject = TestData.mappedNino2FindCitizen(TestData.Ninos.ninoP2A)
       val transferorNino = Nino(transferorNinoObject.nino)
@@ -183,7 +187,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
 
   "Calling list relationship for logged in person" should {
 
-    "check if list contains one active and one historic relationship" in new WithApplication(FakeApplication()) {
+    "check if list contains one active and one historic relationship" in {
       val controller = makeFakeController()
       val request = FakeRequest()
 
@@ -228,7 +232,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
       testUserRecord(userRecord, expectedOutput)
     }
 
-    "check for no relationship" in new WithApplication(FakeApplication()) {
+    "check for no relationship" in {
       val controller = makeFakeController()
       val request = FakeRequest()
 
@@ -253,7 +257,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
       testUserRecord(userRecord, expectedOutput)
     }
 
-    "check for historic relationship" in new WithApplication(FakeApplication()) {
+    "check for historic relationship" in {
       val controller = makeFakeController()
       val request = FakeRequest()
 
@@ -288,7 +292,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
       testUserRecord(userRecord, expectedOutput)
     }
 
-    "check for active relationship" in new WithApplication(FakeApplication()) {
+    "check for active relationship" in {
       val controller = makeFakeController()
       val request = FakeRequest()
 
@@ -324,7 +328,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
 
     }
 
-    "return TRANSFEROR-NOT-FOUND when transferor is deceased" in new WithApplication(FakeApplication()) {
+    "return TRANSFEROR-NOT-FOUND when transferor is deceased" in {
       val controller = makeFakeController()
       val request = FakeRequest()
 
@@ -344,7 +348,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
       (json \ "status" \ "status_code").toString() shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
     }
 
-    "return TRANSFEROR-NOT-FOUND when transferor not found" in new WithApplication(FakeApplication()) {
+    "return TRANSFEROR-NOT-FOUND when transferor not found" in {
       val controller = makeFakeController()
       val request = FakeRequest()
 
@@ -383,7 +387,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
 
   "Calling update relationship for logged in person" should {
 
-    "check if update (cancel) relationship for transferor then response is successfull" in new WithApplication(FakeApplication()) {
+    "check if update (cancel) relationship for transferor then response is successfull" in {
 
       val testInput = TestData.Updates.cancel
       val transferorNino = Nino(testInput.transferor.nino)
@@ -404,7 +408,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
       relationshipRecordStatusWrapper.status.status_code shouldBe "OK"
     }
 
-    "check if update (reject) relationship for recipient then response is successfull" in new WithApplication(FakeApplication()) {
+    "check if update (reject) relationship for recipient then response is successfull" in {
 
       val testInput = TestData.Updates.reject
       val transferorNino = Nino(testInput.transferor.nino)
@@ -425,7 +429,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
       relationshipRecordStatusWrapper.status.status_code shouldBe "OK"
     }
 
-    "check if update (divorce) relationship for transferor then response is successfull" in new WithApplication(FakeApplication()) {
+    "check if update (divorce) relationship for transferor then response is successfull" in {
 
       val testInput = TestData.Updates.divorceTr
       val transferorNino = Nino(testInput.transferor.nino)
@@ -446,7 +450,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility {
       relationshipRecordStatusWrapper.status.status_code shouldBe "OK"
     }
 
-    "check if update (divorce) relationship for recipient then response is successfull" in new WithApplication(FakeApplication()) {
+    "check if update (divorce) relationship for recipient then response is successfull" in {
 
       val testInput = TestData.Updates.divorceRec
       val transferorNino = Nino(testInput.transferor.nino)

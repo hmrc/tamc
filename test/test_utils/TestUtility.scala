@@ -18,25 +18,34 @@ package test_utils
 
 import com.codahale.metrics.Timer
 import com.codahale.metrics.Timer.Context
+import com.kenshoo.play.metrics.PlayModule
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import controllers.MarriageAllowanceController
+import errors.ErrorResponseStatus._
 import metrics.Metrics
 import models.ApiType.ApiType
 import models._
 import org.joda.time._
 import org.scalatest.mock.MockitoSugar
+import play.api.inject.guice.{GuiceApplicationBuilder, GuiceableModule}
 import play.api.libs.json.{JsValue, Writes}
+import play.api.{Application, Mode}
 import services.MarriageAllowanceService
 import test_utils.TestData.{Cids, findMockData}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http._
 import uk.gov.hmrc.time.TaxYearResolver
-import errors.ErrorResponseStatus._
-import errors.UpdateRelationshipError
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait TestUtility {
+
+  def bindModules: Seq[GuiceableModule] = Seq(new PlayModule)
+
+  implicit lazy val fakeApplication: Application = new GuiceApplicationBuilder()
+    .bindings(bindModules: _*)
+    .in(Mode.Test)
+    .build()
 
   def makeFakeController(testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")), isErrorController: Boolean = false) = {
 
@@ -153,11 +162,14 @@ trait TestUtility {
       }
 
       override def updateAllowanceRelationship(data: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
-        def errorResponse(reason: String, code: Int) = Future{new DummyHttpResponse(reason, code)}
+        def errorResponse(reason: String, code: Int) = Future {
+          new DummyHttpResponse(reason, code)
+        }
+
         isErrorController match {
           case true =>
             data.participant1.instanceIdentifier.toLong match {
-              case Cids.cidBadRequest => errorResponse ("""{"Reason":"Cannot update as Participant 1 update time stamp has changed since last view of data"}""", 400)
+              case Cids.cidBadRequest => errorResponse("""{"Reason":"Cannot update as Participant 1 update time stamp has changed since last view of data"}""", 400)
               case Cids.cidCitizenNotFound => errorResponse("""{"Reason":"Person Instance identifier not found"}""", 404)
               case _ => throw new Exception("this exception should not be thrown")
             }

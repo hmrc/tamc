@@ -16,45 +16,47 @@
 
 package metrics
 
-import com.codahale.metrics.Timer
 import com.codahale.metrics.Timer.Context
-import com.kenshoo.play.metrics.MetricsRegistry
-
-import java.util.concurrent.TimeUnit
+import com.codahale.metrics.{MetricRegistry, Timer}
 import models.ApiType
 import models.ApiType.ApiType
+import uk.gov.hmrc.play.graphite.MicroserviceMetrics
 
 trait Metrics {
   def startTimer(api: ApiType): Timer.Context
+
   def incrementSuccessCounter(api: ApiType.ApiType): Unit
+
   def incrementTotalCounter(api: ApiType.ApiType): Unit
 }
 
-object Metrics extends Metrics {
+object Metrics extends Metrics with MicroserviceMetrics {
+
+  val registry: MetricRegistry = metrics.defaultRegistry
 
   val timers = Map(
-    ApiType.FindCitizen -> MetricsRegistry.defaultRegistry.timer("find-citizen-response-timer"),
-    ApiType.FindRecipient -> MetricsRegistry.defaultRegistry.timer("find-recipient-response-timer"),
-    ApiType.CheckRelationship -> MetricsRegistry.defaultRegistry.timer("check-relationship-response-timer"),
-    ApiType.CreateRelationship -> MetricsRegistry.defaultRegistry.timer("create-relationship-response-timer"),
-    ApiType.ListRelationship -> MetricsRegistry.defaultRegistry.timer("list-relationship-response-timer"),
-    ApiType.UpdateRelationship -> MetricsRegistry.defaultRegistry.timer("update-relationship-response-timer"))
+    ApiType.FindCitizen -> registry.timer("find-citizen-response-timer"),
+    ApiType.FindRecipient -> registry.timer("find-recipient-response-timer"),
+    ApiType.CheckRelationship -> registry.timer("check-relationship-response-timer"),
+    ApiType.CreateRelationship -> registry.timer("create-relationship-response-timer"),
+    ApiType.ListRelationship -> registry.timer("list-relationship-response-timer"),
+    ApiType.UpdateRelationship -> registry.timer("update-relationship-response-timer"))
 
   val successCounters = Map(
-    ApiType.FindCitizen -> MetricsRegistry.defaultRegistry.counter("find-citizen-success"),
-    ApiType.FindRecipient -> MetricsRegistry.defaultRegistry.counter("find-recipient-success"),
-    ApiType.CheckRelationship -> MetricsRegistry.defaultRegistry.counter("check-relationship-success"),
-    ApiType.CreateRelationship -> MetricsRegistry.defaultRegistry.counter("create-relationship-success"),
-    ApiType.ListRelationship -> MetricsRegistry.defaultRegistry.counter("list-relationship-success"),
-    ApiType.UpdateRelationship -> MetricsRegistry.defaultRegistry.counter("update-relationship-success"))
+    ApiType.FindCitizen -> registry.counter("find-citizen-success"),
+    ApiType.FindRecipient -> registry.counter("find-recipient-success"),
+    ApiType.CheckRelationship -> registry.counter("check-relationship-success"),
+    ApiType.CreateRelationship -> registry.counter("create-relationship-success"),
+    ApiType.ListRelationship -> registry.counter("list-relationship-success"),
+    ApiType.UpdateRelationship -> registry.counter("update-relationship-success"))
 
   val totalCounters = Map(
-    ApiType.FindCitizen -> MetricsRegistry.defaultRegistry.counter("find-citizen-total"),
-    ApiType.FindRecipient -> MetricsRegistry.defaultRegistry.counter("find-recipient-total"),
-    ApiType.CheckRelationship -> MetricsRegistry.defaultRegistry.counter("check-relationship-total"),
-    ApiType.CreateRelationship -> MetricsRegistry.defaultRegistry.counter("create-relationship-total"),
-    ApiType.ListRelationship -> MetricsRegistry.defaultRegistry.counter("list-relationship-total"),
-    ApiType.UpdateRelationship -> MetricsRegistry.defaultRegistry.counter("update-relationship-total"))
+    ApiType.FindCitizen -> registry.counter("find-citizen-total"),
+    ApiType.FindRecipient -> registry.counter("find-recipient-total"),
+    ApiType.CheckRelationship -> registry.counter("check-relationship-total"),
+    ApiType.CreateRelationship -> registry.counter("create-relationship-total"),
+    ApiType.ListRelationship -> registry.counter("list-relationship-total"),
+    ApiType.UpdateRelationship -> registry.counter("update-relationship-total"))
 
   override def startTimer(api: ApiType): Context = timers(api).time()
 

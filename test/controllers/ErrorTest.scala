@@ -16,26 +16,23 @@
 
 package controllers
 
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import org.scalatestplus.play.OneAppPerSuite
+import play.api.Application
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import play.api.test.FakeApplication
 import play.api.test.FakeRequest
-import play.api.test.Helpers.BAD_REQUEST
-import play.api.test.Helpers.OK
-import play.api.test.Helpers.contentAsString
-import play.api.test.Helpers.defaultAwaitTimeout
-import play.api.test.WithApplication
-import test_utils.TestUtility
+import play.api.test.Helpers.{BAD_REQUEST, OK, contentAsString, defaultAwaitTimeout}
+import test_utils.{TestData, TestUtility}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
-import test_utils.TestData
 
-class ErrorTest extends UnitSpec with TestUtility {
+class ErrorTest extends UnitSpec with TestUtility with OneAppPerSuite {
+
+  override implicit lazy val app: Application = fakeApplication
 
   "Checking user record" should {
 
-    "return BadRequest if there is an error while finding cid for recipient" in new WithApplication(FakeApplication()) {
+    "return BadRequest if there is an error while finding cid for recipient" in {
 
       val transferorNinoObject = TestData.mappedNino2FindCitizen(TestData.Ninos.ninoP2A)
       val transferorNino = Nino(transferorNinoObject.nino)
@@ -56,7 +53,7 @@ class ErrorTest extends UnitSpec with TestUtility {
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:RECIPIENT-NOT-FOUND"
     }
 
-    "return BadRequest if gender is invalid" in new WithApplication(FakeApplication()) {
+    "return BadRequest if gender is invalid" in {
 
       val transferorNinoObject = TestData.mappedNino2FindCitizen(TestData.Ninos.ninoP2A)
       val transferorNino = Nino(transferorNinoObject.nino)
@@ -73,7 +70,7 @@ class ErrorTest extends UnitSpec with TestUtility {
       status(result) shouldBe BAD_REQUEST
     }
 
-    "return bad request should be handled" in new WithApplication(FakeApplication()) {
+    "return bad request should be handled" in {
 
       val controller = makeFakeController(isErrorController = true)
       val request = FakeRequest()
@@ -89,7 +86,7 @@ class ErrorTest extends UnitSpec with TestUtility {
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:BAD-REQUEST"
     }
 
-    "return NotFound should be handled" in new WithApplication(FakeApplication()) {
+    "return NotFound should be handled" in {
 
       val controller = makeFakeController(isErrorController = true)
       val request = FakeRequest()
@@ -105,7 +102,7 @@ class ErrorTest extends UnitSpec with TestUtility {
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:CITIZEN-NOT-FOUND"
     }
 
-    "return InternalServerException should be handled" in new WithApplication(FakeApplication()) {
+    "return InternalServerException should be handled" in {
 
       val controller = makeFakeController(isErrorController = true)
       val request = FakeRequest()
@@ -121,7 +118,7 @@ class ErrorTest extends UnitSpec with TestUtility {
       (json \ "status" \ "status_code").as[String] shouldBe "ERROR:500"
     }
 
-    "return Service unavailable should be handled" in new WithApplication(FakeApplication()) {
+    "return Service unavailable should be handled" in {
 
       val controller = makeFakeController(isErrorController = true)
       val request = FakeRequest()
@@ -141,14 +138,14 @@ class ErrorTest extends UnitSpec with TestUtility {
 
   "Update Relationship " should {
 
-    "handle Bad request and show transferor is deceased" in new WithApplication(FakeApplication()) {
+    "handle Bad request and show transferor is deceased" in {
 
       val testInput = TestData.Updates.badRequest
       val recipientNino = Nino(testInput.transferor.nino)
-      val recipientCid  = testInput.transferor.cid.cid
+      val recipientCid = testInput.transferor.cid.cid
       val transferorNino = Nino(testInput.recipient.nino)
       val transferorCid = testInput.recipient.cid.cid
-      val recipientTs  = testInput.transferor.timestamp.toString()
+      val recipientTs = testInput.transferor.timestamp.toString()
       val transferorTs = testInput.recipient.timestamp.toString()
 
       val controller = makeFakeController(isErrorController = true)
@@ -161,14 +158,14 @@ class ErrorTest extends UnitSpec with TestUtility {
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:BAD-REQUEST"
     }
 
-    "handle Update relationship error" in new WithApplication(FakeApplication()) {
+    "handle Update relationship error" in {
 
       val testInput = TestData.Updates.citizenNotFound
       val recipientNino = Nino(testInput.transferor.nino)
-      val recipientCid  = testInput.transferor.cid.cid
+      val recipientCid = testInput.transferor.cid.cid
       val transferorNino = Nino(testInput.recipient.nino)
       val transferorCid = testInput.recipient.cid.cid
-      val recipientTs  = testInput.transferor.timestamp.toString()
+      val recipientTs = testInput.transferor.timestamp.toString()
       val transferorTs = testInput.recipient.timestamp.toString()
 
       val controller = makeFakeController(isErrorController = true)
