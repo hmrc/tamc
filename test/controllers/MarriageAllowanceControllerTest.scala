@@ -345,7 +345,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with One
       status(result) shouldBe OK
 
       val json = Json.parse(contentAsString(result))
-      (json \ "status" \ "status_code").toString() shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
+      (json \ "status" \ "status_code").get.toString() shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
     }
 
     "return TRANSFEROR-NOT-FOUND when transferor not found" in {
@@ -365,7 +365,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with One
       status(result) shouldBe OK
 
       val json = Json.parse(contentAsString(result))
-      (json \ "status" \ "status_code").toString() shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
+      (json \ "status" \ "status_code").get.toString() shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
     }
 
   }

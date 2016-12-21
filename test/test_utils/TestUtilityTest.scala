@@ -48,10 +48,10 @@ class TestUtilityTest extends UnitSpec with TestUtility with OneAppPerSuite {
       implicit val hc = HeaderCarrier()
       val result = controller.marriageAllowanceService.dataConnector.findCitizen(Nino(userNino))
       ScalaFutures.whenReady(result)(json => {
-        (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "InstanceIdentifier") shouldBe JsNumber(userCid)
-        (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "UpdateTimestamp") shouldBe JsString(userTs)
-        (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "FirstForename") shouldBe JsString("Firstnamefivefivefivefivefivefivefivefivefive")
-        (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "Surname") shouldBe JsString("Lastnamefivefivefivefivefivefivefivefivefive")
+        (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "InstanceIdentifier").get shouldBe JsNumber(userCid)
+        (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "UpdateTimestamp").get shouldBe JsString(userTs)
+        (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "FirstForename").get shouldBe JsString("Firstnamefivefivefivefivefivefivefivefivefive")
+        (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "Surname").get shouldBe JsString("Lastnamefivefivefivefivefivefivefivefivefive")
         (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "InstanceIdentifier").as[Cid] shouldBe userCid
         (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "UpdateTimestamp").as[Timestamp] shouldBe userTs
         (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "FirstForename").as[String] shouldBe "Firstnamefivefivefivefivefivefivefivefivefive"
@@ -71,7 +71,7 @@ class TestUtilityTest extends UnitSpec with TestUtility with OneAppPerSuite {
       val recipientData = FindRecipientRequest("fgh", "asd", Gender("F"), Nino(recipientNino))
       val result = controller.marriageAllowanceService.dataConnector.findRecipient(recipientData)
       ScalaFutures.whenReady(result)(json =>
-        (json \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutItpr1Person" \ "InstanceIdentifier") shouldBe JsNumber(recipientCid))
+        (json \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutItpr1Person" \ "InstanceIdentifier").get shouldBe JsNumber(recipientCid))
     }
 
     "sanity check for listRelationship" in {
@@ -91,8 +91,8 @@ class TestUtilityTest extends UnitSpec with TestUtility with OneAppPerSuite {
       implicit val hc = HeaderCarrier()
       val result = controller.marriageAllowanceService.dataConnector.listRelationship(testCid)
       ScalaFutures.whenReady(result)(json => {
-        ((json \ "relationships") (0) \ "otherParticipantUpdateTimestamp") shouldBe JsString(participiant0Ts)
-        ((json \ "relationships") (1) \ "otherParticipantUpdateTimestamp") shouldBe JsString(participiant1Ts)
+        ((json \ "relationships") (0) \ "otherParticipantUpdateTimestamp").get shouldBe JsString(participiant0Ts)
+        ((json \ "relationships") (1) \ "otherParticipantUpdateTimestamp").get shouldBe JsString(participiant1Ts)
       })
     }
   }
