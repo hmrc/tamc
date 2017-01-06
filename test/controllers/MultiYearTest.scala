@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,45 +16,24 @@
 
 package controllers
 
-import models.CitizenName
 import models.MultiYearDesCreateRelationshipRequest
-import models.SendEmailRequest
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import org.joda.time.{DateTime, DateTimeZone}
+import org.scalatestplus.play.OneAppPerSuite
+import play.api.Application
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import play.api.test.FakeApplication
 import play.api.test.FakeRequest
 import play.api.test.Helpers.OK
-import play.api.test.Helpers.contentAsString
-import play.api.test.Helpers.defaultAwaitTimeout
-import play.api.test.WithApplication
-import test_utils.HttpGETCallWithHeaders
-import test_utils.HttpPOSTCallWithHeaders
-import test_utils.TestUtility
+import test_utils.{TestData, TestUtility}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.emailaddress.EmailAddress
-import uk.gov.hmrc.play.http.logging.Authorization
 import uk.gov.hmrc.play.test.UnitSpec
-import models.RelationshipRecordStatusWrapper
-import models.RelationshipRecordWrapper
-import models.RelationshipRecord
-import play.api.libs.json.JsObject
-import models.UpdateRelationshipRequestHolder
-import models.CreateRelationshipRequestHolder
-import models.UpdateRelationshipResponse
-import test_utils.TestRelationshipRecordStatusWrapper
-import test_utils.TestRelationshipRecord
-import models.UserRecord
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import test_utils.TestData
-import org.joda.time.DateTimeZone
-import org.joda.time.DateTime
 
-class MultiYearTest extends UnitSpec with TestUtility {
+class MultiYearTest extends UnitSpec with TestUtility with OneAppPerSuite {
+
+  override implicit lazy val app: Application = fakeApplication
 
   "Calling Multi Year create relationship" should {
-    "return OK if data is correct for current tax year" in new WithApplication(FakeApplication()) {
+    "return OK if data is correct for current tax year" in {
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
@@ -90,7 +69,7 @@ class MultiYearTest extends UnitSpec with TestUtility {
       first.endDate shouldBe None
     }
 
-    "return OK if data is correct for retrospective year 2015/16, if current tax year is set in the future (1st Jan 2017)" in new WithApplication(FakeApplication()) {
+    "return OK if data is correct for retrospective year 2015/16, if current tax year is set in the future (1st Jan 2017)" in {
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
@@ -126,7 +105,7 @@ class MultiYearTest extends UnitSpec with TestUtility {
       first.endDate shouldBe Some("2016-04-05")
     }
 
-    "return OK if data is correct for retrospective tax year" in new WithApplication(FakeApplication()) {
+    "return OK if data is correct for retrospective tax year" in {
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
@@ -162,7 +141,7 @@ class MultiYearTest extends UnitSpec with TestUtility {
       first.endDate shouldBe Some("2015-04-05")
     }
 
-    "return OK if data is correct for multiple years" in new WithApplication(FakeApplication()) {
+    "return OK if data is correct for multiple years" in {
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
@@ -222,7 +201,8 @@ class MultiYearTest extends UnitSpec with TestUtility {
         startDate = Some("2015-01-01"),
         endDate = Some("2016-02-02"))
 
-      val expextedResult = """
+      val expextedResult =
+        """
 {
     "CID1": "1111",
     "CID1Timestamp": "2222",

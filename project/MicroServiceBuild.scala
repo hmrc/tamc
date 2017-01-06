@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import play.PlayImport.PlayKeys._
+import play.sbt.routes.RoutesKeys
 import sbt._
 
 object MicroServiceBuild extends Build with MicroService {
@@ -22,35 +22,56 @@ object MicroServiceBuild extends Build with MicroService {
   val appName = "tamc"
 
   override lazy val appDependencies: Seq[ModuleID] = AppDependencies()
-  override lazy val playSettings = Seq(routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._"))
+  override lazy val playSettings = Seq(RoutesKeys.routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._"))
 }
 
 private object AppDependencies {
 
+  private val microserviceBootstrapVersion = "5.8.0"
+  private val playAuthVersion = "4.2.0"
+  private val playHealthVersion = "2.0.0"
+  private val logbackJsonLoggerVersion = "3.1.0"
+  private val playUrlBindersVersion = "2.0.0"
+  private val playConfigVersion = "3.0.0"
+  private val domainVersion = "4.0.0"
+  private val hmrcTestVersion = "2.1.0"
+  private val scalaTestVersion = "2.2.6"
+  private val jsoupVersion = "1.8.3"
+  private val timeVersion = "2.1.0"
+  private val httpVerbsVersion = "6.2.0"
+  private val emailAddressVersion = "1.1.0"
+  private val playGraphiteVersion = "3.1.0"
+  private val scalaTestPlusPlayVersion = "1.5.1"
+  private val mockitoCoreVerison = "1.9.5"
+
   val compile = Seq(
-    "uk.gov.hmrc" %% "domain" % "3.3.0",
-    "uk.gov.hmrc" %% "emailaddress" % "1.1.0",
-    "uk.gov.hmrc" %% "http-verbs" % "5.0.0",
-    "uk.gov.hmrc" %% "microservice-bootstrap" % "4.4.0",
-    "uk.gov.hmrc" %% "play-authorisation" % "3.3.0",
-    "uk.gov.hmrc" %% "play-config" % "2.0.1",
-    "uk.gov.hmrc" %% "play-health" % "1.1.0",
-    "uk.gov.hmrc" %% "play-json-logger" % "2.1.0",
-    "uk.gov.hmrc" %% "play-url-binders" % "1.0.0",
-    "uk.gov.hmrc" %% "time" % "2.1.0",
-    "com.kenshoo" %% "metrics-play" % "2.3.0_0.1.8")
+    "uk.gov.hmrc" %% "domain" % domainVersion,
+    "uk.gov.hmrc" %% "emailaddress" % emailAddressVersion,
+    "uk.gov.hmrc" %% "http-verbs" % httpVerbsVersion,
+    "uk.gov.hmrc" %% "microservice-bootstrap" % microserviceBootstrapVersion,
+    "uk.gov.hmrc" %% "play-authorisation" % playAuthVersion,
+    "uk.gov.hmrc" %% "play-config" % playConfigVersion,
+    "uk.gov.hmrc" %% "play-health" % playHealthVersion,
+    "uk.gov.hmrc" %% "logback-json-logger" % logbackJsonLoggerVersion,
+    "uk.gov.hmrc" %% "play-url-binders" % playUrlBindersVersion,
+    "uk.gov.hmrc" %% "time" % timeVersion,
+    "uk.gov.hmrc" %% "play-graphite" % playGraphiteVersion
+  )
 
   trait TestDependencies {
-    lazy val scope: String = "test"
+    lazy val testScope: String = "test"
     lazy val test: Seq[ModuleID] = ???
   }
 
   object Test {
-    def apply() = new TestDependencies {
-      override lazy val test = Seq(
-        "uk.gov.hmrc" %% "hmrctest" % "1.4.0" % scope,
-        "org.jsoup" % "jsoup" % "1.7.3" % scope,
-        "org.scalatest" %% "scalatest" % "2.2.6" % scope)
+    def apply(): Seq[ModuleID] = new TestDependencies {
+      override lazy val test: Seq[ModuleID] = Seq(
+        "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % testScope,
+        "org.jsoup" % "jsoup" % jsoupVersion % testScope,
+        "org.scalatest" %% "scalatest" % scalaTestVersion % testScope,
+        "org.scalatestplus.play" %% "scalatestplus-play" % scalaTestPlusPlayVersion % testScope,
+        "org.mockito" % "mockito-core" % mockitoCoreVerison % testScope
+      )
     }.test
   }
 

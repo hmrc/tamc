@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ object TestRelationshipRecord {
       (json \ "participant").as[String],
       (json \ "creationTimestamp").as[String],
       (json \ "participant1StartDate").as[String],
-      (json \ "relationshipEndReason").as[Option[String]],
-      (json \ "participant1EndDate").as[Option[String]],
+      (json \ "relationshipEndReason").asOpt[String],
+      (json \ "participant1EndDate").asOpt[String],
       (json \ "otherParticipantInstanceIdentifier").as[String],
       (json \ "otherParticipantUpdateTimestamp").as[String]))
 
