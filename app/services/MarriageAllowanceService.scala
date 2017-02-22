@@ -41,7 +41,7 @@ object MarriageAllowanceService extends MarriageAllowanceService {
   override val metrics = Metrics
   override val taxYearResolver = TaxYearResolver
   override val startTaxYear = START_TAX_YEAR
-  override val maSupportedYearsCount = MAX_SUPPORTED_YEARS_COUNT
+  override val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
 }
 
 trait MarriageAllowanceService {

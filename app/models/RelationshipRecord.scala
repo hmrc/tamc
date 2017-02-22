@@ -68,6 +68,7 @@ object RelationshipRecord {
       case Some("Merger") => Some("MERGER")
       case Some("Retrospective") => Some("RETROSPECTIVE")
       case Some("System Closure") => Some("SYSTEM")
+      case Some("Active") => Some("Active")
       case unknown =>
         Logger.warn(s"Unexpected reason code :'${unknown}'")
         Some("DEFAULT")
