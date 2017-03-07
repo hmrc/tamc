@@ -214,6 +214,7 @@ trait TestUtility {
       override val metrics = fakeMetrics
       override val taxYearResolver = fakeTaxYearResolver
       override val startTaxYear = 2015
+      override val maSupportedYearsCount = 5
     }
 
     val debugObject = new Object {

@@ -41,6 +41,7 @@ object MarriageAllowanceService extends MarriageAllowanceService {
   override val metrics = Metrics
   override val taxYearResolver = TaxYearResolver
   override val startTaxYear = START_TAX_YEAR
+  override val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
 }
 
 trait MarriageAllowanceService {
@@ -50,6 +51,7 @@ trait MarriageAllowanceService {
   val metrics: Metrics
   val taxYearResolver: TaxYearResolver
   val startTaxYear: Int
+  val maSupportedYearsCount: Int
 
   def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(UserRecord, List[TaxYear])] = {
     for {
@@ -329,7 +331,6 @@ trait MarriageAllowanceService {
     dataConnector.listRelationship(userRecord.cid).map {
       json =>
         timer.stop()
-        //Logger.debug("ListRelationship Json >> " + json) //TODO remove after E2E testing
         metrics.incrementSuccessCounter(ApiType.ListRelationship)
         Json.parse("" + json + "").as[RelationshipRecordWrapper].copy(userRecord = Some(userRecord))
     }
@@ -382,8 +383,8 @@ trait MarriageAllowanceService {
     val marriageYear = taxYearResolver.taxYearFor(marriageDate)
     val currentYear = taxYearResolver.taxYearFor(LocalDate.now())
     val eligibleTaxYearList = (marriageYear < startTaxYear) match {
-      case true => List.range(startTaxYear, currentYear + 1, 1).takeRight(5)
-      case _    => List.range(marriageYear, currentYear + 1, 1).takeRight(5)
+      case true => List.range(startTaxYear, currentYear + 1, 1).takeRight(maSupportedYearsCount)
+      case _    => List.range(marriageYear, currentYear + 1, 1).takeRight(maSupportedYearsCount)
     }
     Future { eligibleTaxYearList }
   }

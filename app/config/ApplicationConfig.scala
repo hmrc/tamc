@@ -40,6 +40,7 @@ trait ApplicationConfig {
   val REASON_REJECT: String
   val REASON_DIVORCE: String
   val START_TAX_YEAR: Int
+  val MA_SUPPORTED_YEARS_COUNT: Int
   val START_DATE: String
   val END_DATE: String
   val START_DATE_CY: String
@@ -101,4 +102,5 @@ object ApplicationConfig extends ApplicationConfig with ServicesConfig {
   val END_DATE_CY = "5 Ebrill"
   
   override val START_TAX_YEAR = configuration.getInt("ma-start-tax-year").getOrElse(2015)
+  override val MA_SUPPORTED_YEARS_COUNT = configuration.getInt("ma-supported-years-count").getOrElse(5)
 }
