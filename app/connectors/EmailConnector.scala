@@ -38,5 +38,5 @@ trait EmailConnector {
   def url(path: String) = s"$emailUrl$path"
 
   def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
-    httpPost.POST(url("/send-templated-email"), sendEmailRequest)
+    httpPost.POST(url("/hmrc/email"), sendEmailRequest)
 }
