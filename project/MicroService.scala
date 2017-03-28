@@ -21,7 +21,6 @@ import sbt._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 import play.sbt.routes.RoutesKeys.routesGenerator
 
-
 trait MicroService {
 
   import uk.gov.hmrc._

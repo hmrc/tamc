@@ -18,21 +18,19 @@ import play.sbt.routes.RoutesKeys
 import sbt._
 
 object MicroServiceBuild extends Build with MicroService {
-
   val appName = "tamc"
-
   override lazy val appDependencies: Seq[ModuleID] = AppDependencies()
   override lazy val playSettings = Seq(RoutesKeys.routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._"))
 }
 
 private object AppDependencies {
 
-  private val microserviceBootstrapVersion = "5.13.0"
+  private val microserviceBootstrapVersion = "5.14.0"
   private val playAuthVersion = "4.3.0"
   private val playHealthVersion = "2.1.0"
   private val logbackJsonLoggerVersion = "3.1.0"
   private val playUrlBindersVersion = "2.1.0"
-  private val playConfigVersion = "3.0.0"
+  private val playConfigVersion = "4.3.0"
   private val domainVersion = "4.1.0"
   private val hmrcTestVersion = "2.3.0"
   private val scalaTestVersion = "2.2.6"
@@ -40,7 +38,7 @@ private object AppDependencies {
   private val timeVersion = "2.1.0"
   private val httpVerbsVersion = "6.3.0"
   private val emailAddressVersion = "2.0.0"
-  private val playGraphiteVersion = "3.1.0"
+  private val playGraphiteVersion = "3.2.0"
   private val scalaTestPlusPlayVersion = "1.5.1"
   private val mockitoCoreVerison = "1.9.5"
 
@@ -60,7 +58,7 @@ private object AppDependencies {
 
   trait TestDependencies {
     lazy val testScope: String = "test"
-    lazy val test: Seq[ModuleID] = ???
+    lazy val test: Seq[ModuleID] = Seq.empty
   }
 
   object Test {
