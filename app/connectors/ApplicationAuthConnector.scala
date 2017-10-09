@@ -29,5 +29,4 @@ object ApplicationAuthConnector extends AuthConnector with ServicesConfig  with 
 
   override val authBaseUrl = baseUrl("auth")
 
-  override def authorise(resource: ResourceToAuthorise, authRequestParameters: AuthRequestParameters)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] = super.authorise(resource, authRequestParameters)
 }
