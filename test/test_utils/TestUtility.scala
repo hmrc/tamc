@@ -35,8 +35,10 @@ import test_utils.TestData.{Cids, findMockData}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.http._
 import uk.gov.hmrc.time.TaxYearResolver
+import uk.gov.hmrc.play.http.ws.{WSGet, WSPost, WSPut}
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.{ BadRequestException, HeaderCarrier, HttpGet, HttpPost, HttpPut, HttpResponse, InternalServerException, NotFoundException, ServiceUnavailableException }
 
 trait TestUtility {
 
@@ -49,7 +51,7 @@ trait TestUtility {
 
   def makeFakeController(testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")), isErrorController: Boolean = false) = {
 
-    val fakeHttpGet = new HttpGet {
+    val fakeHttpGet = new HttpGet with WSGet{
       override val hooks = NoneRequired
       var httpGetCallsToTest: List[HttpGETCallWithHeaders] = List()
 
@@ -62,11 +64,11 @@ trait TestUtility {
       }
     }
 
-    val fakeHttpPost = new HttpPost {
+    val fakeHttpPost = new HttpPost with WSPost {
       override val hooks = NoneRequired
       var httpPostCallsToTest: List[HttpPOSTCallWithHeaders] = List()
 
-      protected def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = {
+      override def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = {
         val adjustedUrl = s"POST-${url}"
         httpPostCallsToTest = httpPostCallsToTest :+ HttpPOSTCallWithHeaders(url = adjustedUrl, body = body, env = hc.extraHeaders, bearerToken = hc.authorization)
         var responseBody = findMockData(adjustedUrl, Some(body))
@@ -74,18 +76,18 @@ trait TestUtility {
         Future.successful(response)
       }
 
-      protected def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+      override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
 
-      protected def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+      override def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
 
-      protected def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+      override def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
     }
 
-    val fakeHttpPut = new HttpPut {
+    val fakeHttpPut = new HttpPut with WSPut {
       override val hooks = NoneRequired
       var httpPutCallsToTest: List[HttpPUTCallWithHeaders] = List()
 
-      protected def doPut[A](url: String, body: A)(implicit rds: Writes[A], hc: HeaderCarrier): Future[uk.gov.hmrc.play.http.HttpResponse] = {
+      override def doPut[A](url: String, body: A)(implicit rds: Writes[A], hc: HeaderCarrier): Future[_root_.uk.gov.hmrc.http.HttpResponse] = {
         val adjustedUrl = s"PUT-${url}"
         val adjustedBody = body.asInstanceOf[DesUpdateRelationshipRequest]
         httpPutCallsToTest = httpPutCallsToTest :+ HttpPUTCallWithHeaders(url = adjustedUrl, body = adjustedBody, env = hc.extraHeaders, bearerToken = hc.authorization)
@@ -101,13 +103,13 @@ trait TestUtility {
       protected def doFormPut(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
     }
 
-    val fakeHttpEmailPost = new HttpPost {
+    val fakeHttpEmailPost = new HttpPost with WSPost {
       override val hooks = NoneRequired
 
       var checkEmailCallCount = 0
       var checkEmailCallData: Option[SendEmailRequest] = None
 
-      protected def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = {
+      override def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = {
         checkEmailCallCount = checkEmailCallCount + 1
         checkEmailCallData = Some(body.asInstanceOf[SendEmailRequest])
         body.asInstanceOf[SendEmailRequest] match {
@@ -118,11 +120,11 @@ trait TestUtility {
         }
       }
 
-      protected def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+      override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
 
-      protected def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+      override def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
 
-      protected def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+      override def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
     }
 
     val fakeEmailConnector = new EmailConnector {

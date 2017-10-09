@@ -24,11 +24,11 @@ import play.api.Application
 import play.api.libs.json.{JsNumber, JsString}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.math.BigDecimal.long2bigDecimal
+import uk.gov.hmrc.http.HeaderCarrier
 
 class TestUtilityTest extends UnitSpec with TestUtility with OneAppPerSuite {
 

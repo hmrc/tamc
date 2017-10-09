@@ -16,9 +16,18 @@
 
 package connectors
 
-import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
+import play.api.mvc.Result
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.auth.microservice.connectors.{AuthConnector, AuthRequestParameters, ResourceToAuthorise}
 import uk.gov.hmrc.play.config.ServicesConfig
+import utils.WSHttp
 
-object ApplicationAuthConnector extends AuthConnector with ServicesConfig {
+import scala.concurrent.{ExecutionContext, Future}
+
+
+object ApplicationAuthConnector extends AuthConnector with ServicesConfig  with WSHttp {
+
   override val authBaseUrl = baseUrl("auth")
+
+  override def authorise(resource: ResourceToAuthorise, authRequestParameters: AuthRequestParameters)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] = super.authorise(resource, authRequestParameters)
 }

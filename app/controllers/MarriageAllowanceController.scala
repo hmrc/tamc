@@ -35,11 +35,11 @@ import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.microservice.controller.BaseController
 import errors.UpdateRelationshipError
-import uk.gov.hmrc.play.http.{ NotFoundException, BadRequestException, InternalServerException, ServiceUnavailableException }
 import errors.ErrorResponseStatus
 import models.MultiYearCreateRelationshipRequestHolder
 import models.TaxYear
 import errors.RecipientDeceasedError
+import uk.gov.hmrc.http.{ BadRequestException, InternalServerException, NotFoundException, ServiceUnavailableException }
 
 object MarriageAllowanceController extends MarriageAllowanceController {
   override val marriageAllowanceService = MarriageAllowanceService

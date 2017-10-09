@@ -25,8 +25,8 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.{OK, contentAsString, defaultAwaitTimeout}
 import test_utils._
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.logging.Authorization
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.http.logging.Authorization
 
 class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with OneAppPerSuite {
 
