@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import uk.gov.hmrc.play.binders.SimpleObjectBinder
+import binders.SimpleObjectBinder
 import uk.gov.hmrc.domain.Nino
 
 object NinoBinder extends SimpleObjectBinder[Nino](Nino.apply, _.value)

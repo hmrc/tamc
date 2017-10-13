@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package connectors
+package binders
 
-import play.api.mvc.Result
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.auth.microservice.connectors.{AuthConnector, AuthRequestParameters, ResourceToAuthorise}
-import uk.gov.hmrc.play.config.ServicesConfig
-import utils.WSHttp
+import play.api.mvc.PathBindable
 
-import scala.concurrent.{ExecutionContext, Future}
+class SimpleObjectBinder[T](bind: String => T, unbind: T => String)(implicit m: Manifest[T]) extends PathBindable[T] {
+  override def bind(key: String, value: String): Either[String, T] = try {
+    Right(bind(value))
+  } catch {
+    case e: Throwable => Left(s"Cannot parse parameter '$key' with value '$value' as '${m.runtimeClass.getSimpleName}'")
+  }
 
-
-object ApplicationAuthConnector extends AuthConnector with ServicesConfig  with WSHttp {
-
-  override val authBaseUrl = baseUrl("auth")
-
+  def unbind(key: String, value: T): String = unbind(value)
 }

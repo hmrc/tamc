@@ -24,17 +24,13 @@ import models.DesCreateRelationshipRequest
 import models.FindRecipientRequest
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.HttpGet
-import uk.gov.hmrc.play.http.HttpPost
-import uk.gov.hmrc.play.http.HttpPut
-import uk.gov.hmrc.play.http.HttpResponse
-import uk.gov.hmrc.play.http.logging.Authorization
 import utils.WSHttp
 import models.Cid
 import models.DesUpdateRelationshipRequest
 import models.MultiYearDesCreateRelationshipRequest
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpGet, HttpPost, HttpPut, HttpResponse }
+import uk.gov.hmrc.http.logging.Authorization
 
 object MarriageAllowanceDataConnector extends MarriageAllowanceDataConnector with ServicesConfig {
   override val httpGet = WSHttp

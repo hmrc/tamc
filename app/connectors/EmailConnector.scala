@@ -19,12 +19,9 @@ package connectors
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import models.SendEmailRequest
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.HttpPost
-import uk.gov.hmrc.play.http.HttpResponse
 import utils.WSHttp
-import uk.gov.hmrc.play.http.BadRequestException
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpPost, HttpResponse }
 
 object EmailConnector extends EmailConnector with ServicesConfig {
   override val httpPost = WSHttp
