@@ -33,7 +33,7 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.time.TaxYearResolver
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
 
 object MarriageAllowanceService extends MarriageAllowanceService {
   override val dataConnector = MarriageAllowanceDataConnector
@@ -125,8 +125,7 @@ trait MarriageAllowanceService {
             startDate = Some(taxYearResolver.startOfTaxYear(taxYear).toString()),
             endDate = Some(taxYearResolver.endOfTaxYear(taxYear).toString())))
         }
-
-        dataConnector.sendMultiYearCreateRelationshipRequest(request._1, request._2).map {
+        val processed = dataConnector.sendMultiYearCreateRelationshipRequest(request._1, request._2).map {
           httpResponse =>
             timer.stop()
             val json = httpResponse.json
@@ -136,11 +135,13 @@ trait MarriageAllowanceService {
                 MultiYearCreateRelationshipResponse(
                   CID1Timestamp = (json \ "CID1Timestamp").as[Timestamp],
                   CID2Timestamp = (json \ "CID2Timestamp").as[Timestamp])
-              case error if httpResponse.status == 400 =>
-                throw RecipientDeceasedError("Service returned response with 400 - recipient deceased")
               case error =>
                 throw MultiYearCreateRelationshipError(error)
             }
+        }
+        processed.recoverWith{
+          case e: BadRequestException if(e.message.contains("Participant is deceased")) => throw RecipientDeceasedError("Service returned response with 400 - recipient deceased")
+          case ex: Exception => throw MultiYearCreateRelationshipError(ex.getMessage)
         }
     }
 
