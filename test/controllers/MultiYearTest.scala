@@ -27,19 +27,14 @@ import play.api.test.Helpers.{OK, contentAsString, defaultAwaitTimeout}
 import test_utils.TestData.Cids
 import test_utils.{TestData, TestUtility}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.{BadRequestException, ConflictException, Upstream4xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
-
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success, Try}
 
 class MultiYearTest extends UnitSpec with TestUtility with OneAppPerSuite {
 
   override implicit lazy val app: Application = fakeApplication
 
   "Calling Multi Year create relationship" should {
-   /* "return OK if data is correct for current tax year" in {
+    "return OK if data is correct for current tax year" in {
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
@@ -193,7 +188,7 @@ class MultiYearTest extends UnitSpec with TestUtility with OneAppPerSuite {
 
       second.startDate shouldBe Some("2014-04-06")
       second.endDate shouldBe Some("2015-04-05")
-    }*/
+    }
 
 
     "return RELATION-MIGHT-BE-CREATED if data is in conflict state (409) for multiple years" in {
