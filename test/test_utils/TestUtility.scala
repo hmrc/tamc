@@ -38,7 +38,10 @@ import uk.gov.hmrc.time.TaxYearResolver
 import uk.gov.hmrc.play.http.ws.{WSGet, WSPost, WSPut}
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.{ BadRequestException, HeaderCarrier, HttpGet, HttpPost, HttpPut, HttpResponse, InternalServerException, NotFoundException, ServiceUnavailableException }
+import uk.gov.hmrc.http._
+import _root_.controllers.MarriageAllowanceController.JSON
+import play.api.http.Status
+import play.api.mvc.Results
 
 trait TestUtility {
 
@@ -217,6 +220,19 @@ trait TestUtility {
       override val taxYearResolver = fakeTaxYearResolver
       override val startTaxYear = 2015
       override val maSupportedYearsCount = 5
+
+      override def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder, journey: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
+        isErrorController match {
+          case true =>
+            createRelationshipRequestHolder.request.transferor_cid match {
+              case Cids.cidBadRequest => throw new BadRequestException(BAD_REQUEST)
+              case Cids.cidConflict => Future.failed(new Upstream4xxResponse("Cannot update as Participant", 409, 409))
+              case Cids.cidServiceUnavailable => Future.failed(new Upstream5xxResponse("LTM000503", 503, 503))
+              case _ => throw new Exception("this exception should not be thrown")
+            }
+          case _ => super.createMultiYearRelationship(createRelationshipRequestHolder, journey)
+        }
+      }
     }
 
     val debugObject = new Object {

@@ -40,27 +40,16 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with OneApp
   override implicit lazy val app: Application = fakeApplication
 
 
-  "when bad request is sent MarriageAllowanceService" should {
-    "return a recipient deceased exception" in {
+  "when request is sent with deceased recipient in MarriageAllowanceService" should {
+    "return a BadRequestException" in {
         val service = new FakeDeceasedMarriageAllowanceService
         val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
         val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
         //noException should be thrownBy await(response)
-        intercept[RecipientDeceasedError] {
+        intercept[BadRequestException] {
           await(response)
         }
     }
-
-    "return appropriate exception" in {
-      val service = new FakeAuthorityMarriageAllowanceService
-      val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
-      val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
-      //noException should be thrownBy await(response)
-      intercept[MultiYearCreateRelationshipError] {
-        await(response)
-      }
-    }
-
   }
 
 }
