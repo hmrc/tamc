@@ -27,12 +27,18 @@ case class RecipientDeceasedError(message: String) extends RuntimeException(s"er
 case class UpdateRelationshipError(message: String) extends RuntimeException(s"error message :${message}")
 case class MultiYearCreateRelationshipError(message: String) extends RuntimeException(s"error message :${message}")
 
+case class RelationshipMightBeCreatedError(message: String) extends RuntimeException(s"error message :${message}")
+
 object ErrorResponseStatus {
 
   val CITIZEN_NOT_FOUND = "TAMC:ERROR:CITIZEN-NOT-FOUND"
   val BAD_REQUEST = "TAMC:ERROR:BAD-REQUEST"
   val SERVER_ERROR = "ERROR:500"
   val SERVICE_UNAVILABLE = "ERROR:503"
-
   val CANNOT_UPDATE_RELATIONSHIP = "TAMC:ERROR:CANNOT-UPDATE-RELATIONSHIP"
+  val TRANSFEROR_NOT_FOUND = "TAMC:ERROR:TRANSFEROR-NOT-FOUND"
+  val RELATION_MIGHT_BE_CREATED = "TAMC:ERROR:RELATION-MIGHT-BE-CREATED"
+  val RECIPIENT_DECEASED = "TAMC:ERROR:RECIPIENT-DECEASED"
+  val OTHER_ERROR = "TAMC:ERROR:OTHER-ERROR"
+  val RECIPIENT_NOT_FOUND = "TAMC:ERROR:RECIPIENT-NOT-FOUND"
 }
