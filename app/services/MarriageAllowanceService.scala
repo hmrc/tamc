@@ -125,7 +125,7 @@ trait MarriageAllowanceService {
             startDate = Some(taxYearResolver.startOfTaxYear(taxYear).toString()),
             endDate = Some(taxYearResolver.endOfTaxYear(taxYear).toString())))
         }
-        val processed = dataConnector.sendMultiYearCreateRelationshipRequest(request._1, request._2).map {
+       dataConnector.sendMultiYearCreateRelationshipRequest(request._1, request._2).map {
           httpResponse =>
             timer.stop()
             val json = httpResponse.json
@@ -138,10 +138,6 @@ trait MarriageAllowanceService {
               case error =>
                 throw MultiYearCreateRelationshipError(error)
             }
-        }
-        processed.recoverWith{
-          case e: BadRequestException if(e.message.contains("Participant is deceased")) => throw RecipientDeceasedError("Service returned response with 400 - recipient deceased")
-          case ex: Exception => throw MultiYearCreateRelationshipError(ex.getMessage)
         }
     }
 

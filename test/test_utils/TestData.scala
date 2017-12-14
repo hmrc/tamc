@@ -27,7 +27,7 @@ object TestData {
     private lazy val cids = {
       val randomizer = new java.util.Random
       var cids: Set[Cid] = Set()
-      while (cids.size <= 10) {
+      while (cids.size <= 11) {
         cids += randomizer.nextLong().abs
       }
       cids.toList
@@ -43,6 +43,7 @@ object TestData {
     val cidCitizenNotFound: Cid = cids(7)
     val cidServerError: Cid = cids(8)
     val cidServiceUnavailable: Cid = cids(9)
+    val cidConflict: Cid = cids(10)
   }
 
   object Ninos {

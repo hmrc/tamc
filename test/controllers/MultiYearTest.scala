@@ -23,7 +23,8 @@ import play.api.Application
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
-import play.api.test.Helpers.OK
+import play.api.test.Helpers.{OK, contentAsString, defaultAwaitTimeout}
+import test_utils.TestData.Cids
 import test_utils.{TestData, TestUtility}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
@@ -188,6 +189,48 @@ class MultiYearTest extends UnitSpec with TestUtility with OneAppPerSuite {
       second.startDate shouldBe Some("2014-04-06")
       second.endDate shouldBe Some("2015-04-05")
     }
+
+
+    "return RELATION-MIGHT-BE-CREATED if data is in conflict state (409) for multiple years" in {
+
+      val testInput = TestData.MultiYearCreate.happyScenarioStep1
+      val transferorNino = Nino(testInput.transferor.nino)
+      val transferorCid = testInput.transferor.cid.cid
+      val transferorTs = testInput.transferor.timestamp.toString()
+      val recipientNino = Nino(testInput.recipient.nino)
+      val recipientCid = testInput.recipient.cid.cid
+      val recipientTs = testInput.recipient.timestamp.toString()
+
+      val controller = makeFakeController(isErrorController = true)
+      val testData = s"""{"request":{"transferor_cid":${Cids.cidConflict}, "transferor_timestamp": "${transferorTs}", "recipient_cid":${recipientCid}, "recipient_timestamp":"${recipientTs}", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
+      val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
+      val response = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
+      status(response) shouldBe OK
+      val json = Json.parse(contentAsString(response))
+      (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:RELATION-MIGHT-BE-CREATED"
+
+    }
+
+    "return RELATION-MIGHT-BE-CREATED if request results in LTM000503 (503) for multiple years" in {
+
+      val testInput = TestData.MultiYearCreate.happyScenarioStep1
+      val transferorNino = Nino(testInput.transferor.nino)
+      val transferorCid = testInput.transferor.cid.cid
+      val transferorTs = testInput.transferor.timestamp.toString()
+      val recipientNino = Nino(testInput.recipient.nino)
+      val recipientCid = testInput.recipient.cid.cid
+      val recipientTs = testInput.recipient.timestamp.toString()
+
+      val controller = makeFakeController(isErrorController = true)
+      val testData = s"""{"request":{"transferor_cid":${Cids.cidServiceUnavailable}, "transferor_timestamp": "${transferorTs}", "recipient_cid":${recipientCid}, "recipient_timestamp":"${recipientTs}", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
+      val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
+      val response = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
+      status(response) shouldBe OK
+      val json = Json.parse(contentAsString(response))
+      (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:RELATION-MIGHT-BE-CREATED"
+
+    }
+
   }
 
   "Create Multi Year request model" should {
