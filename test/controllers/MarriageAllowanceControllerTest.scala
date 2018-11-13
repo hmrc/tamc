@@ -17,7 +17,7 @@
 package controllers
 
 import models.{UpdateRelationshipResponse, UserRecord}
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
@@ -28,9 +28,7 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.http.logging.Authorization
 
-class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with OneAppPerSuite {
-
-  override implicit lazy val app: Application = fakeApplication
+class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
 
   "Calling hasMarriageAllowance for Recipient" should {
 

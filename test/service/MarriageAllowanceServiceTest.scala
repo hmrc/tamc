@@ -16,29 +16,24 @@
 
 package service
 
-import connectors.{EmailConnector, MarriageAllowanceDataConnector}
-import models._
-import services.MarriageAllowanceService
-import test_utils.TestUtility
-import uk.gov.hmrc.http.{BadGatewayException, CoreGet, HeaderCarrier, HttpResponse, _}
-import uk.gov.hmrc.play.test.UnitSpec
 import Fixtures._
 import com.codahale.metrics.Timer
-import errors.{MultiYearCreateRelationshipError, RecipientDeceasedError}
+import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import metrics.Metrics
 import models.ApiType.ApiType
-import org.scalatestplus.play.OneAppPerSuite
-import play.api.Application
+import models._
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import services.MarriageAllowanceService
+import test_utils.TestUtility
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, _}
+import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.time.TaxYearResolver
 import utils.WSHttp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with OneAppPerSuite{
-
-  override implicit lazy val app: Application = fakeApplication
-
+class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
 
   "when request is sent with deceased recipient in MarriageAllowanceService" should {
     "return a BadRequestException" in {
