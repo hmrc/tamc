@@ -27,30 +27,20 @@ import models.ApiType.ApiType
 import models._
 import org.joda.time._
 import org.scalatest.mock.MockitoSugar
-import play.api.inject.guice.{GuiceApplicationBuilder, GuiceableModule}
+import play.api.inject.guice.GuiceableModule
 import play.api.libs.json.{JsValue, Writes}
-import play.api.{Application, Mode}
 import services.MarriageAllowanceService
 import test_utils.TestData.{Cids, findMockData}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.http._
-import uk.gov.hmrc.time.TaxYearResolver
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.http.ws.{WSGet, WSPost, WSPut}
+import uk.gov.hmrc.time.TaxYearResolver
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http._
-import _root_.controllers.MarriageAllowanceController.JSON
-import play.api.http.Status
-import play.api.mvc.Results
 
 trait TestUtility {
 
   def bindModules: Seq[GuiceableModule] = Seq(new PlayModule)
-
-  implicit lazy val fakeApplication: Application = new GuiceApplicationBuilder()
-    .bindings(bindModules: _*)
-    .in(Mode.Test)
-    .build()
 
   def makeFakeController(testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")), isErrorController: Boolean = false) = {
 

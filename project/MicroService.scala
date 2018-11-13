@@ -15,20 +15,20 @@
  */
 
 import play.routes.compiler.StaticRoutesGenerator
+import play.sbt.routes.RoutesKeys.routesGenerator
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
+import uk.gov.hmrc.DefaultBuildSettings._
+import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
-import play.sbt.routes.RoutesKeys.routesGenerator
+import uk.gov.hmrc.versioning.SbtGitVersioning
+import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
+import uk.gov.hmrc.{SbtArtifactory, SbtAutoBuildPlugin}
 
 trait MicroService {
 
-  import uk.gov.hmrc._
-  import DefaultBuildSettings._
   import TestPhases._
-  import uk.gov.hmrc.SbtAutoBuildPlugin
-  import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
-  import uk.gov.hmrc.versioning.SbtGitVersioning
 
   val appName: String
   val appDependencies: Seq[ModuleID]
@@ -77,10 +77,12 @@ trait MicroService {
         Resolver.jcenterRepo
       )
     )
-    .enablePlugins(SbtDistributablesPlugin, SbtAutoBuildPlugin, SbtGitVersioning)
+    .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+    .settings(majorVersion := 4)
 }
 
 private object TestPhases {
+
   def oneForkedJvmPerTest(tests: Seq[TestDefinition]) =
     tests map {
       test => new Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = Seq("-Dtest.name=" + test.name))))
