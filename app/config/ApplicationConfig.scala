@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package config
 
-import uk.gov.hmrc.play.config.ServicesConfig
-import play.api.Play.configuration
-import play.api.Play.current
+import play.api.Play.{configuration, current}
 
 trait ApplicationConfig {
   val EMAIL_GDS_TEMPLATE_ID: String
@@ -59,7 +57,7 @@ trait ApplicationConfig {
   val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH: String
 }
 
-object ApplicationConfig extends ApplicationConfig with ServicesConfig {
+object ApplicationConfig extends ApplicationConfig {
   
   override val EMAIL_GDS_TEMPLATE_ID = "tamc_confirmation_template_id"
   override val EMAIL_PTA_TEMPLATE_ID = "tamc_confirmation_pta"

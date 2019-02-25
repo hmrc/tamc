@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package connectors
 
-import play.api.mvc.Result
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.auth.microservice.connectors.{AuthConnector, AuthRequestParameters, ResourceToAuthorise}
+import play.api.Mode.Mode
+import play.api.{Configuration, Play}
+import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
 import uk.gov.hmrc.play.config.ServicesConfig
 import utils.WSHttp
 
-import scala.concurrent.{ExecutionContext, Future}
 
-
-object ApplicationAuthConnector extends AuthConnector with ServicesConfig  with WSHttp {
+object ApplicationAuthConnector extends AuthConnector with ServicesConfig with WSHttp {
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 
   override val authBaseUrl = baseUrl("auth")
-
 }

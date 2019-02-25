@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,27 @@
 
 package utils
 
+import akka.actor.ActorSystem
+import com.typesafe.config.Config
 import connectors.ApplicationAuditConnector
+import play.api.{Configuration, Play}
 import uk.gov.hmrc.http.hooks.HttpHooks
 import uk.gov.hmrc.http.{HttpDelete, HttpGet, HttpPost, HttpPut}
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.config.{AppName, RunMode}
+import uk.gov.hmrc.play.config.AppName
 import uk.gov.hmrc.play.http.ws._
 
 
-trait Hooks extends HttpHooks with HttpAuditing {
+trait Hooks extends HttpHooks with HttpAuditing with AppName {
   override val hooks = Seq(AuditingHook)
   override lazy val auditConnector: AuditConnector = ApplicationAuditConnector
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
 }
 
-trait WSHttp extends HttpGet with WSGet with HttpPut with WSPut with HttpPost with WSPost with HttpDelete with WSDelete with Hooks with AppName
+trait WSHttp extends HttpGet with WSGet with HttpPut with WSPut with HttpPost with WSPost with HttpDelete with WSDelete with Hooks {
+  override protected def actorSystem: ActorSystem = Play.current.actorSystem
+  override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
+}
 
 object WSHttp extends WSHttp

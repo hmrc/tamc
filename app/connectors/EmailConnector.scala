@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,16 @@ package connectors
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import models.SendEmailRequest
+import play.api.{Configuration, Play}
+import play.api.Mode.Mode
 import uk.gov.hmrc.play.config.ServicesConfig
 import utils.WSHttp
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpPost, HttpResponse }
+import uk.gov.hmrc.http.{HeaderCarrier, HttpPost, HttpResponse}
 
 object EmailConnector extends EmailConnector with ServicesConfig {
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+
   override val httpPost = WSHttp
   override val emailUrl = baseUrl("email")
 }
