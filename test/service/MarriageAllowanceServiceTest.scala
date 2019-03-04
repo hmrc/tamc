@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import services.MarriageAllowanceService
 import test_utils.TestUtility
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, _}
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.time.TaxYearResolver
 import utils.WSHttp
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -53,7 +52,6 @@ class FakeDeceasedMarriageAllowanceService extends MarriageAllowanceService {
   override val dataConnector = mockDeceasedDataConnector
   override val emailConnector = mockEmailConnector
   override val metrics = Metrics
-  override val taxYearResolver = TaxYearResolver
   override val startTaxYear = 2015
   override val maSupportedYearsCount = 5
 
@@ -63,7 +61,6 @@ class FakeAuthorityMarriageAllowanceService extends MarriageAllowanceService {
   override val dataConnector = mockAuthorityDataConnector
   override val emailConnector = mockEmailConnector
   override val metrics = Metrics
-  override val taxYearResolver = TaxYearResolver
   override val startTaxYear = 2015
   override val maSupportedYearsCount = 5
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import net.ceedubs.ficus.Ficus.{configValueReader, toFicusConfig}
 import play.api.{Application, Configuration, Play}
 import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
 import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
-import uk.gov.hmrc.play.config.{AppName, ControllerConfig, RunMode}
+import uk.gov.hmrc.play.config.{AppName, ControllerConfig}
 import uk.gov.hmrc.play.microservice.bootstrap.DefaultMicroserviceGlobal
-import uk.gov.hmrc.play.microservice.filters.{ AuditFilter, LoggingFilter, MicroserviceFilterSupport }
+import uk.gov.hmrc.play.microservice.filters.{AuditFilter, LoggingFilter, MicroserviceFilterSupport}
 
 object ControllerConfiguration extends ControllerConfig {
   lazy val controllerConfigs: Config = Play.current.configuration.underlying.as[Config]("controllers")
@@ -38,6 +38,8 @@ object MicroserviceAuditFilter extends AuditFilter with AppName with Microservic
   override val auditConnector = ApplicationAuditConnector
 
   override def controllerNeedsAuditing(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsAuditing
+
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
 }
 
 object MicroserviceLoggingFilter extends LoggingFilter with MicroserviceFilterSupport {
@@ -51,7 +53,7 @@ object MicroserviceAuthFilter extends AuthorisationFilter with MicroserviceFilte
   override def controllerNeedsAuth(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsAuth
 }
 
-object ApplicationGlobal extends DefaultMicroserviceGlobal with RunMode {
+object ApplicationGlobal extends DefaultMicroserviceGlobal {
   override val auditConnector = ApplicationAuditConnector
 
   override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig("microservice.metrics")

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,29 @@
 
 package connectors
 
-import java.net.URLEncoder
-import scala.annotation.implicitNotFound
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import models.DesCreateRelationshipRequest
-import models.FindRecipientRequest
+import models.{Cid, DesUpdateRelationshipRequest, FindRecipientRequest, MultiYearDesCreateRelationshipRequest}
+import play.api.Mode.Mode
 import play.api.libs.json.JsValue
+import play.api.{Configuration, Play}
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.config.ServicesConfig
 import utils.WSHttp
-import models.Cid
-import models.DesUpdateRelationshipRequest
-import models.MultiYearDesCreateRelationshipRequest
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpGet, HttpPost, HttpPut, HttpResponse }
-import uk.gov.hmrc.http.logging.Authorization
+
+import scala.concurrent.{ExecutionContext, Future}
 
 object MarriageAllowanceDataConnector extends MarriageAllowanceDataConnector with ServicesConfig {
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+
   override val httpGet = WSHttp
   override val httpPost = WSHttp
   override val httpPut = WSHttp
   override val serviceUrl = baseUrl("marriage-allowance-des")
   override val urlHeaderEnvironment = config("marriage-allowance-des").getString("environment").get
   override val urlHeaderAuthorization = s"Bearer ${config("marriage-allowance-des").getString("authorization-token").get}"
+
 }
 
 trait MarriageAllowanceDataConnector {

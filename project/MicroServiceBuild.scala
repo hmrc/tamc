@@ -25,21 +25,20 @@ object MicroServiceBuild extends Build with MicroService {
 
 private object AppDependencies {
 
-  private val microserviceBootstrapVersion = "8.5.0"
-  private val domainVersion = "5.2.0"
-  private val hmrcTestVersion = "3.2.0"
-  private val scalaTestVersion = "2.2.6"
-  private val jsoupVersion = "1.8.3"
-  private val timeVersion = "2.1.0"
-  private val emailAddressVersion = "2.0.0"
+  private val microserviceBootstrapVersion = "10.4.0"
+  private val domainVersion = "5.3.0"
+  private val hmrcTestVersion = "3.5.0-play-25"
+  private val jsoupVersion = "1.11.3"
+  private val emailAddressVersion = "3.2.0"
   private val scalaTestPlusPlayVersion = "2.0.1"
-  private val mockitoCoreVerison = "1.9.5"
+  private val mockitoCoreVerison = "2.24.5"
+  private val taxYearVersion = "0.5.0"
 
   val compile = Seq(
     "uk.gov.hmrc" %% "domain" % domainVersion,
     "uk.gov.hmrc" %% "emailaddress" % emailAddressVersion,
     "uk.gov.hmrc" %% "microservice-bootstrap" % microserviceBootstrapVersion,
-    "uk.gov.hmrc" %% "time" % timeVersion
+    "uk.gov.hmrc" %% "tax-year" % taxYearVersion
   )
 
   trait TestDependencies {
@@ -52,7 +51,6 @@ private object AppDependencies {
       override lazy val test: Seq[ModuleID] = Seq(
         "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % testScope,
         "org.jsoup" % "jsoup" % jsoupVersion % testScope,
-        "org.scalatest" %% "scalatest" % scalaTestVersion % testScope,
         "org.scalatestplus.play" %% "scalatestplus-play" % scalaTestPlusPlayVersion % testScope,
         "org.mockito" % "mockito-core" % mockitoCoreVerison % testScope
       )

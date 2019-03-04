@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package test_utils
 
+import akka.actor.ActorSystem
 import com.codahale.metrics.Timer
 import com.codahale.metrics.Timer.Context
 import com.kenshoo.play.metrics.PlayModule
+import com.typesafe.config.Config
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import controllers.MarriageAllowanceController
 import errors.ErrorResponseStatus._
@@ -27,6 +29,7 @@ import models.ApiType.ApiType
 import models._
 import org.joda.time._
 import org.scalatest.mock.MockitoSugar
+import play.api.Play
 import play.api.inject.guice.GuiceableModule
 import play.api.libs.json.{JsValue, Writes}
 import services.MarriageAllowanceService
@@ -34,7 +37,7 @@ import test_utils.TestData.{Cids, findMockData}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.http.ws.{WSGet, WSPost, WSPut}
-import uk.gov.hmrc.time.TaxYearResolver
+import uk.gov.hmrc.time
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -55,6 +58,9 @@ trait TestUtility {
         val response = new DummyHttpResponse(responseBody, 200)
         return Future.successful(response)
       }
+
+      override protected def actorSystem: ActorSystem = Play.current.actorSystem
+      override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
     }
 
     val fakeHttpPost = new HttpPost with WSPost {
@@ -74,6 +80,9 @@ trait TestUtility {
       override def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
 
       override def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+      override protected def actorSystem: ActorSystem = Play.current.actorSystem
+      override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
     }
 
     val fakeHttpPut = new HttpPut with WSPut {
@@ -94,6 +103,9 @@ trait TestUtility {
       protected def doEmptyPut[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
 
       protected def doFormPut(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+      override protected def actorSystem: ActorSystem = Play.current.actorSystem
+      override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
     }
 
     val fakeHttpEmailPost = new HttpPost with WSPost {
@@ -118,6 +130,9 @@ trait TestUtility {
       override def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
 
       override def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
+
+      override protected def actorSystem: ActorSystem = Play.current.actorSystem
+      override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
     }
 
     val fakeEmailConnector = new EmailConnector {
@@ -199,15 +214,11 @@ trait TestUtility {
       override def incrementTotalCounter(api: ApiType): Unit = {}
     }
 
-    val fakeTaxYearResolver = new TaxYearResolver {
-      override lazy val now = () => testingTime
-    }
-
     val fakeMarriageAllowanceService = new MarriageAllowanceService {
       override val dataConnector = fakeMarriageAllowanceDataConnector
       override val emailConnector = fakeEmailConnector
       override val metrics = fakeMetrics
-      override val taxYearResolver = fakeTaxYearResolver
+      override val currentTaxYear: Int = time.TaxYear.taxYearFor(testingTime.toLocalDate).startYear
       override val startTaxYear = 2015
       override val maSupportedYearsCount = 5
 

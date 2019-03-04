@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,22 @@ import config.ApplicationConfig._
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import errors._
 import metrics.Metrics
-import models._
+import models.{TaxYear => TaxYearModel, _}
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
 import play.Logger
 import play.api.libs.json.Json
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.emailaddress.EmailAddress
-import uk.gov.hmrc.time.TaxYearResolver
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.time.TaxYear
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
 
 object MarriageAllowanceService extends MarriageAllowanceService {
   override val dataConnector = MarriageAllowanceDataConnector
   override val emailConnector = EmailConnector
   override val metrics = Metrics
-  override val taxYearResolver = TaxYearResolver
   override val startTaxYear = START_TAX_YEAR
   override val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
 }
@@ -49,11 +48,12 @@ trait MarriageAllowanceService {
   val dataConnector: MarriageAllowanceDataConnector
   val emailConnector: EmailConnector
   val metrics: Metrics
-  val taxYearResolver: TaxYearResolver
   val startTaxYear: Int
   val maSupportedYearsCount: Int
 
-  def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(UserRecord, List[TaxYear])] = {
+  val currentTaxYear: Int = TaxYear.current.startYear
+
+  def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(UserRecord, List[TaxYearModel])] = {
     for {
       recipientRecord <- getRecipientRecord(findRecipientRequest)
       recipientRelationshipList <- listRelationship(recipientRecord.cid)
@@ -78,7 +78,7 @@ trait MarriageAllowanceService {
   private def getEmailTemplateId(taxYears: List[Int], isWelsh: Boolean)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] = {
     val pickTemp = pickTemplate(isWelsh)(_,_)
     Future {
-      taxYears.contains(TaxYearResolver.currentTaxYear) match {
+      taxYears.contains(currentTaxYear) match {
         case true if taxYears.size == 1 => pickTemp(EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID, EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID)
         case true if taxYears.size > 1 => pickTemp(EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID, EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID)
         case _ => pickTemp(EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID, EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID)
@@ -122,8 +122,8 @@ trait MarriageAllowanceService {
             endDate = None))
           case false => ("retrospective", convertRequest(
             createRelationshipRequest,
-            startDate = Some(taxYearResolver.startOfTaxYear(taxYear).toString()),
-            endDate = Some(taxYearResolver.endOfTaxYear(taxYear).toString())))
+            startDate = Some(TaxYear(taxYear).starts.toString()),
+            endDate = Some(TaxYear(taxYear).finishes.toString())))
         }
        dataConnector.sendMultiYearCreateRelationshipRequest(request._1, request._2).map {
           httpResponse =>
@@ -142,7 +142,7 @@ trait MarriageAllowanceService {
     }
 
   private def isCurrentTaxYear(taxYear: Int): Boolean = {
-    taxYearResolver.currentTaxYear == taxYear
+    currentTaxYear == taxYear
   }
 
   private def convertRequest(request: MultiYearCreateRelationshipRequest, startDate: Option[String], endDate: Option[String]): MultiYearDesCreateRelationshipRequest =
@@ -183,10 +183,10 @@ trait MarriageAllowanceService {
       case _ => (START_DATE, END_DATE)
     }
 
-    val startDateNextYear = startDate + (taxYearResolver.currentTaxYear + 1)
-    val endDateNextYear = endDate + (taxYearResolver.currentTaxYear + 1)
-    val startDateCurrYear = startDate + taxYearResolver.currentTaxYear
-    val endDateCurrYear = endDate + taxYearResolver.currentTaxYear
+    val startDateNextYear = startDate + (currentTaxYear + 1)
+    val endDateNextYear = endDate + (currentTaxYear + 1)
+    val startDateCurrYear = startDate + currentTaxYear
+    val endDateCurrYear = endDate + currentTaxYear
 
     (relationship.relationshipEndReason, role) match {
       case (REASON_CANCEL, _) =>
@@ -365,10 +365,10 @@ trait MarriageAllowanceService {
     var availedYears: List[Int] = List()
     for (record <- relationships) {
       val startDate = record.participant1StartDate
-      val endDate = record.participant1EndDate.getOrElse(taxYearResolver.endOfCurrentTaxYear.toString().replace("-", ""))
+      val endDate = record.participant1EndDate.getOrElse(TaxYear.current.finishes.toString.replace("-", ""))
       if (startDate != endDate) {
-        val start = taxYearResolver.taxYearFor(LocalDate.parse(startDate, format))
-        val end = taxYearResolver.taxYearFor(LocalDate.parse(endDate, format))
+        val start: Int = TaxYear.taxYearFor(LocalDate.parse(startDate, format)).startYear
+        val end: Int = TaxYear.taxYearFor(LocalDate.parse(endDate, format)).startYear
         val list = start until end + 1 toList;
         availedYears = availedYears ::: list
       }
@@ -377,8 +377,8 @@ trait MarriageAllowanceService {
   }
 
   private def getEligibleTaxYearList(marriageDate: LocalDate)(implicit ec: ExecutionContext): Future[List[Int]] = {
-    val marriageYear = taxYearResolver.taxYearFor(marriageDate)
-    val currentYear = taxYearResolver.taxYearFor(LocalDate.now())
+    val marriageYear = TaxYear.taxYearFor(marriageDate).startYear
+    val currentYear = currentTaxYear
     val eligibleTaxYearList = (marriageYear < startTaxYear) match {
       case true => List.range(startTaxYear, currentYear + 1, 1).takeRight(maSupportedYearsCount)
       case _    => List.range(marriageYear, currentYear + 1, 1).takeRight(maSupportedYearsCount)
@@ -386,18 +386,18 @@ trait MarriageAllowanceService {
     Future { eligibleTaxYearList }
   }
 
-  private def getListOfEligibleTaxYears(transferorYears: List[Int], recipientYears: List[Int], eligibleYearsBasdOnDoM: List[Int])(implicit ec: ExecutionContext): Future[List[TaxYear]] = {
-    var eligibleYears = List[TaxYear]()
+  private def getListOfEligibleTaxYears(transferorYears: List[Int], recipientYears: List[Int], eligibleYearsBasdOnDoM: List[Int])(implicit ec: ExecutionContext): Future[List[TaxYearModel]] = {
+    var eligibleYears = List[TaxYearModel]()
     for (yr <- eligibleYearsBasdOnDoM) {
       if (!(transferorYears.contains(yr) || recipientYears.contains(yr))) {
-        eligibleYears = convertToTaxYear(yr, taxYearResolver.currentTaxYear == yr) :: eligibleYears
+        eligibleYears = convertToTaxYear(yr, currentTaxYear == yr) :: eligibleYears
       }
     }
     Future { eligibleYears }
   }
 
-  private def convertToTaxYear(year: Int, currentTaxYear: Boolean): TaxYear =
-    TaxYear(
+  private def convertToTaxYear(year: Int, currentTaxYear: Boolean): TaxYearModel =
+    TaxYearModel(
       year = year,
       isCurrent = if (currentTaxYear) Some(true) else None)
 
