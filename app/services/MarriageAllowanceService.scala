@@ -51,7 +51,7 @@ trait MarriageAllowanceService {
   val startTaxYear: Int
   val maSupportedYearsCount: Int
 
-  val currentTaxYear: Int = TaxYear.current.startYear
+  def currentTaxYear: Int = TaxYear.current.startYear
 
   def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(UserRecord, List[TaxYearModel])] = {
     for {
