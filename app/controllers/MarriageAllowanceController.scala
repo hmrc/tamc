@@ -61,6 +61,10 @@ trait MarriageAllowanceController extends BaseController {
               Logger.warn("getRecipientRelationship failed with handled error", error.getMessage)
               Ok(Json.toJson(GetRelationshipResponse(
                 status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
+            case transfererDeceased: TransferorDeceasedError =>
+              Logger.warn("getRecipientRelationship failed with handled error", error.getMessage)
+              Ok(Json.toJson(GetRelationshipResponse(
+                status = ResponseStatus(status_code = TRANSFERER_DECEASED))))
             case otherError =>
               Logger.error("getRecipientRelationship failed with unhandled error", error.getMessage)
               Ok(Json.toJson(GetRelationshipResponse(
