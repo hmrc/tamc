@@ -39,7 +39,6 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
 
       val recipient = TestData.Recipients.recHasNoAllowanceNoCid
       val recipientNino = recipient.citizen.nino
-      val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
 
       val controller = makeFakeController()
@@ -61,7 +60,6 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       "return transferor deceased BadRequest when recipient is good (has allowance)" in {
         val recipient = TestData.Recipients.recHasAllowance
         val recipientNino = recipient.citizen.nino
-        val recipientCid = recipient.citizen.cid.cid
         val recipientGender = recipient.gender
 
         val controller = makeFakeController()
@@ -79,7 +77,6 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
 
         val recipient = TestData.Recipients.recHasAllowanceAndSpaceInName
         val recipientNino = recipient.citizen.nino
-        val recipientCid = recipient.citizen.cid.cid
         val recipientGender = recipient.gender
 
         val controller = makeFakeController()
@@ -97,7 +94,6 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
 
         val recipient = TestData.Recipients.recHasNoAllowance
         val recipientNino = recipient.citizen.nino
-        val recipientCid = recipient.citizen.cid.cid
         val recipientGender = recipient.gender
 
         val controller = makeFakeController()
