@@ -55,9 +55,9 @@ trait MarriageAllowanceService {
 
   def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(UserRecord, List[TaxYearModel])] = {
     for {
+      transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
       recipientRecord <- getRecipientRecord(findRecipientRequest)
       recipientRelationshipList <- listRelationship(recipientRecord.cid)
-      transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
       transferorRelationshipList <- listRelationship(transferorRecord.cid)
       transferorYears <- convertToAvailedYears(transferorRelationshipList)
       recipientYears <- convertToAvailedYears(recipientRelationshipList)

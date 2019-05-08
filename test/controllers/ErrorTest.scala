@@ -106,6 +106,19 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
         val json = Json.parse(contentAsString(result))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
       }
+
+      "return transferor deceased BadRequest when recipient not found" in {
+
+        val controller = makeFakeController()
+        val testData = s"""{"name":"abc","lastName":"def", "nino":"AB242424B", "gender":"M"}"""
+        val request = FakeRequest().withBody(Json.parse(testData))
+
+        val result = controller.getRecipientRelationship(transferorNino)(request)
+        status(result) shouldBe OK
+
+        val json = Json.parse(contentAsString(result))
+        (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
+      }
     }
 
     "return BadRequest if gender is invalid" in {
