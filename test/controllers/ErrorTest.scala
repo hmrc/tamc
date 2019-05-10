@@ -39,7 +39,6 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
 
       val recipient = TestData.Recipients.recHasNoAllowanceNoCid
       val recipientNino = recipient.citizen.nino
-      val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
 
       val controller = makeFakeController()
@@ -51,6 +50,75 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
 
       val json = Json.parse(contentAsString(result))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:RECIPIENT-NOT-FOUND"
+    }
+
+    "when transferor deceased" should {
+
+      val transferorNinoObject = TestData.mappedNino2FindCitizen(TestData.Ninos.ninoP6A)
+      val transferorNino = Nino(transferorNinoObject.nino)
+
+      "return transferor deceased BadRequest when recipient is good (has allowance)" in {
+        val recipient = TestData.Recipients.recHasAllowance
+        val recipientNino = recipient.citizen.nino
+        val recipientGender = recipient.gender
+
+        val controller = makeFakeController()
+        val testData = s"""{"name":"rty","lastName":"qwe", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
+        val request = FakeRequest().withBody(Json.parse(testData))
+
+        val result = controller.getRecipientRelationship(transferorNino)(request)
+        status(result) shouldBe OK
+
+        val json = Json.parse(contentAsString(result))
+        (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
+      }
+
+      "return transferor deceased BadRequest when recipient has allowance and space in name" in {
+
+        val recipient = TestData.Recipients.recHasAllowanceAndSpaceInName
+        val recipientNino = recipient.citizen.nino
+        val recipientGender = recipient.gender
+
+        val controller = makeFakeController()
+        val testData = s"""{"name":"rty","lastName":"qwe abc", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
+        val request = FakeRequest().withBody(Json.parse(testData))
+
+        val result = controller.getRecipientRelationship(transferorNino)(request)
+        status(result) shouldBe OK
+
+        val json = Json.parse(contentAsString(result))
+        (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
+      }
+
+      "return transferor deceased BadRequest when recipient has no allowance" in {
+
+        val recipient = TestData.Recipients.recHasNoAllowance
+        val recipientNino = recipient.citizen.nino
+        val recipientGender = recipient.gender
+
+        val controller = makeFakeController()
+        val testData = s"""{"name":"fgh","lastName":"asd", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
+        val request = FakeRequest().withBody(Json.parse(testData))
+
+        val result = controller.getRecipientRelationship(transferorNino)(request)
+        status(result) shouldBe OK
+
+        val json = Json.parse(contentAsString(result))
+        (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
+      }
+
+      "return transferor deceased BadRequest when recipient not found" in {
+
+        val controller = makeFakeController()
+        val testData = s"""{"name":"abc","lastName":"def", "nino":"AB242424B", "gender":"M"}"""
+        val request = FakeRequest().withBody(Json.parse(testData))
+
+        val result = controller.getRecipientRelationship(transferorNino)(request)
+        status(result) shouldBe OK
+
+        val json = Json.parse(contentAsString(result))
+        (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
+      }
     }
 
     "return BadRequest if gender is invalid" in {

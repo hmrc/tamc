@@ -76,9 +76,9 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         bearerToken = Some(Authorization("test-bearer-token")))
 
       controller.debugData.httpGetCallsToTest shouldBe List(
+        findTransferorCall,
         findRecipientCall,
         checkHistoricAllowanceRelationshipCall,
-        findTransferorCall,
         checkTransferorHistoricAllowanceRelationshipCall)
     }
 
@@ -126,9 +126,9 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         bearerToken = Some(Authorization("test-bearer-token")))
 
       controller.debugData.httpGetCallsToTest shouldBe List(
+        findTransferorCall,
         findRecipientCall,
         checkHistoricAllowanceRelationshipCall,
-        findTransferorCall,
         checkTransferorHistoricAllowanceRelationshipCall)
     }
 
@@ -176,9 +176,9 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         bearerToken = Some(Authorization("test-bearer-token")))
 
       controller.debugData.httpGetCallsToTest shouldBe List(
+        findTransferorCall,
         findRecipientCall,
         checkHistoricAllowanceRelationshipCall,
-        findTransferorCall,
         checkTransferorHistoricAllowanceRelationshipCall)
     }
   }
