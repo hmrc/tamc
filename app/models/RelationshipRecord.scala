@@ -16,10 +16,9 @@
 
 package models
 
-import play.api.libs.json.Format
-import play.api.libs.json._
 import config.ApplicationConfig
 import play.api.Logger
+import play.api.libs.json.{Format, _}
 
 case class RelationshipRecordWrapper(
   relationshipRecordList: Seq[RelationshipRecord],
@@ -54,24 +53,24 @@ object RelationshipRecord {
       "otherParticipantUpdateTimestamp" -> relatisoshipRecord.otherParticipantUpdateTimestamp)
   }
 
-  private def transformEndReasonCodeDesc(endReasonCode: Option[String]): Option[String] = {
+  private def transformEndReasonCodeDesc(endReasonCode: Option[String]): Option[RelationshipEndReason] = {
     endReasonCode match {
       case None => None
-      case Some("Death (either participant)") => Some("DEATH")
-      case Some("Divorce/Separation") => Some("DIVORCE")
-      case Some("Relationship Type specific - for future use") => Some("DEFAULT")
-      case Some("Invalid Participant") => Some("INVALID_PARTICIPANT")
-      case Some("Ended by Participant 2") => Some("CANCELLED")
-      case Some("Ended by Participant 1") => Some("REJECTED")
-      case Some("Ended by HMRC") => Some("HMRC")
-      case Some("Closed by mutual consent of participants") => Some("CLOSED")
-      case Some("Merger") => Some("MERGER")
-      case Some("Retrospective") => Some("RETROSPECTIVE")
-      case Some("System Closure") => Some("SYSTEM")
-      case Some("Active") => Some("Active")
+      case Some("Death (either participant)") => Some(DEATH)
+      case Some("Divorce/Separation") => Some(DIVORCE)
+      case Some("Relationship Type specific - for future use") => Some(DEFAULT)
+      case Some("Invalid Participant") => Some(INVALID_PARTICIPANT)
+      case Some("Ended by Participant 2") => Some(CANCELLED)
+      case Some("Ended by Participant 1") => Some(REJECTED)
+      case Some("Ended by HMRC") => Some(HMRC)
+      case Some("Closed by mutual consent of participants") => Some(CLOSED)
+      case Some("Merger") => Some(MERGER)
+      case Some("Retrospective") => Some(RETROSPECTIVE)
+      case Some("System Closure") => Some(SYSTEM)
+      case Some("Active") => Some(ACTIVE)
       case unknown =>
         Logger.warn(s"Unexpected reason code :'${unknown}'")
-        Some("DEFAULT")
+        Some(DEFAULT)
     }
   }
 }

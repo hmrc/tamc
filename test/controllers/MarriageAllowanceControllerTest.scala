@@ -16,17 +16,16 @@
 
 package controllers
 
-import models.{UpdateRelationshipResponse, UserRecord}
+import models.{CANCELLED, DEATH, UpdateRelationshipResponse, UserRecord}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{OK, contentAsString, defaultAwaitTimeout}
 import test_utils._
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.play.test.UnitSpec
 
 class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
 
@@ -219,7 +218,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       testStubDataFromAPI(list(0), expectedOutputMap)
 
       expectedOutputMap = Map("participant" -> "Recipient", "creationTimestamp" -> "20150531235901", "participant1StartDate" -> "20011230",
-        "relationshipEndReason" -> "DEATH", "participant1EndDate" -> "20101230", "otherParticipantInstanceIdentifier" -> participiant1Cid,
+        "relationshipEndReason" -> DEATH.name, "participant1EndDate" -> "20101230", "otherParticipantInstanceIdentifier" -> participiant1Cid,
         "otherParticipantUpdateTimestamp" -> participiant1Ts)
 
       testStubDataFromAPI(list(1), expectedOutputMap)
@@ -278,7 +277,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
 
       list.size shouldBe 1
       val expectedOutputMap = Map("participant" -> "Recipient", "creationTimestamp" -> "20150531235901", "participant1StartDate" -> "20011230",
-        "relationshipEndReason" -> "CANCELLED", "participant1EndDate" -> "20101230", "otherParticipantInstanceIdentifier" -> participiant0Cid,
+        "relationshipEndReason" -> CANCELLED.name, "participant1EndDate" -> "20101230", "otherParticipantInstanceIdentifier" -> participiant0Cid,
         "otherParticipantUpdateTimestamp" -> participiant0Ts)
 
       testStubDataFromAPI(list(0), expectedOutputMap)
