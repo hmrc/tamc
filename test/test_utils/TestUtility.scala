@@ -98,12 +98,6 @@ trait TestUtility {
         Future.successful(response)
       }
 
-      protected def doPutString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
-
-      protected def doEmptyPut[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
-
-      protected def doFormPut(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
-
       override protected def actorSystem: ActorSystem = Play.current.actorSystem
       override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
     }
