@@ -17,13 +17,11 @@
 package fixtures
 
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
-import errors.ErrorResponseStatus.BAD_REQUEST
 import javax.inject.Inject
 import metrics.Metrics
 import models.MultiYearCreateRelationshipRequestHolder
 import services.MarriageAllowanceService
-import test_utils.TestData.Cids
-import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.time
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,26 +32,15 @@ class FakeMarriageAllowanceService @Inject()(override val dataConnector: Marriag
                                                                                                 emailConnector,
                                                                                                 metrics) {
 
-  //def makeFakeController(
-  // testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")),
-  // isErrorController: Boolean = false)
-
-
       override val currentTaxYear: Int = time.TaxYear.taxYearFor(testingTime.toLocalDate).startYear
       override val startTaxYear = 2015
       override val maSupportedYearsCount = 5
 
-      override def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder, journey: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
-        isErrorController match {
-          case true =>
-            createRelationshipRequestHolder.request.transferor_cid match {
-              case Cids.cidBadRequest => throw new BadRequestException(BAD_REQUEST)
-              case Cids.cidConflict => Future.failed(new Upstream4xxResponse("Cannot update as Participant", 409, 409))
-              case Cids.cidServiceUnavailable => Future.failed(new Upstream5xxResponse("LTM000503", 503, 503))
-              case _ => throw new Exception("this exception should not be thrown")
-            }
-          case _ => super.createMultiYearRelationship(createRelationshipRequestHolder, journey)
-        }
+      override def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder,
+                                               journey: String)
+                                              (implicit hc: HeaderCarrier,
+                                               ec: ExecutionContext): Future[Unit] = {
+        super.createMultiYearRelationship(createRelationshipRequestHolder, journey)
       }
 
 }

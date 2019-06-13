@@ -31,15 +31,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class MarriageAllowanceServiceTest extends UnitSpec with GuiceOneAppPerSuite {
 
   implicit lazy override val app: Application = new GuiceApplicationBuilder()
-    .overrides(bind(classOf[MarriageAllowanceDataConnector]).to[mockDeceasedDataConnector])
-    .overrides(bind(classOf[EmailConnector]).to[mockEmailConnector])
+    .overrides(bind(classOf[MarriageAllowanceDataConnector]).to[MockDeceasedDataConnector])
+    .overrides(bind(classOf[EmailConnector]).to[MockEmailConnector])
     .build()
 
   "when request is sent with deceased recipient in MarriageAllowanceService" should {
     "return a BadRequestException" in {
         val service = app.injector.instanceOf[MarriageAllowanceService]
         val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
-        val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
+        val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(HeaderCarrier(), implicitly)
         intercept[BadRequestException] {
           await(response)
         }

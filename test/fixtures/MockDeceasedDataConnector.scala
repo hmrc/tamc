@@ -24,7 +24,7 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class mockDeceasedDataConnector @Inject() (http: HttpClient) extends MarriageAllowanceDataConnector(http) {
+class MockDeceasedDataConnector @Inject() (http: HttpClient) extends MarriageAllowanceDataConnector(http) {
   override val serviceUrl = ""
   override val urlHeaderEnvironment = ""
   override val urlHeaderAuthorization = "foo"

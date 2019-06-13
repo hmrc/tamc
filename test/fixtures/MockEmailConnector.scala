@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package support
+package fixtures
 
-import com.google.inject.AbstractModule
-import config.AppConfig
-import connectors.HmrcTierConnector
-import javax.inject.Scope
-import org.mockito.Mockito.mock
-import service.mockDeceasedDataConnector
-import services.BikListService
-import utils.{SplunkLogger, TestAuthAction, TestNoSessionCheckAction}
+import connectors.EmailConnector
+import javax.inject.Inject
+import models.SendEmailRequest
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-trait DeceasedMarriage extends Scope {
+import scala.concurrent.{ExecutionContext, Future}
 
-  object GuiceTestModule extends AbstractModule {
-    override def configure(): Unit = {
-      bind(classOf[mockDeceasedDataConnector]).toInstance(mock(classOf[mockDeceasedDataConnector]))
-    }
+class MockEmailConnector @Inject()(http: HttpClient) extends EmailConnector(http) {
+  override val emailUrl = "bar"
+  override def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+    Future(HttpResponse(200,None))
   }
-
 }

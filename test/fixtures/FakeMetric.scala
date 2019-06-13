@@ -16,14 +16,13 @@
 
 package fixtures
 
-import com.codahale.metrics.{MetricRegistry, Timer}
 import com.codahale.metrics.Timer.Context
-import javax.inject.Inject
+import com.codahale.metrics.{MetricRegistry, Timer}
 import metrics.Metrics
 import models.ApiType.ApiType
 import org.scalatest.mockito.MockitoSugar
 
-class FakeMetric @Inject()(metrics: MetricRegistry) extends Metrics(metrics) {
+class FakeMetric extends Metrics(MockitoSugar.mock[MetricRegistry]) {
 
       val fakeTimerContext = MockitoSugar.mock[Timer.Context]
 

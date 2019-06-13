@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package test_utils
+package utils
 
 import models.DesUpdateRelationshipRequest
 import play.api.libs.json.{JsValue, Json}

@@ -16,20 +16,23 @@
 
 package controllers
 
-import javax.inject.Inject
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{BAD_REQUEST, OK, contentAsString, defaultAwaitTimeout}
-import test_utils.{TestData, TestUtility}
+import utils.{TestData, TestUtility}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 
-class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceOneAppPerSuite {
+import scala.concurrent.ExecutionContext
+
+class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite {
 
   override implicit lazy val app: Application = fakeApplication
+
+  implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
 
   "Checking user record" should {
 
@@ -42,7 +45,7 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
       val recipientNino = recipient.citizen.nino
       val recipientGender = recipient.gender
 
-      val controller = testUtility.makeFakeController()
+      val controller = TestUtility.makeFakeController()
       val testData = s"""{"name":"foo","lastName":"bar", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
       val request = FakeRequest().withBody(Json.parse(testData))
 
@@ -63,7 +66,7 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
         val recipientNino = recipient.citizen.nino
         val recipientGender = recipient.gender
 
-        val controller = makeFakeController()
+        val controller = TestUtility.makeFakeController()
         val testData = s"""{"name":"rty","lastName":"qwe", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
         val request = FakeRequest().withBody(Json.parse(testData))
 
@@ -80,7 +83,7 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
         val recipientNino = recipient.citizen.nino
         val recipientGender = recipient.gender
 
-        val controller = makeFakeController()
+        val controller = TestUtility.makeFakeController()
         val testData = s"""{"name":"rty","lastName":"qwe abc", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
         val request = FakeRequest().withBody(Json.parse(testData))
 
@@ -97,7 +100,7 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
         val recipientNino = recipient.citizen.nino
         val recipientGender = recipient.gender
 
-        val controller = makeFakeController()
+        val controller = TestUtility.makeFakeController()
         val testData = s"""{"name":"fgh","lastName":"asd", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
         val request = FakeRequest().withBody(Json.parse(testData))
 
@@ -110,7 +113,7 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
 
       "return transferor deceased BadRequest when recipient not found" in {
 
-        val controller = makeFakeController()
+        val controller = TestUtility.makeFakeController()
         val testData = s"""{"name":"abc","lastName":"def", "nino":"AB242424B", "gender":"M"}"""
         val request = FakeRequest().withBody(Json.parse(testData))
 
@@ -131,7 +134,7 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
       val recipientNino = recipient.citizen.nino
       val recipientCid = recipient.citizen.cid.cid
 
-      val controller = makeFakeController()
+      val controller = TestUtility.makeFakeController()
       val testData = s"""{"name":"fgh","lastName":"asd", "nino":"${recipientNino}", "gender":"123"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)
@@ -141,7 +144,7 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
 
     "return bad request should be handled" in {
 
-      val controller = makeFakeController(isErrorController = true)
+      val controller = TestUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.badRequest
@@ -157,7 +160,7 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
 
     "return NotFound should be handled" in {
 
-      val controller = makeFakeController(isErrorController = true)
+      val controller = TestUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.citizenNotFound
@@ -173,7 +176,7 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
 
     "return InternalServerException should be handled" in {
 
-      val controller = makeFakeController(isErrorController = true)
+      val controller = TestUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.serverError
@@ -189,7 +192,7 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
 
     "return Service unavailable should be handled" in {
 
-      val controller = makeFakeController(isErrorController = true)
+      val controller = TestUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.serviceUnavailable
@@ -214,10 +217,10 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
       val recipientCid = testInput.transferor.cid.cid
       val transferorNino = Nino(testInput.recipient.nino)
       val transferorCid = testInput.recipient.cid.cid
-      val recipientTs = testInput.transferor.timestamp.toString()
-      val transferorTs = testInput.recipient.timestamp.toString()
+      val recipientTs = testInput.transferor.timestamp.toString
+      val transferorTs = testInput.recipient.timestamp.toString
 
-      val controller = makeFakeController(isErrorController = true)
+      val controller = TestUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
@@ -234,10 +237,10 @@ class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceO
       val recipientCid = testInput.transferor.cid.cid
       val transferorNino = Nino(testInput.recipient.nino)
       val transferorCid = testInput.recipient.cid.cid
-      val recipientTs = testInput.transferor.timestamp.toString()
-      val transferorTs = testInput.recipient.timestamp.toString()
+      val recipientTs = testInput.transferor.timestamp.toString
+      val transferorTs = testInput.recipient.timestamp.toString
 
-      val controller = makeFakeController(isErrorController = true)
+      val controller = TestUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)

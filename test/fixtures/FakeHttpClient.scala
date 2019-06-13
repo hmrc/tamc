@@ -21,12 +21,12 @@ import com.typesafe.config.Config
 import models.DesUpdateRelationshipRequest
 import play.api.Play
 import play.api.libs.json.Writes
-import test_utils.{DummyHttpResponse, HttpPUTCallWithHeaders}
+import utils.{DummyHttpResponse, HttpPUTCallWithHeaders}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
-import test_utils.TestData._
+import utils.TestData._
 import uk.gov.hmrc.http.hooks.HttpHook
 
 class FakeHttpClient extends HttpClient {

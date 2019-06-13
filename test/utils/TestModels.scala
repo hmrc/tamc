@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package test_utils
+package utils
 
 import models.{ResponseStatus, UserRecord}
 import play.api.libs.json.{Format, JsSuccess, JsValue, Json}

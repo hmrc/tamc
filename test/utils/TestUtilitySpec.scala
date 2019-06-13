@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package test_utils
+package utils
 
 import models.{Cid, FindRecipientRequest, Gender, Timestamp}
 import org.scalatest.concurrent.ScalaFutures
@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.math.BigDecimal.long2bigDecimal
 import uk.gov.hmrc.http.HeaderCarrier
 
-class TestUtilityTest extends UnitSpec with TestUtility with OneAppPerSuite {
+class TestUtilitySpec extends UnitSpec with OneAppPerSuite {
 
   override implicit lazy val app: Application = fakeApplication
 
@@ -43,7 +43,7 @@ class TestUtilityTest extends UnitSpec with TestUtility with OneAppPerSuite {
       val userCid = user.cid.cid
       val userTs = user.timestamp
 
-      val controller = makeFakeController()
+      val controller =TestUtility.makeFakeController()
       val request = FakeRequest()
       implicit val hc = HeaderCarrier()
       val result = controller.marriageAllowanceService.dataConnector.findCitizen(Nino(userNino))
@@ -60,7 +60,7 @@ class TestUtilityTest extends UnitSpec with TestUtility with OneAppPerSuite {
     }
 
     "sanity check for findRecipient" in {
-      val controller = makeFakeController()
+      val controller =TestUtility.makeFakeController()
       val request = FakeRequest()
       implicit val hc = HeaderCarrier()
 
@@ -86,7 +86,7 @@ class TestUtilityTest extends UnitSpec with TestUtility with OneAppPerSuite {
       val participiant1Cid: String = participiant1.partner.cid.cid.toString
       val participiant1Ts = participiant1.partner.timestamp.toString()
 
-      val controller = makeFakeController()
+      val controller =TestUtility.makeFakeController()
       val request = FakeRequest()
       implicit val hc = HeaderCarrier()
       val result = controller.marriageAllowanceService.dataConnector.listRelationship(testCid)
