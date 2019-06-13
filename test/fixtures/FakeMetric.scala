@@ -14,11 +14,23 @@
  * limitations under the License.
  */
 
-package connectors
+package fixtures
 
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.microservice.config.LoadAuditingConfig
+import com.codahale.metrics.{MetricRegistry, Timer}
+import com.codahale.metrics.Timer.Context
+import javax.inject.Inject
+import metrics.Metrics
+import models.ApiType.ApiType
+import org.scalatest.mockito.MockitoSugar
 
-object ApplicationAuditConnector extends AuditConnector {
-  override lazy val auditingConfig = LoadAuditingConfig("auditing")
+class FakeMetric @Inject()(metrics: MetricRegistry) extends Metrics(metrics) {
+
+      val fakeTimerContext = MockitoSugar.mock[Timer.Context]
+
+      override def startTimer(api: ApiType): Context = fakeTimerContext
+
+      override def incrementSuccessCounter(api: ApiType): Unit = {}
+
+      override def incrementTotalCounter(api: ApiType): Unit = {}
+
 }

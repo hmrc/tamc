@@ -32,7 +32,7 @@ lazy val microservice = Project(appName, file("."))
     parallelExecution in Test := false,
     fork in Test := true,
     retrieveManaged := true,
-    routesGenerator := StaticRoutesGenerator,
+    routesGenerator := InjectedRoutesGenerator,
     resolvers := Seq(
       Resolver.bintrayRepo("hmrc", "releases"),
       Resolver.typesafeRepo("releases"),

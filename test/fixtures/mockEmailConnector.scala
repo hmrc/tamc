@@ -14,26 +14,19 @@
  * limitations under the License.
  */
 
-package connectors
+package fixtures
 
+import connectors.EmailConnector
 import javax.inject.Inject
 import models.SendEmailRequest
-import play.api.Mode.Mode
-import play.api.{Configuration, Play}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EmailConnector @Inject()(httpClient: HttpClient) extends ServicesConfig {
-  override protected def mode: Mode = Play.current.mode
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
-
-  val emailUrl: String = baseUrl("email")
-
-  def url(path: String) = s"$emailUrl$path"
-
-  def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
-    httpClient.POST(url("/hmrc/email"), sendEmailRequest)
+class mockEmailConnector @Inject()(http: HttpClient) extends EmailConnector(http) {
+  override val emailUrl = "bar"
+  override def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+    Future(HttpResponse(200,None))
+  }
 }

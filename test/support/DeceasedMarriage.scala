@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package connectors
+package support
 
-import play.api.Mode.Mode
-import play.api.{Configuration, Play}
-import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
-import uk.gov.hmrc.play.config.ServicesConfig
-import utils.WSHttp
+import com.google.inject.AbstractModule
+import config.AppConfig
+import connectors.HmrcTierConnector
+import javax.inject.Scope
+import org.mockito.Mockito.mock
+import service.mockDeceasedDataConnector
+import services.BikListService
+import utils.{SplunkLogger, TestAuthAction, TestNoSessionCheckAction}
 
+trait DeceasedMarriage extends Scope {
 
-object ApplicationAuthConnector extends AuthConnector with ServicesConfig with WSHttp {
-  override protected def mode: Mode = Play.current.mode
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
+  object GuiceTestModule extends AbstractModule {
+    override def configure(): Unit = {
+      bind(classOf[mockDeceasedDataConnector]).toInstance(mock(classOf[mockDeceasedDataConnector]))
+    }
+  }
 
-  override val authBaseUrl = baseUrl("auth")
 }

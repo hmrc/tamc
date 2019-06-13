@@ -17,13 +17,13 @@
 package test_utils
 
 import akka.actor.ActorSystem
-import com.codahale.metrics.Timer
 import com.codahale.metrics.Timer.Context
+import com.codahale.metrics.{MetricRegistry, Timer}
 import com.kenshoo.play.metrics.PlayModule
 import com.typesafe.config.Config
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
-import controllers.MarriageAllowanceController
 import errors.ErrorResponseStatus._
+import javax.inject.Inject
 import metrics.Metrics
 import models.ApiType.ApiType
 import models._
@@ -36,199 +36,24 @@ import services.MarriageAllowanceService
 import test_utils.TestData.{Cids, findMockData}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.http.ws.{WSGet, WSPost, WSPut}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.http.ws.{WSPost, WSPut}
 import uk.gov.hmrc.time
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait TestUtility {
+class TestUtility @Inject()(httpClient: HttpClient,
+                            dataConnector: MarriageAllowanceDataConnector,
+                            emailConnector: EmailConnector,
+                            metrics: Metrics,
+                            metricRegistry: MetricRegistry) {
 
   def bindModules: Seq[GuiceableModule] = Seq(new PlayModule)
 
-  def makeFakeController(testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")), isErrorController: Boolean = false) = {
 
-    val fakeHttpGet = new HttpGet with WSGet{
-      override val hooks = NoneRequired
-      var httpGetCallsToTest: List[HttpGETCallWithHeaders] = List()
 
-      override def doGet(url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
-        val adjustedUrl = s"GET-${url}"
-        httpGetCallsToTest = httpGetCallsToTest :+ HttpGETCallWithHeaders(url = adjustedUrl, env = hc.extraHeaders, bearerToken = hc.authorization)
-        var responseBody = findMockData(adjustedUrl)
-        val response = new DummyHttpResponse(responseBody, 200)
-        return Future.successful(response)
-      }
 
-      override protected def actorSystem: ActorSystem = Play.current.actorSystem
-      override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
-    }
 
-    val fakeHttpPost = new HttpPost with WSPost {
-      override val hooks = NoneRequired
-      var httpPostCallsToTest: List[HttpPOSTCallWithHeaders] = List()
-
-      override def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = {
-        val adjustedUrl = s"POST-${url}"
-        httpPostCallsToTest = httpPostCallsToTest :+ HttpPOSTCallWithHeaders(url = adjustedUrl, body = body, env = hc.extraHeaders, bearerToken = hc.authorization)
-        var responseBody = findMockData(adjustedUrl, Some(body))
-        val response = new DummyHttpResponse(responseBody, 200)
-        Future.successful(response)
-      }
-
-      override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
-
-      override def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
-
-      override def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
-
-      override protected def actorSystem: ActorSystem = Play.current.actorSystem
-      override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
-    }
-
-    val fakeHttpPut = new HttpPut with WSPut {
-      override val hooks = NoneRequired
-      var httpPutCallsToTest: List[HttpPUTCallWithHeaders] = List()
-
-      override def doPut[A](url: String, body: A)(implicit rds: Writes[A], hc: HeaderCarrier): Future[_root_.uk.gov.hmrc.http.HttpResponse] = {
-        val adjustedUrl = s"PUT-${url}"
-        val adjustedBody = body.asInstanceOf[DesUpdateRelationshipRequest]
-        httpPutCallsToTest = httpPutCallsToTest :+ HttpPUTCallWithHeaders(url = adjustedUrl, body = adjustedBody, env = hc.extraHeaders, bearerToken = hc.authorization)
-        var responseBody = findMockData(adjustedUrl, Some(adjustedBody))
-        val response = new DummyHttpResponse(responseBody, 200)
-        Future.successful(response)
-      }
-
-      override protected def actorSystem: ActorSystem = Play.current.actorSystem
-      override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
-    }
-
-    val fakeHttpEmailPost = new HttpPost with WSPost {
-      override val hooks = NoneRequired
-
-      var checkEmailCallCount = 0
-      var checkEmailCallData: Option[SendEmailRequest] = None
-
-      override def doPost[A](url: String, body: A, headers: Seq[(String, String)])(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = {
-        checkEmailCallCount = checkEmailCallCount + 1
-        checkEmailCallData = Some(body.asInstanceOf[SendEmailRequest])
-        body.asInstanceOf[SendEmailRequest] match {
-          case SendEmailRequest(addressList, _, _, _) if (addressList.exists { address => address.value.equals("bad-request@example.com") }) =>
-            Future.failed(new BadRequestException("throwing error for:" + addressList))
-          case _ =>
-            Future.successful(new DummyHttpResponse("", 200))
-        }
-      }
-
-      override def doPostString(url: String, body: String, headers: Seq[(String, String)])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
-
-      override def doEmptyPost[A](url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
-
-      override def doFormPost(url: String, body: Map[String, Seq[String]])(implicit hc: HeaderCarrier): Future[HttpResponse] = ???
-
-      override protected def actorSystem: ActorSystem = Play.current.actorSystem
-      override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
-    }
-
-    val fakeEmailConnector = new EmailConnector {
-      override val httpPost = fakeHttpEmailPost
-      override val emailUrl = "email-url"
-    }
-
-    val fakeMarriageAllowanceDataConnector = new MarriageAllowanceDataConnector {
-      override val httpGet: HttpGet = fakeHttpGet
-      override val httpPost: HttpPost = fakeHttpPost
-      override val httpPut: HttpPut = fakeHttpPut
-      override val serviceUrl: String = "foo"
-      override val urlHeaderEnvironment = "test-environment"
-      override val urlHeaderAuthorization = "test-bearer-token"
-
-      var findCitizenNinoToTest: Option[Nino] = None
-      var findRecipientNinoToTest: Option[Nino] = None
-      var findCitizenNinoToTestCount = 0
-      var findRecipientNinoToTestCount = 0
-      var checkAllowanceRelationshipCidToTest: Option[Cid] = None
-      var checkAllowanceRelationshipCidToTestCount = 0
-      var createAllowanceRelationshipDataToTest: Option[DesCreateRelationshipRequest] = None
-      var createAllowanceRelationshipDataToTestCount = 0
-      var updateAllowanceRelationshipDataToTest: Option[DesUpdateRelationshipRequest] = None
-      var updateAllowanceRelationshipDataToTestCount = 0
-
-      override def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue] = {
-        findCitizenNinoToTest = Some(nino)
-        findCitizenNinoToTestCount = findCitizenNinoToTestCount + 1
-        super.findCitizen(nino)
-      }
-
-      override def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[JsValue] = {
-        findRecipientNinoToTest = Some(findRecipientRequest.nino)
-        findRecipientNinoToTestCount = findRecipientNinoToTestCount + 1
-        super.findRecipient(findRecipientRequest)
-      }
-
-      override def updateAllowanceRelationship(data: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
-        def errorResponse(reason: String, code: Int) = Future {
-          new DummyHttpResponse(reason, code)
-        }
-
-        isErrorController match {
-          case true =>
-            data.participant1.instanceIdentifier.toLong match {
-              case Cids.cidBadRequest => errorResponse("""{"Reason":"Cannot update as Participant 1 update time stamp has changed since last view of data"}""", 400)
-              case Cids.cidCitizenNotFound => errorResponse("""{"Reason":"Person Instance identifier not found"}""", 404)
-              case _ => throw new Exception("this exception should not be thrown")
-            }
-          case false => updateAllowanceRelationshipDataToTest = Some(data)
-            updateAllowanceRelationshipDataToTestCount = updateAllowanceRelationshipDataToTestCount + 1
-            super.updateAllowanceRelationship(data)
-        }
-      }
-
-      override def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue] = {
-        isErrorController match {
-          case true =>
-            cid match {
-              case Cids.cidBadRequest => throw new BadRequestException(BAD_REQUEST)
-              case Cids.cidCitizenNotFound => throw new NotFoundException(CITIZEN_NOT_FOUND)
-              case Cids.cidServerError => throw new InternalServerException(SERVER_ERROR)
-              case Cids.cidServiceUnavailable => throw new ServiceUnavailableException(SERVICE_UNAVILABLE)
-              case _ => throw new Exception("this exception should not be thrown")
-            }
-          case _ => super.listRelationship(cid, includeHistoric)
-        }
-      }
-    }
-
-    val fakeMetrics = new Metrics {
-      val fakeTimerContext = MockitoSugar.mock[Timer.Context]
-
-      override def startTimer(api: ApiType): Context = fakeTimerContext
-
-      override def incrementSuccessCounter(api: ApiType): Unit = {}
-
-      override def incrementTotalCounter(api: ApiType): Unit = {}
-    }
-
-    val fakeMarriageAllowanceService = new MarriageAllowanceService {
-      override val dataConnector = fakeMarriageAllowanceDataConnector
-      override val emailConnector = fakeEmailConnector
-      override val metrics = fakeMetrics
-      override val currentTaxYear: Int = time.TaxYear.taxYearFor(testingTime.toLocalDate).startYear
-      override val startTaxYear = 2015
-      override val maSupportedYearsCount = 5
-
-      override def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder, journey: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) = {
-        isErrorController match {
-          case true =>
-            createRelationshipRequestHolder.request.transferor_cid match {
-              case Cids.cidBadRequest => throw new BadRequestException(BAD_REQUEST)
-              case Cids.cidConflict => Future.failed(new Upstream4xxResponse("Cannot update as Participant", 409, 409))
-              case Cids.cidServiceUnavailable => Future.failed(new Upstream5xxResponse("LTM000503", 503, 503))
-              case _ => throw new Exception("this exception should not be thrown")
-            }
-          case _ => super.createMultiYearRelationship(createRelationshipRequestHolder, journey)
-        }
-      }
-    }
 
     val debugObject = new Object {
       def findCitizenNinoToTest = fakeMarriageAllowanceDataConnector.findCitizenNinoToTest
@@ -266,5 +91,5 @@ trait TestUtility {
       override val marriageAllowanceService = fakeMarriageAllowanceService
       val debugData = debugObject
     }
-  }
+
 }

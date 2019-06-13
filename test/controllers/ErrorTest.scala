@@ -16,6 +16,7 @@
 
 package controllers
 
+import javax.inject.Inject
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.libs.json.{JsValue, Json}
@@ -26,7 +27,7 @@ import test_utils.{TestData, TestUtility}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 
-class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
+class ErrorTest @Inject()(testUtility: TestUtility) extends UnitSpec with GuiceOneAppPerSuite {
 
   override implicit lazy val app: Application = fakeApplication
 
@@ -41,7 +42,7 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientNino = recipient.citizen.nino
       val recipientGender = recipient.gender
 
-      val controller = makeFakeController()
+      val controller = testUtility.makeFakeController()
       val testData = s"""{"name":"foo","lastName":"bar", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
       val request = FakeRequest().withBody(Json.parse(testData))
 

@@ -18,10 +18,9 @@ package controllers
 
 import models.MultiYearDesCreateRelationshipRequest
 import play.api.libs.json.Json
-import test_utils.TestUtility
 import uk.gov.hmrc.play.test.UnitSpec
 
-class CustomJson extends UnitSpec with TestUtility {
+class CustomJson extends UnitSpec {
   "MultiYearDesCreateRelationshipRequest be properly transformed to JSON" should {
     "if dates are not available" in {
       Json.toJson(MultiYearDesCreateRelationshipRequest("a", "b", "c", "d", None, None))

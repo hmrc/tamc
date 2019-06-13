@@ -548,7 +548,7 @@ object TestData {
       recipientOutTimestamp = Some("200000003"))
   }
 
-  lazy val mappedMultiYearCreate = Map(
+  lazy val mappedMultiYearCreate: Map[String, CreateAllowanceTransferRelationshipResponse] = Map(
     MultiYearCreate.happyScenarioStep1.key -> MultiYearCreate.happyScenarioStep1,
     MultiYearCreate.happyScenarioStep2.key -> MultiYearCreate.happyScenarioStep2)
 
@@ -613,7 +613,7 @@ object TestData {
     }
   }
 
-  def decodeQueryStringValue(value: String) =
+  def decodeQueryStringValue(value: String): Timestamp =
     URLDecoder.decode(value, "UTF-8")
 
 }

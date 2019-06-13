@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package Fixtures
+package fixtures
 
 import models._
 import uk.gov.hmrc.emailaddress.EmailAddress

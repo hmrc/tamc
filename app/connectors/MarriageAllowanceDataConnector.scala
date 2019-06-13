@@ -16,72 +16,61 @@
 
 package connectors
 
+import javax.inject.Inject
 import models.{Cid, DesUpdateRelationshipRequest, FindRecipientRequest, MultiYearDesCreateRelationshipRequest}
 import play.api.Mode.Mode
 import play.api.libs.json.JsValue
 import play.api.{Configuration, Play}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
-import utils.WSHttp
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object MarriageAllowanceDataConnector extends MarriageAllowanceDataConnector with ServicesConfig {
+class MarriageAllowanceDataConnector @Inject()(httpClient: HttpClient) extends ServicesConfig {
   override protected def mode: Mode = Play.current.mode
+
   override protected def runModeConfiguration: Configuration = Play.current.configuration
 
-  override val httpGet = WSHttp
-  override val httpPost = WSHttp
-  override val httpPut = WSHttp
-  override val serviceUrl = baseUrl("marriage-allowance-des")
-  override val urlHeaderEnvironment = config("marriage-allowance-des").getString("environment").get
-  override val urlHeaderAuthorization = s"Bearer ${config("marriage-allowance-des").getString("authorization-token").get}"
+  val serviceUrl: String = baseUrl("marriage-allowance-des")
+  val urlHeaderEnvironment: String = config("marriage-allowance-des").getString("environment").get
+  val urlHeaderAuthorization: String = s"Bearer ${config("marriage-allowance-des").getString("authorization-token").get}"
 
-}
-
-trait MarriageAllowanceDataConnector {
-
-  val httpGet: HttpGet
-  val httpPost: HttpPost
-  val httpPut: HttpPut
-  val serviceUrl: String
-  val urlHeaderEnvironment: String
-  val urlHeaderAuthorization: String
   def url(path: String) = s"$serviceUrl$path"
 
-  private def createHeaderCarrier = HeaderCarrier(extraHeaders = Seq(("Environment" -> urlHeaderEnvironment)), authorization = Some(Authorization(urlHeaderAuthorization)))
+  private def createHeaderCarrier = HeaderCarrier(extraHeaders = Seq("Environment" -> urlHeaderEnvironment), authorization = Some(Authorization(urlHeaderAuthorization)))
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue] = {
     implicit val hc = createHeaderCarrier
-    val path = url(s"/marriage-allowance/citizen/${nino}")
-    httpGet.GET[JsValue](path)
+    val path = url(s"/marriage-allowance/citizen/$nino")
+    httpClient.GET[JsValue](path)
   }
 
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue] = {
     implicit val hc = createHeaderCarrier
-    val path = url(s"/marriage-allowance/citizen/${cid}/relationships?includeHistoric=${includeHistoric}")
-    httpGet.GET[JsValue](path)
+    val path = url(s"/marriage-allowance/citizen/$cid/relationships?includeHistoric=$includeHistoric")
+    httpClient.GET[JsValue](path)
   }
 
   def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[JsValue] = {
-    implicit val hc = createHeaderCarrier
+    implicit val hc: HeaderCarrier = createHeaderCarrier
     val query = s"surname=${utils.encodeQueryStringValue(findRecipientRequest.lastName)}&forename1=${utils.encodeQueryStringValue(findRecipientRequest.name)}&gender=${utils.encodeQueryStringValue(findRecipientRequest.gender.gender)}"
     val nino = findRecipientRequest.nino.nino.replaceAll(" ", "")
-    val path = url(s"/marriage-allowance/citizen/${nino}/check?${query}")
-    httpGet.GET[JsValue](path)
+    val path = url(s"/marriage-allowance/citizen/$nino/check?$query")
+    httpClient.GET[JsValue](path)
   }
 
   def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
     implicit val hc = createHeaderCarrier
-    val path = url(s"/marriage-allowance/02.00.00/citizen/${createRelationshipRequest.recipientCid}/relationship/${relType}")
-    httpPost.POST(path, createRelationshipRequest)
+    val path = url(s"/marriage-allowance/02.00.00/citizen/${createRelationshipRequest.recipientCid}/relationship/$relType")
+    httpClient.POST(path, createRelationshipRequest)
   }
 
   def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
     implicit val hc = createHeaderCarrier
     val path = url(s"/marriage-allowance/citizen/${updateRelationshipRequest.participant1.instanceIdentifier}/relationship")
-    httpPut.PUT(path, updateRelationshipRequest)
+    httpClient.PUT(path, updateRelationshipRequest)
   }
 }

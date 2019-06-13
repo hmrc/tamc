@@ -16,37 +16,24 @@
 
 package controllers
 
-import errors._
 import errors.ErrorResponseStatus._
-import models.CreateRelationshipResponse
-import models.FindRecipientRequest
-import models.GetRelationshipResponse
-import models.RelationshipRecordStatusWrapper
-import models.RelationshipRecordWrapper
-import models.ResponseStatus
-import models.UpdateRelationshipRequestHolder
-import models.UpdateRelationshipResponse
-import models.UserRecord
+import errors._
+import javax.inject.Inject
+import models._
 import play.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.Json
-import play.api.mvc.Action
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.{Action, AnyContent}
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.microservice.controller.BaseController
-import models.MultiYearCreateRelationshipRequestHolder
-import models.TaxYear
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
-object MarriageAllowanceController extends MarriageAllowanceController {
-  override val marriageAllowanceService = MarriageAllowanceService
-}
+import scala.concurrent.ExecutionContext
 
-trait MarriageAllowanceController extends BaseController {
+class MarriageAllowanceController @Inject()(val marriageAllowanceService: MarriageAllowanceService)
+                                           (implicit ec: ExecutionContext) extends BaseController {
 
-  val marriageAllowanceService: MarriageAllowanceService
-
-  def getRecipientRelationship(transferorNino: Nino) = Action.async(parse.json) { implicit request =>
+  def getRecipientRelationship(transferorNino: Nino): Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[FindRecipientRequest] { findRecipientRequest =>
       marriageAllowanceService.getRecipientRelationship(transferorNino, findRecipientRequest) map {
         case (recipientRecord: UserRecord, taxYears: List[TaxYear]) =>
@@ -74,7 +61,7 @@ trait MarriageAllowanceController extends BaseController {
     }
   }
 
-  def createMultiYearRelationship(transferorNino: Nino, journey: String) = Action.async(parse.json) {
+  def createMultiYearRelationship(transferorNino: Nino, journey: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[MultiYearCreateRelationshipRequestHolder] { createRelationshipRequestHolder =>
         marriageAllowanceService.createMultiYearRelationship(createRelationshipRequestHolder, journey) map {
@@ -101,7 +88,7 @@ trait MarriageAllowanceController extends BaseController {
       }
   }
 
-  def listRelationship(transferorNino: Nino) = Action.async { implicit request =>
+  def listRelationship(transferorNino: Nino): Action[AnyContent] = Action.async { implicit request =>
     marriageAllowanceService.listRelationship(transferorNino) map {
       case relationshipList: RelationshipRecordWrapper =>
         Ok(Json.toJson(RelationshipRecordStatusWrapper(relationship_record = relationshipList, status = ResponseStatus(status_code = "OK"))))
@@ -133,7 +120,7 @@ trait MarriageAllowanceController extends BaseController {
     }
   }
 
-  def updateRelationship(transferorNino: Nino) = Action.async(parse.json) {
+  def updateRelationship(transferorNino: Nino): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[UpdateRelationshipRequestHolder] {
         updateRelationshipRequestHolder =>
