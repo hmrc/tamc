@@ -16,25 +16,25 @@
 
 package utils
 
+import controllers.FakeTamcApplication
 import models.{Cid, FindRecipientRequest, Gender, Timestamp}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import org.scalatestplus.play.OneAppPerSuite
-import play.api.Application
 import play.api.libs.json.{JsNumber, JsString}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.math.BigDecimal.long2bigDecimal
-import uk.gov.hmrc.http.HeaderCarrier
 
-class TestUtilitySpec extends UnitSpec with OneAppPerSuite {
+class TestUtilitySpec extends UnitSpec with OneAppPerSuite with FakeTamcApplication {
 
-  override implicit lazy val app: Application = fakeApplication
+  val testUtility: TestUtility = app.injector.instanceOf[TestUtility]
 
-  "TestUtilityTest" should {
+  "TestUtilitySpec" should {
 
     "sanity check for findCitizen" in {
 
@@ -43,9 +43,9 @@ class TestUtilitySpec extends UnitSpec with OneAppPerSuite {
       val userCid = user.cid.cid
       val userTs = user.timestamp
 
-      val controller =TestUtility.makeFakeController()
+      val controller =testUtility.makeFakeController()
       val request = FakeRequest()
-      implicit val hc = HeaderCarrier()
+      implicit val hc: HeaderCarrier = HeaderCarrier()
       val result = controller.marriageAllowanceService.dataConnector.findCitizen(Nino(userNino))
       ScalaFutures.whenReady(result)(json => {
         (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "InstanceIdentifier").get shouldBe JsNumber(userCid)
@@ -60,9 +60,9 @@ class TestUtilitySpec extends UnitSpec with OneAppPerSuite {
     }
 
     "sanity check for findRecipient" in {
-      val controller =TestUtility.makeFakeController()
+      val controller =testUtility.makeFakeController()
       val request = FakeRequest()
-      implicit val hc = HeaderCarrier()
+      implicit val hc: HeaderCarrier = HeaderCarrier()
 
       val recipient = TestData.Recipients.recHasNoAllowance
       val recipientNino = recipient.citizen.nino
@@ -86,9 +86,9 @@ class TestUtilitySpec extends UnitSpec with OneAppPerSuite {
       val participiant1Cid: String = participiant1.partner.cid.cid.toString
       val participiant1Ts = participiant1.partner.timestamp.toString()
 
-      val controller =TestUtility.makeFakeController()
+      val controller =testUtility.makeFakeController()
       val request = FakeRequest()
-      implicit val hc = HeaderCarrier()
+      implicit val hc: HeaderCarrier = HeaderCarrier()
       val result = controller.marriageAllowanceService.dataConnector.listRelationship(testCid)
       ScalaFutures.whenReady(result)(json => {
         ((json \ "relationships") (0) \ "otherParticipantUpdateTimestamp").get shouldBe JsString(participiant0Ts)

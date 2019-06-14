@@ -20,6 +20,7 @@ import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import javax.inject.Inject
 import metrics.Metrics
 import models.MultiYearCreateRelationshipRequestHolder
+import org.joda.time.DateTime
 import services.MarriageAllowanceService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.time
@@ -32,9 +33,9 @@ class FakeMarriageAllowanceService @Inject()(override val dataConnector: Marriag
                                                                                                 emailConnector,
                                                                                                 metrics) {
 
+      override val startTaxYear: Int = 2015
+      val testingTime: DateTime = new DateTime(startTaxYear,1,1,0,0)
       override val currentTaxYear: Int = time.TaxYear.taxYearFor(testingTime.toLocalDate).startYear
-      override val startTaxYear = 2015
-      override val maSupportedYearsCount = 5
 
       override def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder,
                                                journey: String)

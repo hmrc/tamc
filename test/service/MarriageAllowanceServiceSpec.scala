@@ -16,24 +16,27 @@
 
 package service
 
-import fixtures._
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
+import fixtures._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import services.MarriageAllowanceService
 import uk.gov.hmrc.http.{HeaderCarrier, _}
+import controllers.FakeTamcApplication
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class MarriageAllowanceServiceTest extends UnitSpec with GuiceOneAppPerSuite {
+class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite with FakeTamcApplication {
 
-  implicit lazy override val app: Application = new GuiceApplicationBuilder()
-    .overrides(bind(classOf[MarriageAllowanceDataConnector]).to[MockDeceasedDataConnector])
-    .overrides(bind(classOf[EmailConnector]).to[MockEmailConnector])
-    .build()
+  implicit lazy override val app: Application = GuiceApplicationBuilder(
+    disabled = Seq(classOf[com.kenshoo.play.metrics.PlayModule])
+  )
+  .overrides(bind(classOf[MarriageAllowanceDataConnector]).to[MockDeceasedDataConnector])
+  .overrides(bind(classOf[EmailConnector]).to[MockEmailConnector])
+  .build()
 
   "when request is sent with deceased recipient in MarriageAllowanceService" should {
     "return a BadRequestException" in {

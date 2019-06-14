@@ -21,6 +21,7 @@ import errors.ErrorResponseStatus.BAD_REQUEST
 import javax.inject.Inject
 import metrics.Metrics
 import models.MultiYearCreateRelationshipRequestHolder
+import org.joda.time.DateTime
 import services.MarriageAllowanceService
 import utils.TestData.Cids
 import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
@@ -34,9 +35,9 @@ class FakeMarriageAllowanceErrrorControllerService @Inject()(override val dataCo
   emailConnector,
   metrics) {
 
+  override val startTaxYear: Int = 2015
+  val testingTime: DateTime = new DateTime(startTaxYear,1,1,0,0)
   override val currentTaxYear: Int = time.TaxYear.taxYearFor(testingTime.toLocalDate).startYear
-  override val startTaxYear = 2015
-  override val maSupportedYearsCount = 5
 
   override def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder,
                                            journey: String)

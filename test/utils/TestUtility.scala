@@ -19,30 +19,30 @@ package utils
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import controllers.MarriageAllowanceController
 import fixtures.{FakeHttpClient, FakeMarriageAllowanceDataConnector, FakeMarriageAllowanceErrorControllerDataConnector, FakeMarriageAllowanceErrrorControllerService, FakeMarriageAllowanceService, FakeMetric, MockEmailConnector}
+import javax.inject.Inject
 import metrics.Metrics
 import org.joda.time._
+import play.api.{Configuration, Environment}
 import services.MarriageAllowanceService
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.ExecutionContext
 
-object TestUtility {
+class TestUtility @Inject()(environment: Environment, runModeConfiguration: Configuration){
 
   def makeFakeController(testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")),
                          isErrorController: Boolean = false)(implicit ec: ExecutionContext): MarriageAllowanceController = {
 
     val httpClient: HttpClient = new FakeHttpClient
 
-
-    val emailConnector: EmailConnector = new MockEmailConnector(httpClient)
+    val emailConnector: EmailConnector = new MockEmailConnector(httpClient, environment, runModeConfiguration)
     val metrics: Metrics = new FakeMetric
 
     val dataConnector: MarriageAllowanceDataConnector = if(isErrorController){
-      new FakeMarriageAllowanceDataConnector(httpClient)
+      new FakeMarriageAllowanceDataConnector(httpClient, environment, runModeConfiguration)
     } else {
-      new FakeMarriageAllowanceErrorControllerDataConnector(httpClient)
+      new FakeMarriageAllowanceErrorControllerDataConnector(httpClient, environment, runModeConfiguration)
     }
-
 
     val marriageAllowanceService: MarriageAllowanceService = if(isErrorController){
       new FakeMarriageAllowanceService(dataConnector, emailConnector, metrics)

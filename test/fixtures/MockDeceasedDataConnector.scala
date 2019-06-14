@@ -19,12 +19,15 @@ package fixtures
 import connectors.MarriageAllowanceDataConnector
 import javax.inject.Inject
 import models.MultiYearDesCreateRelationshipRequest
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.{BadRequestException, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class MockDeceasedDataConnector @Inject() (http: HttpClient) extends MarriageAllowanceDataConnector(http) {
+class MockDeceasedDataConnector @Inject()(http: HttpClient,
+                                          environment: Environment,
+                                          runModeConfiguration: Configuration) extends MarriageAllowanceDataConnector(http, environment, runModeConfiguration) {
   override val serviceUrl = ""
   override val urlHeaderEnvironment = ""
   override val urlHeaderAuthorization = "foo"

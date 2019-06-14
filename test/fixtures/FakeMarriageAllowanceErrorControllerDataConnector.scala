@@ -20,16 +20,19 @@ import connectors.MarriageAllowanceDataConnector
 import errors.ErrorResponseStatus.{BAD_REQUEST, CITIZEN_NOT_FOUND, SERVER_ERROR, SERVICE_UNAVILABLE}
 import javax.inject.Inject
 import models.{Cid, DesCreateRelationshipRequest, DesUpdateRelationshipRequest, FindRecipientRequest}
+import play.api.{Configuration, Environment}
 import play.api.libs.json.JsValue
-import utils.DummyHttpResponse
-import utils.TestData.Cids
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import utils.DummyHttpResponse
+import utils.TestData.Cids
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FakeMarriageAllowanceErrorControllerDataConnector @Inject()(httpClient: HttpClient) extends MarriageAllowanceDataConnector(httpClient) {
+class FakeMarriageAllowanceErrorControllerDataConnector @Inject()(httpClient: HttpClient,
+                                                                  environment: Environment,
+                                                                  runModeConfiguration: Configuration) extends MarriageAllowanceDataConnector(httpClient, environment, runModeConfiguration) {
 
   override val serviceUrl: String = "foo"
   override val urlHeaderEnvironment = "test-environment"
@@ -37,14 +40,14 @@ class FakeMarriageAllowanceErrorControllerDataConnector @Inject()(httpClient: Ht
 
   var findCitizenNinoToTest: Option[Nino] = None
   var findRecipientNinoToTest: Option[Nino] = None
-  var findCitizenNinoToTestCount = 0
-  var findRecipientNinoToTestCount = 0
+  var findCitizenNinoToTestCount: Int = 0
+  var findRecipientNinoToTestCount: Int = 0
   var checkAllowanceRelationshipCidToTest: Option[Cid] = None
-  var checkAllowanceRelationshipCidToTestCount = 0
+  var checkAllowanceRelationshipCidToTestCount: Int = 0
   var createAllowanceRelationshipDataToTest: Option[DesCreateRelationshipRequest] = None
-  var createAllowanceRelationshipDataToTestCount = 0
+  var createAllowanceRelationshipDataToTestCount: Int = 0
   var updateAllowanceRelationshipDataToTest: Option[DesUpdateRelationshipRequest] = None
-  var updateAllowanceRelationshipDataToTestCount = 0
+  var updateAllowanceRelationshipDataToTestCount: Int = 0
 
   override def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue] = {
     findCitizenNinoToTest = Some(nino)
@@ -62,7 +65,6 @@ class FakeMarriageAllowanceErrorControllerDataConnector @Inject()(httpClient: Ht
     def errorResponse(reason: String, code: Int) = Future {
       new DummyHttpResponse(reason, code)
     }
-
 
     data.participant1.instanceIdentifier.toLong match {
       case Cids.cidBadRequest => errorResponse("""{"Reason":"Cannot update as Participant 1 update time stamp has changed since last view of data"}""", 400)

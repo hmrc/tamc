@@ -19,16 +19,18 @@ package connectors
 import javax.inject.Inject
 import models.SendEmailRequest
 import play.api.Mode.Mode
-import play.api.{Configuration, Play}
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EmailConnector @Inject()(httpClient: HttpClient) extends ServicesConfig {
-  override protected def mode: Mode = Play.current.mode
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
+class EmailConnector @Inject()(httpClient: HttpClient,
+                               environment: Environment,
+                               val runModeConfiguration: Configuration) extends ServicesConfig {
+
+  override protected def mode: Mode = environment.mode
 
   val emailUrl: String = baseUrl("email")
 
