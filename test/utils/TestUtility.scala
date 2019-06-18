@@ -16,9 +16,10 @@
 
 package utils
 
+import config.ApplicationConfig
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import controllers.MarriageAllowanceController
-import fixtures.{FakeHttpClient, FakeMarriageAllowanceDataConnector, FakeMarriageAllowanceErrorControllerDataConnector, FakeMarriageAllowanceErrrorControllerService, FakeMarriageAllowanceService, FakeMetric, MockEmailConnector}
+import fixtures.{FakeHttpClient, FakeMarriageAllowanceDataConnector, FakeMarriageAllowanceErrorControllerDataConnector, FakeMarriageAllowanceErrorControllerService, FakeMarriageAllowanceService, FakeMetric, MockEmailConnector}
 import javax.inject.Inject
 import metrics.Metrics
 import org.joda.time._
@@ -28,7 +29,7 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.ExecutionContext
 
-class TestUtility @Inject()(environment: Environment, runModeConfiguration: Configuration){
+class TestUtility @Inject()(applicationConfig: ApplicationConfig, environment: Environment, runModeConfiguration: Configuration){
 
   def makeFakeController(testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")),
                          isErrorController: Boolean = false)(implicit ec: ExecutionContext): MarriageAllowanceController = {
@@ -45,9 +46,9 @@ class TestUtility @Inject()(environment: Environment, runModeConfiguration: Conf
     }
 
     val marriageAllowanceService: MarriageAllowanceService = if(isErrorController){
-      new FakeMarriageAllowanceService(dataConnector, emailConnector, metrics)
+      new FakeMarriageAllowanceService(applicationConfig, dataConnector, emailConnector, metrics)
     } else {
-      new FakeMarriageAllowanceErrrorControllerService(dataConnector, emailConnector, metrics)
+      new FakeMarriageAllowanceErrorControllerService(applicationConfig, dataConnector, emailConnector, metrics)
     }
 
     new MarriageAllowanceController(marriageAllowanceService)

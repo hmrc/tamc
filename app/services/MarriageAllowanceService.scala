@@ -19,6 +19,7 @@ package services
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import config.ApplicationConfig
 import config.ApplicationConfig._
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import errors._
@@ -36,12 +37,13 @@ import uk.gov.hmrc.time.TaxYear
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class MarriageAllowanceService @Inject()(val dataConnector: MarriageAllowanceDataConnector,
+class MarriageAllowanceService @Inject()( val applicationConfig: ApplicationConfig,
+                                          val dataConnector: MarriageAllowanceDataConnector,
                                          val emailConnector: EmailConnector,
                                          val metrics: Metrics) {
 
-  val startTaxYear: Int = START_TAX_YEAR
-  val maSupportedYearsCount: Int = MA_SUPPORTED_YEARS_COUNT
+  lazy val startTaxYear: Int = applicationConfig.START_TAX_YEAR
+  val maSupportedYearsCount: Int = applicationConfig.MA_SUPPORTED_YEARS_COUNT
 
   def currentTaxYear: Int = TaxYear.current.startYear
 

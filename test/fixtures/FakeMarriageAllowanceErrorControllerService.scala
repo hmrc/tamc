@@ -16,6 +16,7 @@
 
 package fixtures
 
+import config.ApplicationConfig
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import errors.ErrorResponseStatus.BAD_REQUEST
 import javax.inject.Inject
@@ -29,13 +30,16 @@ import uk.gov.hmrc.time
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FakeMarriageAllowanceErrrorControllerService @Inject()(override val dataConnector: MarriageAllowanceDataConnector,
-                                                             override val emailConnector: EmailConnector,
-                                                             override val metrics: Metrics) extends MarriageAllowanceService(dataConnector,
-  emailConnector,
-  metrics) {
+class FakeMarriageAllowanceErrorControllerService @Inject()(override val applicationConfig: ApplicationConfig,
+                                                             override val dataConnector: MarriageAllowanceDataConnector,
+                                                            override val emailConnector: EmailConnector,
+                                                            override val metrics: Metrics) extends MarriageAllowanceService(
+                                                                                                      applicationConfig,
+                                                                                                      dataConnector,
+                                                                                                      emailConnector,
+                                                                                                      metrics) {
 
-  override val startTaxYear: Int = 2015
+  override lazy val startTaxYear: Int = 2015
   val testingTime: DateTime = new DateTime(startTaxYear,1,1,0,0)
   override val currentTaxYear: Int = time.TaxYear.taxYearFor(testingTime.toLocalDate).startYear
 

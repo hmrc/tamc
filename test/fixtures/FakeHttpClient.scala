@@ -31,7 +31,7 @@ import uk.gov.hmrc.http.hooks.HttpHook
 
 class FakeHttpClient extends HttpClient {
 
-  override val hooks: Seq[HttpHook] = ???
+  override val hooks: Seq[HttpHook] = Seq.empty[HttpHook]
 
   override def doPut[A](url: String, body: A)(implicit rds: Writes[A], hc: HeaderCarrier): Future[HttpResponse] = {
     val adjustedUrl = s"PUT-${url}"

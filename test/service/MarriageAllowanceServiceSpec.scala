@@ -24,7 +24,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import services.MarriageAllowanceService
 import uk.gov.hmrc.http.{HeaderCarrier, _}
-import controllers.FakeTamcApplication
+import _root_.controllers.FakeTamcApplication
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
