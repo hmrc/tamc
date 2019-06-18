@@ -39,13 +39,13 @@ class TestUtility @Inject()(applicationConfig: ApplicationConfig, environment: E
     val emailConnector: EmailConnector = new MockEmailConnector(httpClient, environment, runModeConfiguration)
     val metrics: Metrics = new FakeMetric
 
-    val dataConnector: MarriageAllowanceDataConnector = if(isErrorController){
+    val dataConnector: MarriageAllowanceDataConnector = if(isErrorController) {
       new FakeMarriageAllowanceDataConnector(httpClient, environment, runModeConfiguration)
     } else {
       new FakeMarriageAllowanceErrorControllerDataConnector(httpClient, environment, runModeConfiguration)
     }
 
-    val marriageAllowanceService: MarriageAllowanceService = if(isErrorController){
+    val marriageAllowanceService: MarriageAllowanceService = if(isErrorController) {
       new FakeMarriageAllowanceService(applicationConfig, dataConnector, emailConnector, metrics)
     } else {
       new FakeMarriageAllowanceErrorControllerService(applicationConfig, dataConnector, emailConnector, metrics)

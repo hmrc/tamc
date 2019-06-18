@@ -60,7 +60,7 @@ class TestUtilitySpec extends UnitSpec with OneAppPerSuite with FakeTamcApplicat
     }
 
     "sanity check for findRecipient" in {
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
       implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -86,7 +86,7 @@ class TestUtilitySpec extends UnitSpec with OneAppPerSuite with FakeTamcApplicat
       val participiant1Cid: String = participiant1.partner.cid.cid.toString
       val participiant1Ts = participiant1.partner.timestamp.toString()
 
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
       implicit val hc: HeaderCarrier = HeaderCarrier()
       val result = controller.marriageAllowanceService.dataConnector.listRelationship(testCid)

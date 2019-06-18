@@ -16,13 +16,8 @@
 
 package controllers
 
-import connectors.{EmailConnector, MarriageAllowanceDataConnector}
-import fixtures.{FakeMarriageAllowanceErrorControllerDataConnector, MockDeceasedDataConnector, MockEmailConnector}
 import models.{UpdateRelationshipResponse, UserRecord}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
-import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
@@ -41,7 +36,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
 
   "Calling hasMarriageAllowance for Recipient" should {
 
-    "return OK if cid is founds" in {
+    "return OK if cid is found" in {
 
       val transferorNinoObject = TestData.mappedNino2FindCitizen(TestData.Ninos.ninoP2A)
       val transferorNino = Nino(transferorNinoObject.nino)
@@ -51,7 +46,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
 
-      val controller = testUtility.makeFakeController()
+      val controller = testUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"name":"rty","lastName":"qwe", "nino":"$recipientNino", "gender":"$recipientGender", "dateOfMarriage":"01/01/2015"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)
@@ -103,7 +98,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
 
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"name":"rty","lastName":"qwe abc", "nino":"$recipientNino", "gender":"$recipientGender", "dateOfMarriage":"01/01/2015"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)
@@ -155,7 +150,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
 
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"name":"fgh","lastName":"asd", "nino":"$recipientNino", "gender":"$recipientGender", "dateOfMarriage":"01/01/2015"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)
@@ -201,7 +196,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
   "Calling list relationship for logged in person" should {
 
     "check if list contains one active and one historic relationship" in {
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.oneActiveOneHistoric
@@ -246,7 +241,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
     }
 
     "check for no relationship" in {
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.noRelations
@@ -271,7 +266,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
     }
 
     "check for historic relationship" in {
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.oneHistoric
@@ -306,7 +301,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
     }
 
     "check for active relationship" in {
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.oneActive
@@ -342,7 +337,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
     }
 
     "return TRANSFEROR-NOT-FOUND when transferor is deceased" in {
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.deceased
@@ -362,7 +357,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
     }
 
     "return TRANSFEROR-NOT-FOUND when transferor not found" in {
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.tansfrorNotFound
@@ -410,7 +405,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val transferorTs = testInput.transferor.timestamp.toString
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"$recipientCid","updateTimestamp":"$recipientTs"},"participant2":{"updateTimestamp":"$transferorTs"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
@@ -431,7 +426,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val transferorTs = testInput.transferor.timestamp.toString
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"$recipientCid","updateTimestamp":"$recipientTs"},"participant2":{"updateTimestamp":"$transferorTs"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Rejected by Recipient","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Recipient", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
@@ -452,7 +447,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val transferorTs = testInput.transferor.timestamp.toString
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"$recipientCid","updateTimestamp":"$recipientTs"},"participant2":{"updateTimestamp":"$transferorTs"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Divorce/Separation","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
@@ -473,7 +468,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val transferorTs = testInput.transferor.timestamp.toString
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"$recipientCid","updateTimestamp":"$recipientTs"},"participant2":{"updateTimestamp":"$transferorTs"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Divorce/Separation","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Recipient", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)

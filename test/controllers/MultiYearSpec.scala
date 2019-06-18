@@ -46,7 +46,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with FakeTamcAppli
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller =testUtility.makeFakeController()
+      val controller = testUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
@@ -83,7 +83,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with FakeTamcAppli
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller =testUtility.makeFakeController(testingTime = new DateTime(2017, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")))
+      val controller =testUtility.makeFakeController(testingTime = new DateTime(2017, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")),isErrorController = true )
       val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
@@ -120,7 +120,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with FakeTamcAppli
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
@@ -157,7 +157,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with FakeTamcAppli
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller =testUtility.makeFakeController()
+      val controller =testUtility.makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
@@ -207,7 +207,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with FakeTamcAppli
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString()
 
-      val controller =testUtility.makeFakeController(isErrorController = true)
+      val controller =testUtility.makeFakeController()
       val testData = s"""{"request":{"transferor_cid":${Cids.cidConflict}, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val response = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
@@ -227,7 +227,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with FakeTamcAppli
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller =testUtility.makeFakeController(isErrorController = true)
+      val controller =testUtility.makeFakeController()
       val testData = s"""{"request":{"transferor_cid":${Cids.cidServiceUnavailable}, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val response = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
