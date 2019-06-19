@@ -19,18 +19,20 @@ package fixtures
 import connectors.MarriageAllowanceDataConnector
 import javax.inject.Inject
 import models.{Cid, DesCreateRelationshipRequest, DesUpdateRelationshipRequest, FindRecipientRequest}
-import play.api.{Configuration, Environment}
 import play.api.libs.json.JsValue
-import utils.DummyHttpResponse
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.play.bootstrap.config.RunMode
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import utils.DummyHttpResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class FakeMarriageAllowanceDataConnector @Inject()(httpClient: HttpClient,
                                                    environment: Environment,
-                                                   override val runModeConfiguration: Configuration) extends MarriageAllowanceDataConnector(httpClient, environment, runModeConfiguration) {
+                                                   configuration: Configuration,
+                                                   runMode: RunMode) extends MarriageAllowanceDataConnector(httpClient, environment, configuration, runMode) {
 
   override val serviceUrl: String = "foo"
   override val urlHeaderEnvironment = "test-environment"

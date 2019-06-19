@@ -16,28 +16,29 @@
 
 package uk.gov.hmrc.play.logging.tamc
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.core.JsonGenerator.Feature
-import ch.qos.logback.core.pattern.PatternLayoutEncoderBase
-import ch.qos.logback.classic.spi.{ILoggingEvent, ThrowableProxyUtil}
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 
-import org.apache.commons.lang3.time.FastDateFormat
-import org.apache.commons.io.IOUtils._
-import play.api.Play
 import ch.qos.logback.classic.PatternLayout
+import ch.qos.logback.classic.spi.{ILoggingEvent, ThrowableProxyUtil}
+import ch.qos.logback.core.pattern.PatternLayoutEncoderBase
+import com.fasterxml.jackson.core.JsonGenerator.Feature
+import com.fasterxml.jackson.databind.ObjectMapper
+import javax.inject.Inject
+import org.apache.commons.io.IOUtils._
+import org.apache.commons.lang3.time.FastDateFormat
+import play.api.{Configuration, Play}
 
-class PatternLayoutJsonEncoder extends PatternLayoutEncoderBase[ILoggingEvent] {
+class PatternLayoutJsonEncoder @Inject()(configuration: Configuration) extends PatternLayoutEncoderBase[ILoggingEvent] {
 
   import scala.collection.JavaConversions._
 
   private val mapper = new ObjectMapper().configure(Feature.ESCAPE_NON_ASCII, true)
 
-  lazy val appName = Play.current.configuration.getString("appName").getOrElse("APP NAME NOT SET")
+  lazy val appName: String = configuration.get[String]("appName")
 
   private lazy val dateFormat = FastDateFormat.getInstance(
-    Play.current.configuration.getString("logger.json.dateformat").getOrElse("yyyy-MM-dd HH:mm:ss.SSSZZ")
+    configuration.get[String]("logger.json.dateformat")
   )
 
   override def encode(event: ILoggingEvent):Array[Byte] = {
@@ -73,7 +74,7 @@ class PatternLayoutJsonEncoder extends PatternLayoutEncoderBase[ILoggingEvent] {
   override def start() {
     val patternLayout = new PatternLayout()
     patternLayout.setContext(context)
-    patternLayout.setPattern(getPattern())
+    patternLayout.setPattern(getPattern)
     patternLayout.start()
     this.layout = patternLayout
     super.start()

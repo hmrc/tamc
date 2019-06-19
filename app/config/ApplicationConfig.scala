@@ -22,8 +22,8 @@ import play.api.Configuration
 
 class ApplicationConfig @Inject()(configuration: Configuration) {
 
-  val START_TAX_YEAR = configuration.getInt("ma-start-tax-year").getOrElse(2015)
-  val MA_SUPPORTED_YEARS_COUNT = configuration.getInt("ma-supported-years-count").getOrElse(5)
+  val START_TAX_YEAR: Int = configuration.get[Int]("ma-start-tax-year")
+  val MA_SUPPORTED_YEARS_COUNT: Int = configuration.get[Int]("ma-supported-years-count")
 }
 
 object ApplicationConfig {

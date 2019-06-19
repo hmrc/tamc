@@ -24,9 +24,9 @@ import metrics.Metrics
 import models.MultiYearCreateRelationshipRequestHolder
 import org.joda.time.DateTime
 import services.MarriageAllowanceService
-import utils.TestData.Cids
 import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier, Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.time
+import utils.TestData.Cids
 
 import scala.concurrent.{ExecutionContext, Future}
 

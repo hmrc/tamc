@@ -16,6 +16,7 @@
 
 package service
 
+import _root_.controllers.FakeTamcApplication
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import fixtures._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -24,7 +25,6 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import services.MarriageAllowanceService
 import uk.gov.hmrc.http.{HeaderCarrier, _}
-import _root_.controllers.FakeTamcApplication
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global

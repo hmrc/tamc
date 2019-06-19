@@ -16,17 +16,14 @@
 
 package models
 
-import play.api.libs.json.Json
-import uk.gov.hmrc.domain.Nino
 import org.joda.time.LocalDate
-import play.api.libs.json.Writes
-import play.api.libs.json.Reads
-import play.api.libs.json.Format
+import play.api.libs.json._
+import uk.gov.hmrc.domain.Nino
 
 object FindRecipientRequest {
   private val pattern = "dd/MM/yyyy"
-  implicit val dateFormat = Format[LocalDate](Reads.jodaLocalDateReads(pattern), Writes.jodaLocalDateWrites(pattern))
-  implicit val formats = Json.format[FindRecipientRequest]
+  implicit val dateFormat: Format[LocalDate] = Format[LocalDate](JodaReads.jodaLocalDateReads(pattern), JodaWrites.jodaLocalDateWrites(pattern))
+  implicit val formats: OFormat[FindRecipientRequest] = Json.format[FindRecipientRequest]
 }
 
 case class FindRecipientRequest(name: String, lastName: String, gender: Gender, nino: Nino, dateOfMarriage: Option[LocalDate] = None)

@@ -16,8 +16,7 @@
 
 package models
 
-import play.api.libs.json.Format
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 
 case class CitizenName(firstName: Option[String], lastName: Option[String])
 

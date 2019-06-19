@@ -20,10 +20,11 @@ import connectors.MarriageAllowanceDataConnector
 import errors.ErrorResponseStatus.{BAD_REQUEST, CITIZEN_NOT_FOUND, SERVER_ERROR, SERVICE_UNAVILABLE}
 import javax.inject.Inject
 import models.{Cid, DesCreateRelationshipRequest, DesUpdateRelationshipRequest, FindRecipientRequest}
-import play.api.{Configuration, Environment}
 import play.api.libs.json.JsValue
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.config.RunMode
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import utils.DummyHttpResponse
 import utils.TestData.Cids
@@ -32,7 +33,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class FakeMarriageAllowanceErrorControllerDataConnector @Inject()(httpClient: HttpClient,
                                                                   environment: Environment,
-                                                                  runModeConfiguration: Configuration) extends MarriageAllowanceDataConnector(httpClient, environment, runModeConfiguration) {
+                                                                  configuration: Configuration,
+                                                                  runMode: RunMode) extends MarriageAllowanceDataConnector(httpClient, environment, configuration, runMode) {
 
   override val serviceUrl: String = "foo"
   override val urlHeaderEnvironment = "test-environment"

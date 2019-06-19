@@ -16,23 +16,23 @@
 
 package connectors
 
+import config.Service
 import javax.inject.Inject
 import models.SendEmailRequest
-import play.api.Mode.Mode
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class EmailConnector @Inject()(httpClient: HttpClient,
                                environment: Environment,
-                               val runModeConfiguration: Configuration) extends ServicesConfig {
+                               configuration: Configuration,
+                               runMode: RunMode) extends ServicesConfig(configuration, runMode) {
 
-  override protected def mode: Mode = environment.mode
-
-  val emailUrl: String = baseUrl("email")
+  //TODO: what is the path?
+  val emailUrl: String = configuration.get[Service]("microservice.services.marriage-allowance-des")
 
   def url(path: String) = s"$emailUrl$path"
 

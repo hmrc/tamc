@@ -16,10 +16,8 @@
 
 package models
 
-import play.api.libs.json.Reads
-import play.api.libs.json.Writes
-import uk.gov.hmrc.domain.SimpleObjectReads
-import uk.gov.hmrc.domain.SimpleObjectWrites
+import play.api.libs.json.{Reads, Writes}
+import uk.gov.hmrc.domain.{SimpleObjectReads, SimpleObjectWrites}
 
 case class Gender(gender: String) {
   override val toString = gender

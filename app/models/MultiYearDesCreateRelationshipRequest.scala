@@ -16,9 +16,8 @@
 
 package models
 
-import play.api.libs.json._
-import uk.gov.hmrc.emailaddress.EmailAddress
 import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 object MultiYearDesCreateRelationshipRequest {
   implicit val multiYearWrites = (

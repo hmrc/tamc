@@ -27,6 +27,7 @@ lazy val microservice = Project(appName, file("."))
     defaultSettings(),
     targetJvm := "jvm-1.8",
     scalaVersion := "2.11.11",
+    majorVersion := 4,
     PlayKeys.playDefaultPort := 9909,
     libraryDependencies ++= AppDependencies.all,
     parallelExecution in Test := false,
@@ -35,8 +36,6 @@ lazy val microservice = Project(appName, file("."))
     routesGenerator := InjectedRoutesGenerator,
     resolvers := Seq(
       Resolver.bintrayRepo("hmrc", "releases"),
-      Resolver.typesafeRepo("releases"),
-      Resolver.jcenterRepo,
-      "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/"
-    ),
-    majorVersion := 4)
+      Resolver.jcenterRepo
+    )
+  )

@@ -22,16 +22,17 @@ import javax.inject.Inject
 import models._
 import play.Logger
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
-class MarriageAllowanceController @Inject()(val marriageAllowanceService: MarriageAllowanceService)
-                                           (implicit ec: ExecutionContext) extends BaseController {
+class MarriageAllowanceController @Inject()(val marriageAllowanceService: MarriageAllowanceService,
+                                           cc: ControllerComponents)
+                                           (implicit ec: ExecutionContext) extends BackendController(cc) {
 
   def getRecipientRelationship(transferorNino: Nino): Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[FindRecipientRequest] { findRecipientRequest =>

@@ -16,10 +16,9 @@
 
 package models
 
-import play.api.libs.json.Format
-import play.api.libs.json._
 import config.ApplicationConfig
 import play.api.Logger
+import play.api.libs.json.{Format, _}
 
 case class RelationshipRecordWrapper(
   relationshipRecordList: Seq[RelationshipRecord],

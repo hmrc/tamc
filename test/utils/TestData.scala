@@ -16,9 +16,9 @@
 
 package utils
 
-import models._
 import java.net.URLDecoder
 
+import models._
 import uk.gov.hmrc.domain.Generator
 
 object TestData {

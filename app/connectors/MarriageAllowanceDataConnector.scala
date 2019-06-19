@@ -18,26 +18,24 @@ package connectors
 
 import javax.inject.Inject
 import models.{Cid, DesUpdateRelationshipRequest, FindRecipientRequest, MultiYearDesCreateRelationshipRequest}
-import play.api.Mode.Mode
 import play.api.libs.json.JsValue
-import play.api.{Configuration, Environment, Play}
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class MarriageAllowanceDataConnector @Inject()(httpClient: HttpClient,
                                                environment: Environment,
-                                               val runModeConfiguration: Configuration) extends ServicesConfig {
-
-  override protected def mode: Mode = environment.mode
+                                               configuration: Configuration,
+                                               runMode: RunMode) extends ServicesConfig(configuration, runMode) {
 
   val serviceUrl: String = baseUrl("marriage-allowance-des")
-  val urlHeaderEnvironment: String = config("marriage-allowance-des").getString("environment").get
-  val urlHeaderAuthorization: String = s"Bearer ${config("marriage-allowance-des").getString("authorization-token").get}"
+  val urlHeaderEnvironment: String = config("marriage-allowance-des").get[String]("environment")
+  val urlHeaderAuthorization: String = s"Bearer ${config("marriage-allowance-des").get[String]("authorization-token")}"
 
   def url(path: String) = s"$serviceUrl$path"
 

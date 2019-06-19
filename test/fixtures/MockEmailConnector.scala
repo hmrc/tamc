@@ -21,16 +21,19 @@ import javax.inject.Inject
 import models.SendEmailRequest
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.config.RunMode
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class MockEmailConnector @Inject()(http: HttpClient,
                                    environment: Environment,
-                                   runModeConfiguration: Configuration) extends EmailConnector(http, environment, runModeConfiguration) {
+                                   configuration: Configuration,
+                                   runMode: RunMode) extends EmailConnector(http, environment, configuration, runMode) {
 
   override val emailUrl = "bar"
+
   override def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
-    Future(HttpResponse(200,None))
+    Future(HttpResponse(200, None))
   }
 }

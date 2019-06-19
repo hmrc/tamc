@@ -395,7 +395,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
 
   "Calling update relationship for logged in person" should {
 
-    "check if update (cancel) relationship for transferor then response is successfull" in {
+    "check if update (cancel) relationship for transferor then response is successful" in {
 
       val testInput = TestData.Updates.cancel
       val transferorNino = Nino(testInput.transferor.nino)
@@ -416,7 +416,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       relationshipRecordStatusWrapper.status.status_code shouldBe "OK"
     }
 
-    "check if update (reject) relationship for recipient then response is successfull" in {
+    "check if update (reject) relationship for recipient then response is successful" in {
 
       val testInput = TestData.Updates.reject
       val transferorNino = Nino(testInput.transferor.nino)
@@ -437,7 +437,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       relationshipRecordStatusWrapper.status.status_code shouldBe "OK"
     }
 
-    "check if update (divorce) relationship for transferor then response is successfull" in {
+    "check if update (divorce) relationship for transferor then response is successful" in {
 
       val testInput = TestData.Updates.divorceTr
       val transferorNino = Nino(testInput.transferor.nino)
@@ -458,7 +458,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       relationshipRecordStatusWrapper.status.status_code shouldBe "OK"
     }
 
-    "check if update (divorce) relationship for recipient then response is successfull" in {
+    "check if update (divorce) relationship for recipient then response is successful" in {
 
       val testInput = TestData.Updates.divorceRec
       val transferorNino = Nino(testInput.transferor.nino)
