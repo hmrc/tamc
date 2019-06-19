@@ -20,7 +20,7 @@ import controllers.FakeTamcApplication
 import models.{Cid, FindRecipientRequest, Gender, Timestamp}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.{JsNumber, JsString}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.Nino
@@ -30,7 +30,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.math.BigDecimal.long2bigDecimal
 
-class TestUtilitySpec extends UnitSpec with OneAppPerSuite with FakeTamcApplication {
+class TestUtilitySpec extends UnitSpec with GuiceOneAppPerSuite with FakeTamcApplication {
 
   val testUtility: TestUtility = app.injector.instanceOf[TestUtility]
 

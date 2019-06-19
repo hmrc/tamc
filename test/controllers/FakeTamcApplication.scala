@@ -18,11 +18,11 @@ package controllers
 
 import akka.stream.Materializer
 import org.scalatest.TestSuite
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
-trait FakeTamcApplication extends OneAppPerSuite {
+trait FakeTamcApplication extends GuiceOneAppPerSuite {
 
   this: TestSuite =>
 
