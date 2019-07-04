@@ -19,15 +19,31 @@ package models
 import play.api.libs.json.Format
 import play.api.libs.json._
 import config.ApplicationConfig
+import models.RelationshipEndReason.RelationshipEndReasonHodsReads
 import play.api.Logger
 
 case class RelationshipRecordWrapper(
   relationshipRecordList: Seq[RelationshipRecord],
   userRecord: Option[UserRecord] = None)
 
-case class RelationshipRecord(participant: String, creationTimestamp: String, participant1StartDate: String, relationshipEndReason: Option[String] = None, participant1EndDate: Option[String] = None, otherParticipantInstanceIdentifier: String, otherParticipantUpdateTimestamp: String) {
-  def this(participant: Int, creationTimestamp: String, participant1StartDate: String, relationshipEndReason: Option[String], participant1EndDate: Option[String], otherParticipantInstanceIdentifier: String, otherParticipantUpdateTimestamp: String) =
-    this(if (participant == 1) ApplicationConfig.ROLE_RECIPIENT else ApplicationConfig.ROLE_TRANSFEROR, creationTimestamp, participant1StartDate, relationshipEndReason, participant1EndDate, otherParticipantInstanceIdentifier, otherParticipantUpdateTimestamp)
+case class RelationshipRecord(participant: String,
+                              creationTimestamp: String,
+                              participant1StartDate: String,
+                              relationshipEndReason: Option[RelationshipEndReason] = None,
+                              participant1EndDate: Option[String] = None,
+                              otherParticipantInstanceIdentifier: String,
+                              otherParticipantUpdateTimestamp: String) {
+
+  def this(participant: Int,
+           creationTimestamp: String,
+           participant1StartDate: String,
+           relationshipEndReason: Option[RelationshipEndReason],
+           participant1EndDate: Option[String],
+           otherParticipantInstanceIdentifier: String,
+           otherParticipantUpdateTimestamp: String) =
+    this(
+      if (participant == 1) ApplicationConfig.ROLE_RECIPIENT
+      else ApplicationConfig.ROLE_TRANSFEROR, creationTimestamp, participant1StartDate, relationshipEndReason, participant1EndDate, otherParticipantInstanceIdentifier, otherParticipantUpdateTimestamp)
 }
 
 object RelationshipRecord {
@@ -38,20 +54,20 @@ object RelationshipRecord {
       (json \ "participant").as[Int],
       (json \ "creationTimestamp").as[String],
       (json \ "participant1StartDate").as[String],
-      (json \ "relationshipEndReason").asOpt[String],
+      (json \ "relationshipEndReason").asOpt[RelationshipEndReason](RelationshipEndReasonHodsReads),
       (json \ "participant1EndDate").asOpt[String],
       (json \ "otherParticipantInstanceIdentifier").as[String],
       (json \ "otherParticipantUpdateTimestamp").as[String]))
 
-    def writes(relatisoshipRecord: RelationshipRecord) = Json.obj(
+    def writes(relationshipRecord: RelationshipRecord) = Json.obj(
 
-      "participant" -> relatisoshipRecord.participant,
-      "creationTimestamp" -> relatisoshipRecord.creationTimestamp,
-      "participant1StartDate" -> relatisoshipRecord.participant1StartDate,
-      "relationshipEndReason" -> transformEndReasonCodeDesc(relatisoshipRecord.relationshipEndReason),
-      "participant1EndDate" -> relatisoshipRecord.participant1EndDate,
-      "otherParticipantInstanceIdentifier" -> relatisoshipRecord.otherParticipantInstanceIdentifier,
-      "otherParticipantUpdateTimestamp" -> relatisoshipRecord.otherParticipantUpdateTimestamp)
+      "participant" -> relationshipRecord.participant,
+      "creationTimestamp" -> relationshipRecord.creationTimestamp,
+      "participant1StartDate" -> relationshipRecord.participant1StartDate,
+      "relationshipEndReason" -> Json.toJson(relationshipRecord.relationshipEndReason),
+      "participant1EndDate" -> relationshipRecord.participant1EndDate,
+      "otherParticipantInstanceIdentifier" -> relationshipRecord.otherParticipantInstanceIdentifier,
+      "otherParticipantUpdateTimestamp" -> relationshipRecord.otherParticipantUpdateTimestamp)
   }
 
   private def transformEndReasonCodeDesc(endReasonCode: Option[String]): Option[String] = {
