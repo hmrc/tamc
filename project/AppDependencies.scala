@@ -16,6 +16,7 @@
 
 import sbt._
 import play.sbt.PlayImport._
+import sbt.Keys.libraryDependencies
 
 object AppDependencies {
 

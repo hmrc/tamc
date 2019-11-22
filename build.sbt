@@ -38,7 +38,8 @@ lazy val microservice = Project(appName, file("."))
     parallelExecution in Test := false,
     fork in Test := true,
     retrieveManaged := true,
-    routesGenerator := StaticRoutesGenerator
+    routesGenerator := StaticRoutesGenerator,
+    routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._")
   )
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(Defaults.itSettings),
