@@ -25,7 +25,8 @@ object AppDependencies {
     "uk.gov.hmrc" %% "domain"                 % "5.3.0",
     "uk.gov.hmrc" %% "emailaddress"           % "3.2.0",
     "uk.gov.hmrc" %% "microservice-bootstrap" % "10.4.0",
-    "uk.gov.hmrc" %% "tax-year"               % "0.5.0"
+    "uk.gov.hmrc" %% "tax-year"               % "0.5.0",
+    "uk.gov.hmrc"  %% "auth-client"          % "2.31.0-play-25"
   )
 
   val test: Seq[ModuleID] = Seq(
