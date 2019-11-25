@@ -16,29 +16,18 @@
 
 package controllers
 
-import errors._
+import _root_.controllers.auth.AuthAction
 import errors.ErrorResponseStatus._
-import models.CreateRelationshipResponse
-import models.FindRecipientRequest
-import models.GetRelationshipResponse
-import models.RelationshipRecordStatusWrapper
-import models.RelationshipRecordWrapper
-import models.ResponseStatus
-import models.UpdateRelationshipRequestHolder
-import models.UpdateRelationshipResponse
-import models.UserRecord
+import errors._
+import models._
 import play.Logger
+import play.api.Play
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
-import play.api.mvc.Action
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.microservice.controller.BaseController
-import models.MultiYearCreateRelationshipRequestHolder
-import models.TaxYear
 import uk.gov.hmrc.http._
-import _root_.controllers.auth.AuthAction
-import play.api.Play
+import uk.gov.hmrc.play.microservice.controller.BaseController
 
 object MarriageAllowanceController extends MarriageAllowanceController {
   override val marriageAllowanceService = MarriageAllowanceService

@@ -20,36 +20,23 @@ import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.Status.SEE_OTHER
 import play.api.mvc.{Action, AnyContent, Controller}
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{redirectLocation, _}
-import test_utils.RetrievalOps._
-import uk.gov.hmrc.auth.core.authorise.Predicate
-import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
+import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.domain.SaUtrGenerator
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.language.postfixOps
 
 class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar {
-
-  class BrokenAuthConnector(exception: Throwable) extends AuthConnector {
-    override def authorise[A](predicate: Predicate, retrieval: Retrieval[A])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[A] =
-      Future.failed(exception)
-  }
 
   val mockAuthConnector: AuthConnector = mock[AuthConnector]
 
   class Harness(authAction: AuthAction) extends Controller {
     def onPageLoad(): Action[AnyContent] = authAction { request => Ok("") }
   }
-
 
   "A user with no active session" should {
     "return UNAUTHORIZED" in {
@@ -85,5 +72,4 @@ class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar
       status(result) shouldBe OK
     }
   }
-
 }
