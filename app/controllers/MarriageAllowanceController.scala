@@ -16,37 +16,31 @@
 
 package controllers
 
-import errors._
+import _root_.controllers.auth.AuthAction
 import errors.ErrorResponseStatus._
-import models.CreateRelationshipResponse
-import models.FindRecipientRequest
-import models.GetRelationshipResponse
-import models.RelationshipRecordStatusWrapper
-import models.RelationshipRecordWrapper
-import models.ResponseStatus
-import models.UpdateRelationshipRequestHolder
-import models.UpdateRelationshipResponse
-import models.UserRecord
+import errors._
+import models._
 import play.Logger
+import play.api.Play
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
-import play.api.mvc.Action
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.microservice.controller.BaseController
-import models.MultiYearCreateRelationshipRequestHolder
-import models.TaxYear
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.microservice.controller.BaseController
 
 object MarriageAllowanceController extends MarriageAllowanceController {
   override val marriageAllowanceService = MarriageAllowanceService
+  override val authAction: AuthAction = Play.current.injector.instanceOf[AuthAction]
 }
 
 trait MarriageAllowanceController extends BaseController {
 
   val marriageAllowanceService: MarriageAllowanceService
 
-  def getRecipientRelationship(transferorNino: Nino) = Action.async(parse.json) { implicit request =>
+  val authAction: AuthAction
+
+  def getRecipientRelationship(transferorNino: Nino) = authAction.async(parse.json) { implicit request =>
     withJsonBody[FindRecipientRequest] { findRecipientRequest =>
       marriageAllowanceService.getRecipientRelationship(transferorNino, findRecipientRequest) map {
         case (recipientRecord: UserRecord, taxYears: List[TaxYear]) =>
@@ -74,7 +68,7 @@ trait MarriageAllowanceController extends BaseController {
     }
   }
 
-  def createMultiYearRelationship(transferorNino: Nino, journey: String) = Action.async(parse.json) {
+  def createMultiYearRelationship(transferorNino: Nino, journey: String) = authAction.async(parse.json) {
     implicit request =>
       withJsonBody[MultiYearCreateRelationshipRequestHolder] { createRelationshipRequestHolder =>
         marriageAllowanceService.createMultiYearRelationship(createRelationshipRequestHolder, journey) map {
@@ -101,7 +95,7 @@ trait MarriageAllowanceController extends BaseController {
       }
   }
 
-  def listRelationship(transferorNino: Nino) = Action.async { implicit request =>
+  def listRelationship(transferorNino: Nino) = authAction.async { implicit request =>
     marriageAllowanceService.listRelationship(transferorNino) map {
       case relationshipList: RelationshipRecordWrapper =>
         Ok(Json.toJson(RelationshipRecordStatusWrapper(relationship_record = relationshipList, status = ResponseStatus(status_code = "OK"))))
@@ -133,7 +127,7 @@ trait MarriageAllowanceController extends BaseController {
     }
   }
 
-  def updateRelationship(transferorNino: Nino) = Action.async(parse.json) {
+  def updateRelationship(transferorNino: Nino) = authAction.async(parse.json) {
     implicit request =>
       withJsonBody[UpdateRelationshipRequestHolder] {
         updateRelationshipRequestHolder =>

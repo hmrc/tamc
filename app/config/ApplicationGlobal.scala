@@ -30,10 +30,6 @@ object ControllerConfiguration extends ControllerConfig {
   lazy val controllerConfigs: Config = Play.current.configuration.underlying.as[Config]("controllers")
 }
 
-object AuthParamsControllerConfiguration extends AuthParamsControllerConfig {
-  lazy val controllerConfigs: Config = ControllerConfiguration.controllerConfigs
-}
-
 object MicroserviceAuditFilter extends AuditFilter with AppName with MicroserviceFilterSupport {
   override val auditConnector = ApplicationAuditConnector
 
@@ -46,13 +42,6 @@ object MicroserviceLoggingFilter extends LoggingFilter with MicroserviceFilterSu
   override def controllerNeedsLogging(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsLogging
 }
 
-object MicroserviceAuthFilter extends AuthorisationFilter with MicroserviceFilterSupport {
-  override lazy val authParamsConfig = AuthParamsControllerConfiguration
-  override lazy val authConnector = ApplicationAuthConnector
-
-  override def controllerNeedsAuth(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsAuth
-}
-
 object ApplicationGlobal extends DefaultMicroserviceGlobal {
   override val auditConnector = ApplicationAuditConnector
 
@@ -62,5 +51,5 @@ object ApplicationGlobal extends DefaultMicroserviceGlobal {
 
   override val microserviceAuditFilter = MicroserviceAuditFilter
 
-  override val authFilter = Some(MicroserviceAuthFilter)
+  override val authFilter = None
 }

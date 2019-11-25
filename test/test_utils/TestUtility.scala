@@ -270,6 +270,7 @@ trait TestUtility {
 
     new MarriageAllowanceController {
       override val marriageAllowanceService = fakeMarriageAllowanceService
+      override val authAction = FakeAuthAction
       val debugData = debugObject
     }
   }
