@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import config.ApplicationConfig._
-import connectors.{EmailConnector, MarriageAllowanceDataConnector}
+import connectors.{EmailConnector, MarriageAllowanceConnector, MarriageAllowanceDESConnector, MarriageAllowanceDataConnector}
 import errors._
 import metrics.Metrics
 import models.{TaxYear => TaxYearModel, _}
@@ -36,7 +36,8 @@ import uk.gov.hmrc.time.TaxYear
 import scala.concurrent.{ExecutionContext, Future}
 
 object MarriageAllowanceService extends MarriageAllowanceService {
-  override val dataConnector = MarriageAllowanceDataConnector
+  //TODO config derived
+  override val dataConnector = MarriageAllowanceDESConnector
   override val emailConnector = EmailConnector
   override val metrics = Metrics
   override val startTaxYear = START_TAX_YEAR
@@ -45,7 +46,7 @@ object MarriageAllowanceService extends MarriageAllowanceService {
 
 trait MarriageAllowanceService {
 
-  val dataConnector: MarriageAllowanceDataConnector
+  val dataConnector: MarriageAllowanceConnector
   val emailConnector: EmailConnector
   val metrics: Metrics
   val startTaxYear: Int
@@ -287,39 +288,45 @@ trait MarriageAllowanceService {
   }
 
   private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserRecord] = {
-    metrics.incrementTotalCounter(ApiType.FindRecipient)
-    val timer = metrics.startTimer(ApiType.FindRecipient)
-    dataConnector.findRecipient(findRecipientRequest).map {
-      json =>
-        timer.stop()
-        ((json
-          \ "Jfwk1012FindCheckPerNoninocallResponse"
-          \ "Jfwk1012FindCheckPerNoninoExport"
-          \ "OutWCbdParameters"
-          \ "ReturnCode").as[Int],
-          (json
-            \ "Jfwk1012FindCheckPerNoninocallResponse"
-            \ "Jfwk1012FindCheckPerNoninoExport"
-            \ "OutWCbdParameters"
-            \ "ReasonCode").as[Int]) match {
-              case (1, 1) =>
-                metrics.incrementSuccessCounter(ApiType.FindRecipient)
-                UserRecord(
-                  cid = (json
-                    \ "Jfwk1012FindCheckPerNoninocallResponse"
-                    \ "Jfwk1012FindCheckPerNoninoExport"
-                    \ "OutItpr1Person"
-                    \ "InstanceIdentifier").as[Cid],
-                  timestamp = (json
-                    \ "Jfwk1012FindCheckPerNoninocallResponse"
-                    \ "Jfwk1012FindCheckPerNoninoExport"
-                    \ "OutItpr1Person"
-                    \ "UpdateTimestamp").as[Timestamp])
-              case (returnCode, reasonCode) =>
-                metrics.incrementSuccessCounter(ApiType.FindRecipient)
-                throw new FindRecipientError(returnCode, reasonCode)
-            }
-    }
+//    metrics.incrementTotalCounter(ApiType.FindRecipient)
+//    val timer = metrics.startTimer(ApiType.FindRecipient)
+//    val desRecipientRequest = FindRecipientRequestDes(findRecipientRequest)
+//
+//    dataConnector.findRecipient(findRecipientRequest.ninoWithoutSpaces, desRecipientRequest).map {
+//      case Right(json) =>  {
+//        timer.stop()
+//        ((json
+//          \ "Jfwk1012FindCheckPerNoninocallResponse"
+//          \ "Jfwk1012FindCheckPerNoninoExport"
+//          \ "OutWCbdParameters"
+//          \ "ReturnCode").as[Int],
+//          (json
+//            \ "Jfwk1012FindCheckPerNoninocallResponse"
+//            \ "Jfwk1012FindCheckPerNoninoExport"
+//            \ "OutWCbdParameters"
+//            \ "ReasonCode").as[Int]) match {
+//          case (1, 1) =>
+//            metrics.incrementSuccessCounter(ApiType.FindRecipient)
+//            UserRecord(
+//              cid = (json
+//                \ "Jfwk1012FindCheckPerNoninocallResponse"
+//                \ "Jfwk1012FindCheckPerNoninoExport"
+//                \ "OutItpr1Person"
+//                \ "InstanceIdentifier").as[Cid],
+//              timestamp = (json
+//                \ "Jfwk1012FindCheckPerNoninocallResponse"
+//                \ "Jfwk1012FindCheckPerNoninoExport"
+//                \ "OutItpr1Person"
+//                \ "UpdateTimestamp").as[Timestamp])
+//          case (returnCode, reasonCode) =>
+//            metrics.incrementSuccessCounter(ApiType.FindRecipient)
+//            throw new FindRecipientError(returnCode, reasonCode)
+//        }
+//      }
+//      //TODO Move to controller
+//      case Left(_) => ???
+//    }
+    ???
   }
 
   private def listRelationshipRecord(userRecord: UserRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {

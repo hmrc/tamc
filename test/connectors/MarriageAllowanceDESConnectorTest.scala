@@ -18,7 +18,7 @@ package connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{ok, post, urlEqualTo}
 import connectors.MarriageAllowanceDESConnector.baseUrl
-import models.FindRecipientRequestDes
+import models.{Cid, FindRecipientRequestDes, FindRecipientResponseDES, Timestamp}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
@@ -53,28 +53,32 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
   "findRecipient" should {
 
-    "return JsValue" in {
+    "return a FindRecipientResponseDES given valid Json" in {
 
       val generatedNino = new Generator().nextNino.nino
-
       val request = FindRecipientRequestDes("testSurname", "testForename1", Some("testForename2"), Some("M"))
 
-      val expectedJson = Json.parse("""{
+      val reasonCode = 1
+      val returnCode = 1
+      val instanceIdentifier: Cid = 123456789
+      val updateTimestamp: Timestamp = "20200116155359011123"
+
+      val expectedJson = Json.parse(s"""{
           "Jfwk1012FindCheckPerNoninocallResponse": {
             "Jfwk1012FindCheckPerNoninoExport": {
               "@exitStateType": "0",
               "@exitState": "0",
               "OutItpr1Person": {
-                "InstanceIdentifier": 123456789,
-                "UpdateTimestamp": "20200116155359011123"
+                "InstanceIdentifier": $instanceIdentifier,
+                "UpdateTimestamp": "$updateTimestamp"
               },
               "OutWCbdParameters": {
                 "SeverityCode": "W",
                 "DataStoreStatus": "S",
                 "OriginServid": 9999,
                 "ContextString": "ITPR1311_PER_DETAILS_FIND_S",
-                "ReturnCode": 1,
-                "ReasonCode": 1,
+                "ReturnCode": $reasonCode,
+                "ReasonCode": $returnCode,
                 "Checksum": "a234jnjbhr9ui83"
               }
             }
@@ -87,10 +91,10 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
         post(urlEqualTo(url))
           .willReturn(ok(expectedJson.toString()))
       )
-
+      val expectedResult = FindRecipientResponseDES(reasonCode = reasonCode, returnCode = returnCode, instanceIdentifier, updateTimestamp)
       val result = await(connector.findRecipient(generatedNino, request))
 
-      result shouldBe Right(expectedJson)
+      result shouldBe Right(expectedResult)
      }
   }
 }

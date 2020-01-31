@@ -16,7 +16,7 @@
 
 package connectors
 
-import models.{Cid, DesUpdateRelationshipRequest, FindRecipientRequest, MultiYearDesCreateRelationshipRequest}
+import models._
 import play.api.Mode.Mode
 import play.api.libs.json.JsValue
 import play.api.{Configuration, Play}
@@ -65,10 +65,12 @@ trait MarriageAllowanceDataConnector {
     httpGet.GET[JsValue](path)
   }
 
-  def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[JsValue] = {
+  def findRecipient(nino: String, findRecipientRequestDes: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[JsValue] = {
     implicit val hc = createHeaderCarrier
-    val query = s"surname=${utils.encodeQueryStringValue(findRecipientRequest.lastName)}&forename1=${utils.encodeQueryStringValue(findRecipientRequest.name)}&gender=${utils.encodeQueryStringValue(findRecipientRequest.gender.gender)}"
-    val nino = findRecipientRequest.nino.nino.replaceAll(" ", "")
+
+    //TODO is gender optional on the old spec, need to update "" to removing the query parameter
+    val query = s"surname=${utils.encodeQueryStringValue(findRecipientRequestDes.surname)}&forename1=${utils.encodeQueryStringValue(findRecipientRequestDes.forename1)}" +
+      s"&gender=${utils.encodeQueryStringValue(findRecipientRequestDes.gender.getOrElse(""))}"
     val path = url(s"/marriage-allowance/citizen/${nino}/check?${query}")
     httpGet.GET[JsValue](path)
   }
