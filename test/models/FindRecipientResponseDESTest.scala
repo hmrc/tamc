@@ -58,8 +58,5 @@ class FindRecipientResponseDESTest extends UnitSpec {
       expectedJson.as[FindRecipientResponseDES] shouldBe expectedModel
 
     }
-
   }
-
-
 }

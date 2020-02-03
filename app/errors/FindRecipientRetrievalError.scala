@@ -25,5 +25,5 @@ case object ServiceUnavailableError extends FindRecipientRetrievalError
 case object ResponseValidationError extends FindRecipientRetrievalError
 case object TooManyRequestsError extends FindRecipientRetrievalError
 case object TimeOutError extends FindRecipientRetrievalError
-case object UnHandledStatusError extends FindRecipientRetrievalError
 case object BadGatewayError extends FindRecipientRetrievalError
+case object UnhandledStatusError extends FindRecipientRetrievalError

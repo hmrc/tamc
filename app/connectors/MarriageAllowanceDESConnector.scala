@@ -16,21 +16,21 @@
 
 package connectors
 
-import errors.{FindRecipientRetrievalError, ResponseValidationError}
+import java.util.UUID
+
+import errors._
 import models._
 import play.api.Mode.Mode
 import play.api.data.validation.ValidationError
-import play.api.http.Status
+import play.api.http.Status._
 import play.api.libs.json.{JsPath, JsValue}
 import play.api.{Configuration, Logger, Play}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.config.ServicesConfig
 import utils.WSHttp
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
-
 
 trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
 
@@ -46,33 +46,85 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
     httpGet.GET[JsValue](path)
   }
 
-  def findRecipient(nino: String, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, FindRecipientResponseDES]] = {
+  def findRecipient(nino: String, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
 
+    //TODO make these two generic
     def extractValidationErrors: Seq[(JsPath, scala.Seq[ValidationError])] => String = errors => {
       errors.map {
         case (path, List(validationError: ValidationError, _*)) => s"$path: ${validationError.message}"
       }.mkString(", ").trim
     }
 
-    def handleError: Seq[(JsPath, scala.Seq[ValidationError])] => Left[FindRecipientRetrievalError, FindRecipientResponseDES] =  err => {
+    def handleError: Seq[(JsPath, scala.Seq[ValidationError])] => Left[FindRecipientRetrievalError, UserRecord] =  err => {
       Logger.error(s"Not able to parse the response received from DES with error ${extractValidationErrors(err)}")
       Left(ResponseValidationError)
     }
 
+    //TODO move away from Magic Numbers
+    def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[FindRecipientRetrievalError, UserRecord] = {
+      (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
+        case(1, 1) => Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
+        case(-1011, 2016) => {
+          //TODO add identifier ?
+          Logger.warn("Nino not found and Nino not found in merge trail")
+          Left(ResourceNotFoundError)
+        }
+        case(-1011, 2017) => {
+          Logger.warn("Nino not found and Nino found in multiple merge trails")
+          Left(ResourceNotFoundError)
+        }
+        case(-1011, 2018) => {
+          Logger.error("Confidence check failed")
+          Left(???)
+        }
+        case(-1011, 2039) => {
+          Logger.error("Nino must be supplied")
+          Left(BadRequestError)
+        }
+        case(-1011, 2040) => {
+          Logger.error("Only one of Nino or Temporary Reference must be supplied")
+          Left(BadRequestError)
+        }
+        case(-1011, 2061) => {
+          Logger.error("Confidence Check Surname not supplied")
+          Left(BadRequestError)
+        }
+        case(returnCode, reasonCode) => {
+          Logger.error(s"Unknown response code returned from DES: ReturnCode=$returnCode, ReasonCode=$reasonCode")
+          Left(UnhandledStatusError)
+        }
+      }
+    }
 
-    implicit val hc = createHeaderCarrier
+    implicit val updatedHeaderCarrier: HeaderCarrier = createHeaderCarrier withExtraHeaders("CorrelationId" -> UUID.randomUUID().toString)
+
     //TODO config derived
     val path = url(s"/marriage-allowance/citizen/${nino}/check")
 
-    implicit val httpRead = new HttpReads[Either[FindRecipientRetrievalError, FindRecipientResponseDES]]{
+    implicit val httpRead = new HttpReads[Either[FindRecipientRetrievalError, UserRecord]]{
 
-      override def read(method: String, url: String, response: HttpResponse): Either[FindRecipientRetrievalError, FindRecipientResponseDES] =
+      //TODO logging
+      override def read(method: String, url: String, response: HttpResponse): Either[FindRecipientRetrievalError, UserRecord] =
         response.status match {
-          case Status.OK => response.json.validate[FindRecipientResponseDES].fold(handleError(_), Right(_))
+          case OK => response.json.validate[FindRecipientResponseDES].fold(handleError(_), evaluateCodes(_))
+          case BAD_REQUEST => Left(BadRequestError)
+          case TOO_MANY_REQUESTS => Left(TooManyRequestsError)
+          case INTERNAL_SERVER_ERROR => Left(ServerError)
+          case SERVICE_UNAVAILABLE => Left(ServiceUnavailableError)
+          case 499 | GATEWAY_TIMEOUT => Left(TimeOutError)
+          case BAD_GATEWAY => Left(BadGatewayError)
+          case _ => Left(UnhandledStatusError)
         }
     }
 
-    httpPost.POST(path, findRecipientRequest)
+    httpPost.POST(path, findRecipientRequest) recover {
+      case _: GatewayTimeoutException => {
+        Left(TimeOutError)
+      }
+      case _: BadGatewayException => {
+        Left(BadGatewayError)
+      }
+    }
   }
 
   def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
@@ -86,9 +138,6 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
     val path = url(s"/marriage-allowance/citizen/${updateRelationshipRequest.participant1.instanceIdentifier}/relationship")
     httpPut.PUT(path, updateRelationshipRequest)
   }
-
-
-
 }
 
 object MarriageAllowanceDESConnector extends MarriageAllowanceDESConnector with ServicesConfig {
