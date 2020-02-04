@@ -326,6 +326,17 @@ trait MarriageAllowanceService {
 //      //TODO Move to controller
 //      case Left(_) => ???
 //    }
+
+
+//    dataConnector.findRecipient(findRecipientRequest.ninoWithoutSpaces, desRecipientRequest) map {
+//
+//
+//
+//    }
+
+
+
+
     ???
   }
 

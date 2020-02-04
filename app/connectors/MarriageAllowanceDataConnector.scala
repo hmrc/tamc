@@ -16,10 +16,13 @@
 
 package connectors
 
+import errors._
 import models._
 import play.api.Mode.Mode
-import play.api.libs.json.JsValue
-import play.api.{Configuration, Play}
+import play.api.data.validation.ValidationError
+import play.api.http.Status._
+import play.api.libs.json.{JsPath, JsValue}
+import play.api.{Configuration, Logger, Play}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.http._
@@ -41,17 +44,7 @@ object MarriageAllowanceDataConnector extends MarriageAllowanceDataConnector wit
 
 }
 
-trait MarriageAllowanceDataConnector {
-
-  val httpGet: HttpGet
-  val httpPost: HttpPost
-  val httpPut: HttpPut
-  val serviceUrl: String
-  val urlHeaderEnvironment: String
-  val urlHeaderAuthorization: String
-  def url(path: String) = s"$serviceUrl$path"
-
-  private def createHeaderCarrier = HeaderCarrier(extraHeaders = Seq(("Environment" -> urlHeaderEnvironment)), authorization = Some(Authorization(urlHeaderAuthorization)))
+trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue] = {
     implicit val hc = createHeaderCarrier
@@ -65,14 +58,43 @@ trait MarriageAllowanceDataConnector {
     httpGet.GET[JsValue](path)
   }
 
-  def findRecipient(nino: String, findRecipientRequestDes: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[JsValue] = {
+  def findRecipient(nino: String, findRecipientRequestDes: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
     implicit val hc = createHeaderCarrier
 
-    //TODO is gender optional on the old spec, need to update "" to removing the query parameter
-    val query = s"surname=${utils.encodeQueryStringValue(findRecipientRequestDes.surname)}&forename1=${utils.encodeQueryStringValue(findRecipientRequestDes.forename1)}" +
-      s"&gender=${utils.encodeQueryStringValue(findRecipientRequestDes.gender.getOrElse(""))}"
+    val genderQueryString = findRecipientRequestDes.gender.fold("")(gender => s"&gender=${utils.encodeQueryStringValue(gender)}")
+    val query = s"surname=${utils.encodeQueryStringValue(findRecipientRequestDes.surname)}&forename1=${utils.encodeQueryStringValue(findRecipientRequestDes.forename1)}$genderQueryString"
+
+    def extractValidationErrors: Seq[(JsPath, scala.Seq[ValidationError])] => String = errors => {
+      errors.map {
+        case (path, List(validationError: ValidationError, _*)) => s"$path: ${validationError.message}"
+      }.mkString(", ").trim
+    }
+
+    def handleError: Seq[(JsPath, scala.Seq[ValidationError])] => Left[FindRecipientRetrievalError, UserRecord] =  err => {
+      Logger.error(s"Not able to parse the response received from DES with error ${extractValidationErrors(err)}")
+      Left(ResponseValidationError)
+    }
+
+    //TODO move away from Magic Numbers
+    def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[FindRecipientRetrievalError, UserRecord] = {
+      (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
+        case(1, 1) => Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
+        case(_, _) => Left(UnhandledStatusError)
+      }
+    }
+
+    implicit val httpRead = new HttpReads[Either[FindRecipientRetrievalError, UserRecord]]{
+
+      //TODO logging
+    override def read(method: String, url: String, response: HttpResponse): Either[FindRecipientRetrievalError, UserRecord] =
+      response.status match {
+        case OK => response.json.validate[FindRecipientResponseDES].fold(handleError(_), evaluateCodes(_))
+        case _ => Left(UnhandledStatusError)
+      }
+    }
+
     val path = url(s"/marriage-allowance/citizen/${nino}/check?${query}")
-    httpGet.GET[JsValue](path)
+    httpGet.GET[Either[FindRecipientRetrievalError, UserRecord]](path)
   }
 
   def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {

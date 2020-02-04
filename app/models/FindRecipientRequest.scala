@@ -30,6 +30,5 @@ object FindRecipientRequest {
 }
 
 case class FindRecipientRequest(name: String, lastName: String, gender: Gender, nino: Nino, dateOfMarriage: Option[LocalDate] = None){
-  //TODO test
   val ninoWithoutSpaces = nino.value.replaceAll(" ", "")
 }

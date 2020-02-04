@@ -60,35 +60,16 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
       Left(ResponseValidationError)
     }
 
-    //TODO move away from Magic Numbers
+    //TODO create object that can contain the error message and code
     def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[FindRecipientRetrievalError, UserRecord] = {
       (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
         case(1, 1) => Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
-        case(-1011, 2016) => {
-          //TODO add identifier ?
-          Logger.warn("Nino not found and Nino not found in merge trail")
-          Left(ResourceNotFoundError)
-        }
-        case(-1011, 2017) => {
-          Logger.warn("Nino not found and Nino found in multiple merge trails")
-          Left(ResourceNotFoundError)
-        }
-        case(-1011, 2018) => {
-          Logger.error("Confidence check failed")
-          Left(???)
-        }
-        case(-1011, 2039) => {
-          Logger.error("Nino must be supplied")
-          Left(BadRequestError)
-        }
-        case(-1011, 2040) => {
-          Logger.error("Only one of Nino or Temporary Reference must be supplied")
-          Left(BadRequestError)
-        }
-        case(-1011, 2061) => {
-          Logger.error("Confidence Check Surname not supplied")
-          Left(BadRequestError)
-        }
+        case codes @ (-1011, 2016) => Left(CodedErrorResponse(codes._1, codes._2, "Nino not found and Nino not found in merge trail"))
+        case codes @ (-1011, 2017) => Left(CodedErrorResponse(codes._1, codes._2, "Nino not found and Nino found in multiple merge trails"))
+        case codes @ (-1011, 2018) => Left(CodedErrorResponse(codes._1, codes._2, "Confidence check failed"))
+        case codes @ (-1011, 2039) => Left(CodedErrorResponse(codes._1, codes._2, "Nino must be supplied"))
+        case codes @ (-1011, 2040) => Left(CodedErrorResponse(codes._1, codes._2, "Only one of Nino or Temporary Reference must be supplied"))
+        case codes @ (-1011, 2061) => Left(CodedErrorResponse(codes._1, codes._2, "Confidence Check Surname not supplied"))
         case(returnCode, reasonCode) => {
           Logger.error(s"Unknown response code returned from DES: ReturnCode=$returnCode, ReasonCode=$reasonCode")
           Left(UnhandledStatusError)

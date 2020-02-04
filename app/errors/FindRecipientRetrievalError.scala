@@ -27,3 +27,7 @@ case object TooManyRequestsError extends FindRecipientRetrievalError
 case object TimeOutError extends FindRecipientRetrievalError
 case object BadGatewayError extends FindRecipientRetrievalError
 case object UnhandledStatusError extends FindRecipientRetrievalError
+
+//TODO can this be matched upon
+case class CodedErrorResponse(returnCode: Int, reasonCode: Int, error: String) extends FindRecipientRetrievalError
+//final case class x(errorReturnCode: Int = 1, errorReasonCode: Int = 1) extends CodedErrorResponse(errorReturnCode, errorReasonCode)
