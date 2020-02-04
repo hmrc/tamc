@@ -46,7 +46,9 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
     httpGet.GET[JsValue](path)
   }
 
-  def findRecipient(nino: String, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
+  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
+
+    val updatedHeaderCarrier: HeaderCarrier = createHeaderCarrier withExtraHeaders("CorrelationId" -> UUID.randomUUID().toString)
 
     //TODO make these two generic
     def extractValidationErrors: Seq[(JsPath, scala.Seq[ValidationError])] => String = errors => {
@@ -60,7 +62,7 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
       Left(ResponseValidationError)
     }
 
-    //TODO create object that can contain the error message and code
+    //TODO constants
     def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[FindRecipientRetrievalError, UserRecord] = {
       (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
         case(1, 1) => Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
@@ -77,12 +79,7 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
       }
     }
 
-    implicit val updatedHeaderCarrier: HeaderCarrier = createHeaderCarrier withExtraHeaders("CorrelationId" -> UUID.randomUUID().toString)
-
-    //TODO config derived
-    val path = url(s"/marriage-allowance/citizen/${nino}/check")
-
-    implicit val httpRead = new HttpReads[Either[FindRecipientRetrievalError, UserRecord]]{
+    val httpRead = new HttpReads[Either[FindRecipientRetrievalError, UserRecord]]{
 
       //TODO logging
       override def read(method: String, url: String, response: HttpResponse): Either[FindRecipientRetrievalError, UserRecord] =
@@ -98,7 +95,10 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
         }
     }
 
-    httpPost.POST(path, findRecipientRequest) recover {
+    //TODO config derived
+    val path = url(s"/marriage-allowance/citizen/${ninoWithoutSpaces(nino)}/check")
+
+    httpPost.POST(path, findRecipientRequest)(implicitly, httpRead, updatedHeaderCarrier, ec = global) recover {
       case _: GatewayTimeoutException => {
         Left(TimeOutError)
       }

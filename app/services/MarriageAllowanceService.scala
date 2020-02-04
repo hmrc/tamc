@@ -57,7 +57,7 @@ trait MarriageAllowanceService {
   def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(UserRecord, List[TaxYearModel])] = {
     for {
       transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
-      recipientRecord <- getRecipientRecord(findRecipientRequest)
+      Right(recipientRecord) <- getRecipientRecord(findRecipientRequest)
       recipientRelationshipList <- listRelationship(recipientRecord.cid)
       transferorRelationshipList <- listRelationship(transferorRecord.cid)
       transferorYears <- convertToAvailedYears(transferorRelationshipList)
@@ -287,7 +287,7 @@ trait MarriageAllowanceService {
     }
   }
 
-  private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserRecord] = {
+  private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
 //    metrics.incrementTotalCounter(ApiType.FindRecipient)
 //    val timer = metrics.startTimer(ApiType.FindRecipient)
 //    val desRecipientRequest = FindRecipientRequestDes(findRecipientRequest)
@@ -335,9 +335,7 @@ trait MarriageAllowanceService {
 //    }
 
 
-
-
-    ???
+    dataConnector.findRecipient(findRecipientRequest.nino, FindRecipientRequestDes(findRecipientRequest))
   }
 
   private def listRelationshipRecord(userRecord: UserRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {

@@ -167,7 +167,7 @@ trait TestUtility {
       }
 
       //TODO fix
-      override def findRecipient(nino: String, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
+      override def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
 //        findRecipientNinoToTest = Some(nino
 //        findRecipientNinoToTestCount = findRecipientNinoToTestCount + 1
 //        super.findRecipient(nino, findRecipientRequest)

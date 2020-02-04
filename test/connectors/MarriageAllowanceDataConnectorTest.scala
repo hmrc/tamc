@@ -30,7 +30,7 @@ import play.api.http.Status._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import test_utils.WireMockHelper
-import uk.gov.hmrc.domain.Generator
+import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.{BadGatewayException, GatewayTimeoutException, HttpGet, HttpPost}
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.WSHttp
@@ -51,8 +51,8 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
   trait FindRecipientSetup {
 
     val request = FindRecipientRequestDes("testSurname", "testForename1", Some("testForename2"), Some("M"))
-    val generatedNino = new Generator().nextNino.nino
-    val url = s"/marriage-allowance/citizen/$generatedNino/check"
+    val generatedNino = new Generator().nextNino
+    val url = s"/marriage-allowance/citizen/${generatedNino.nino}/check"
 
   }
 
@@ -121,6 +121,27 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
           val result = await(connector.findRecipient(generatedNino, request))
 
           result shouldBe Right(expectedResult)
+        }
+      }
+
+      "a valid nino contains spaces" in { new FindRecipientSetup {
+
+            val reasonCode = 1
+            val returnCode = 1
+
+            val json = expectedJson(reasonCode, returnCode)
+
+            server.stubFor(
+              post(urlEqualTo(url))
+                .willReturn(ok(json.toString()))
+            )
+
+            val expectedResult = UserRecord(instanceIdentifier, updateTimestamp)
+            val ninoWithSpaces = Nino(generatedNino.formatted)
+
+            val result = await(connector.findRecipient(ninoWithSpaces, request))
+
+            result shouldBe Right(expectedResult)
         }
       }
     }
@@ -212,61 +233,6 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
           result shouldBe Left(BadRequestError)
         }
       }
-
-      "a response states a nino must be supplied" in { new FindRecipientSetup {
-
-          val returnCode = -1011
-          val reasonCode = 2039
-
-          val json = expectedJson(reasonCode, returnCode)
-
-          server.stubFor(
-            post(urlEqualTo(url))
-              .willReturn(ok(json.toString()))
-          )
-
-          val result = await(connector.findRecipient(generatedNino, request))
-
-          result shouldBe Left(BadRequestError)
-        }
-      }
-
-      "a response states only one of Nino or temporary reference must be supplied" in { new FindRecipientSetup {
-
-          val returnCode = -1011
-          val reasonCode = 2040
-
-          val json = expectedJson(reasonCode, returnCode)
-
-          server.stubFor(
-            post(urlEqualTo(url))
-              .willReturn(ok(json.toString()))
-          )
-
-          val result = await(connector.findRecipient(generatedNino, request))
-
-          result shouldBe Left(BadRequestError)
-        }
-      }
-
-      "a response states the confidence check surname has not been supplied" in { new FindRecipientSetup {
-
-          val returnCode = -1011
-          val reasonCode = 2061
-
-          val json = expectedJson(reasonCode, returnCode)
-
-          server.stubFor(
-            post(urlEqualTo(url))
-              .willReturn(ok(json.toString()))
-          )
-
-          val result = await(connector.findRecipient(generatedNino, request))
-
-          result shouldBe Left(BadRequestError)
-        }
-      }
-
     }
 
 
@@ -311,8 +277,74 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
     }
 
+    "return a ServerError type when an InternalServerError is received " in { new FindRecipientSetup {
+        server.stubFor(
+          post(urlEqualTo(url))
+            .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
+        )
 
-    "return a ResourceNotFound Error" when {
+        val result = await(connector.findRecipient(generatedNino, request))
+
+        result shouldBe Left(ServerError)
+
+      }
+    }
+
+    "return a CodedErrorResponse" when {
+
+      "a response states a nino must be supplied" in { new FindRecipientSetup {
+
+        val returnCode = -1011
+        val reasonCode = 2039
+
+        val json = expectedJson(reasonCode, returnCode)
+
+        server.stubFor(
+          post(urlEqualTo(url))
+            .willReturn(ok(json.toString()))
+        )
+
+        val result = await(connector.findRecipient(generatedNino, request))
+
+        result shouldBe Left(CodedErrorResponse(returnCode, reasonCode, "Nino must be supplied"))
+      }
+      }
+
+      "a response states only one of Nino or temporary reference must be supplied" in { new FindRecipientSetup {
+
+        val returnCode = -1011
+        val reasonCode = 2040
+
+        val json = expectedJson(reasonCode, returnCode)
+
+        server.stubFor(
+          post(urlEqualTo(url))
+            .willReturn(ok(json.toString()))
+        )
+
+        val result = await(connector.findRecipient(generatedNino, request))
+
+        result shouldBe Left(CodedErrorResponse(returnCode, reasonCode, "Only one of Nino or Temporary Reference must be supplied"))
+      }
+      }
+
+      "a response states the confidence check surname has not been supplied" in { new FindRecipientSetup {
+
+        val returnCode = -1011
+        val reasonCode = 2061
+
+        val json = expectedJson(reasonCode, returnCode)
+
+        server.stubFor(
+          post(urlEqualTo(url))
+            .willReturn(ok(json.toString()))
+        )
+
+        val result = await(connector.findRecipient(generatedNino, request))
+
+        result shouldBe Left(CodedErrorResponse(returnCode, reasonCode, "Confidence Check Surname not supplied"))
+      }
+      }
 
       "the returnCode and reasonCode state the nino is not found" in new FindRecipientSetup {
 
@@ -327,8 +359,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         )
 
         val result = await(connector.findRecipient(generatedNino, request))
-
-        result shouldBe Left(ResourceNotFoundError)
+        result shouldBe Left(CodedErrorResponse(returnCode, reasonCode, "Nino not found and Nino not found in merge trail"))
 
       }
 
@@ -346,23 +377,11 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
         val result = await(connector.findRecipient(generatedNino, request))
 
-        result shouldBe Left(ResourceNotFoundError)
+        result shouldBe Left(CodedErrorResponse(returnCode, reasonCode, "Nino not found and Nino found in multiple merge trails"))
 
       }
 
-    }
 
-    "return a ServerError type when an InternalServerError is received " in { new FindRecipientSetup {
-        server.stubFor(
-          post(urlEqualTo(url))
-            .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
-        )
-
-        val result = await(connector.findRecipient(generatedNino, request))
-
-        result shouldBe Left(ServerError)
-
-      }
     }
 
     "return an UnhandledStatusError type" when {

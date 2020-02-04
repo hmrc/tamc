@@ -29,6 +29,4 @@ object FindRecipientRequest {
   implicit val formats = Json.format[FindRecipientRequest]
 }
 
-case class FindRecipientRequest(name: String, lastName: String, gender: Gender, nino: Nino, dateOfMarriage: Option[LocalDate] = None){
-  val ninoWithoutSpaces = nino.value.replaceAll(" ", "")
-}
+case class FindRecipientRequest(name: String, lastName: String, gender: Gender, nino: Nino, dateOfMarriage: Option[LocalDate] = None)

@@ -24,7 +24,6 @@ import play.api.http.Status._
 import play.api.libs.json.{JsPath, JsValue}
 import play.api.{Configuration, Logger, Play}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.config.ServicesConfig
 import utils.WSHttp
@@ -58,7 +57,7 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
     httpGet.GET[JsValue](path)
   }
 
-  def findRecipient(nino: String, findRecipientRequestDes: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
+  def findRecipient(nino: Nino, findRecipientRequestDes: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
     implicit val hc = createHeaderCarrier
 
     val genderQueryString = findRecipientRequestDes.gender.fold("")(gender => s"&gender=${utils.encodeQueryStringValue(gender)}")
@@ -79,7 +78,16 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
     def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[FindRecipientRetrievalError, UserRecord] = {
       (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
         case(1, 1) => Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
-        case(_, _) => Left(UnhandledStatusError)
+        case codes @ (-1011, 2016) => Left(CodedErrorResponse(codes._1, codes._2, "Nino not found and Nino not found in merge trail"))
+        case codes @ (-1011, 2017) => Left(CodedErrorResponse(codes._1, codes._2, "Nino not found and Nino found in multiple merge trails"))
+        case codes @ (-1011, 2018) => Left(CodedErrorResponse(codes._1, codes._2, "Confidence check failed"))
+        case codes @ (-1011, 2039) => Left(CodedErrorResponse(codes._1, codes._2, "Nino must be supplied"))
+        case codes @ (-1011, 2040) => Left(CodedErrorResponse(codes._1, codes._2, "Only one of Nino or Temporary Reference must be supplied"))
+        case codes @ (-1011, 2061) => Left(CodedErrorResponse(codes._1, codes._2, "Confidence Check Surname not supplied"))
+        case(returnCode, reasonCode) => {
+          Logger.error(s"Unknown response code returned from DES: ReturnCode=$returnCode, ReasonCode=$reasonCode")
+          Left(UnhandledStatusError)
+        }
       }
     }
 
@@ -93,7 +101,7 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
       }
     }
 
-    val path = url(s"/marriage-allowance/citizen/${nino}/check?${query}")
+    val path = url(s"/marriage-allowance/citizen/${ninoWithoutSpaces(nino)}/check?${query}")
     httpGet.GET[Either[FindRecipientRetrievalError, UserRecord]](path)
   }
 
