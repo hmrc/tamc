@@ -22,6 +22,7 @@ import play.api.libs.json.JsValue
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.logging.Authorization
+import metrics.Metrics
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -33,6 +34,7 @@ trait MarriageAllowanceConnector {
   val serviceUrl: String
   val urlHeaderEnvironment: String
   val urlHeaderAuthorization: String
+  val metrics: Metrics
   def url(path: String) = s"$serviceUrl$path"
   def ninoWithoutSpaces(nino: Nino) = nino.value.replaceAll(" ", "")
 
@@ -40,7 +42,7 @@ trait MarriageAllowanceConnector {
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue]
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue]
-  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]]
+  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]]
   def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse]
   def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse]
 

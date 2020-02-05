@@ -148,6 +148,7 @@ trait TestUtility {
       override val serviceUrl: String = "foo"
       override val urlHeaderEnvironment = "test-environment"
       override val urlHeaderAuthorization = "test-bearer-token"
+      override val metrics = Metrics
 
       var findCitizenNinoToTest: Option[Nino] = None
       var findRecipientNinoToTest: Option[Nino] = None
@@ -167,7 +168,7 @@ trait TestUtility {
       }
 
       //TODO fix
-      override def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
+      override def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
 //        findRecipientNinoToTest = Some(nino
 //        findRecipientNinoToTestCount = findRecipientNinoToTestCount + 1
 //        super.findRecipient(nino, findRecipientRequest)
@@ -215,6 +216,8 @@ trait TestUtility {
       override def incrementSuccessCounter(api: ApiType): Unit = {}
 
       override def incrementTotalCounter(api: ApiType): Unit = {}
+
+      override def incrementFailedCounter(api: ApiType): Unit = {}
     }
 
     //TODO fix

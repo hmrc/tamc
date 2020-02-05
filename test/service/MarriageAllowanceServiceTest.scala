@@ -75,6 +75,7 @@ object mockDeceasedDataConnector extends MarriageAllowanceDataConnector {
   override val serviceUrl = ""
   override val urlHeaderEnvironment = ""
   override val urlHeaderAuthorization = "foo"
+  override val metrics = Metrics
 
   override def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
     Future.failed(new BadRequestException("{\"reason\": \"Participant is deceased\"}"))
@@ -88,6 +89,7 @@ object mockAuthorityDataConnector extends MarriageAllowanceDataConnector {
   override val serviceUrl = ""
   override val urlHeaderEnvironment = ""
   override val urlHeaderAuthorization = "foo"
+  override val metrics = Metrics
 
   override def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
     Future.failed(new BadRequestException("{\"reason\": \"User does not have authority to retrieve requested Participant 1 record\"}"))
@@ -108,4 +110,6 @@ object Metrics extends Metrics {
   def incrementSuccessCounter(api: ApiType.ApiType) = {}
 
   def incrementTotalCounter(api: ApiType.ApiType) = {}
+
+  def incrementFailedCounter(api: ApiType) = {}
 }

@@ -16,9 +16,11 @@
 
 package connectors
 
+import com.codahale.metrics.Timer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connectors.MarriageAllowanceDESConnector.baseUrl
 import errors._
+import metrics.Metrics
 import models._
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
@@ -50,9 +52,12 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
   trait FindRecipientSetup {
 
-    val request = FindRecipientRequestDes("testSurname", "testForename1", Some("testForename2"), Some("M"))
     val generatedNino = new Generator().nextNino
+    val request = FindRecipientRequest(name = "testForename1", lastName = "testLastName", gender = Gender("M"), nino = generatedNino)
     val url = s"/marriage-allowance/citizen/${generatedNino.nino}/check"
+
+    val mockTimerContext = mock[Timer.Context]
+    when(connector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
 
   }
 
@@ -63,6 +68,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
     override val serviceUrl = baseUrl("marriage-allowance-des")
     override val urlHeaderEnvironment = "test"
     override val urlHeaderAuthorization = "Bearer"
+    override val metrics = mock[Metrics]
   }
 
   lazy val mockedPostConnector = new MarriageAllowanceDESConnector {
@@ -72,6 +78,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
     override val serviceUrl = baseUrl("marriage-allowance-des")
     override val urlHeaderEnvironment = "test"
     override val urlHeaderAuthorization = "Bearer"
+    override val metrics = mock[Metrics]
   }
 
   val instanceIdentifier: Cid = 123456789
@@ -240,6 +247,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       "a GatewayTimeout is received" in new FindRecipientSetup {
 
+        when(mockedPostConnector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
         when(mockedPostConnector.httpPost.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
           .thenReturn(Future.failed(new GatewayTimeoutException("timeout")))
 
@@ -266,6 +274,8 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
     "return a BadGateway Error" when {
 
       "a BadGateway Exception is received" in new FindRecipientSetup {
+
+        when(mockedPostConnector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
 
         when(mockedPostConnector.httpPost.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
           .thenReturn(Future.failed(new BadGatewayException("Bad gateway")))

@@ -16,27 +16,24 @@
 
 package connectors
 
+import com.codahale.metrics.Timer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import connectors.MarriageAllowanceDESConnector.baseUrl
 import errors._
+import metrics.Metrics
 import models._
-import org.mockito.ArgumentMatchers
-import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
-import play.api.http.Status._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import test_utils.WireMockHelper
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.http.{BadGatewayException, GatewayTimeoutException, HttpGet, HttpPost}
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.WSHttp
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSuite with WireMockHelper with MockitoSugar {
 
@@ -50,28 +47,26 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
   trait FindRecipientSetup {
 
-    val request = FindRecipientRequestDes("testSurname", "testForename1", Some("testForename2"), Some("M"))
     val generatedNino = new Generator().nextNino
-    val url = s"/marriage-allowance/citizen/${generatedNino.nino}/check"
+    val surname = "testSurname"
+    val forename1 = "testForename1"
+    val gender = "M"
+    val request = FindRecipientRequest(name = forename1, lastName = surname, gender = Gender(gender), nino = generatedNino)
+    val queryString = s"surname=${utils.encodeQueryStringValue(surname)}&forename1=${utils.encodeQueryStringValue(forename1)}&gender=${utils.encodeQueryStringValue(gender)}"
+    val url = s"/marriage-allowance/citizen/${generatedNino.nino}/check?${queryString}"
 
+    val mockTimerContext = mock[Timer.Context]
+    when(connector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
   }
 
-  lazy val connector = new MarriageAllowanceDESConnector {
+  lazy val connector = new MarriageAllowanceDataConnector {
     override val httpGet = WSHttp
     override val httpPost = WSHttp
     override val httpPut = WSHttp
     override val serviceUrl = baseUrl("marriage-allowance-des")
     override val urlHeaderEnvironment = "test"
     override val urlHeaderAuthorization = "Bearer"
-  }
-
-  lazy val mockedPostConnector = new MarriageAllowanceDESConnector {
-    override val httpGet: HttpGet = WSHttp
-    override val httpPost: HttpPost = mock[WSHttp]
-    override val httpPut = WSHttp
-    override val serviceUrl = baseUrl("marriage-allowance-des")
-    override val urlHeaderEnvironment = "test"
-    override val urlHeaderAuthorization = "Bearer"
+    override val metrics = mock[Metrics]
   }
 
   val instanceIdentifier: Cid = 123456789
@@ -104,7 +99,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
   "findRecipient" should {
 
-    "return a UserRecord given valid Json" when {
+    "return a UserRecord given a valid request" when {
 
       "the return code and response code are both 1" in { new FindRecipientSetup {
 
@@ -114,7 +109,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
           val json = expectedJson(reasonCode, returnCode)
 
           server.stubFor(
-            post(urlEqualTo(url))
+            get(urlEqualTo(url))
               .willReturn(ok(json.toString()))
           )
           val expectedResult = UserRecord(instanceIdentifier, updateTimestamp)
@@ -132,7 +127,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
             val json = expectedJson(reasonCode, returnCode)
 
             server.stubFor(
-              post(urlEqualTo(url))
+              get(urlEqualTo(url))
                 .willReturn(ok(json.toString()))
             )
 
@@ -145,31 +140,6 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         }
       }
     }
-
-    "contain the correct headers to send to DES" in new FindRecipientSetup {
-
-      val uuidRegex = """[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}"""
-
-      val reasonCode = 1
-      val returnCode = 1
-
-      val json = expectedJson(reasonCode, returnCode)
-
-
-      server.stubFor(
-        post(urlEqualTo(url))
-          .willReturn(ok(json.toString()))
-      )
-
-      val result = await(connector.findRecipient(generatedNino, request))
-
-      server.verify(postRequestedFor(urlEqualTo(url))
-        .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
-        .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
-        .withHeader("CorrelationId", matching(uuidRegex))
-      )
-    }
-
 
     "return a ResponseValidator error given non valid Json" in { new FindRecipientSetup {
 
@@ -195,97 +165,13 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
       }"""
 
       server.stubFor(
-        post(urlEqualTo(url))
+        get(urlEqualTo(url))
           .willReturn(ok(nonValidJson.toString()))
       )
 
       val result = await(connector.findRecipient(generatedNino, request))
 
       result shouldBe Left(ResponseValidationError)
-
-      }
-    }
-
-    "return a Too Many Requests error type when a TOO_MANY_REQUESTS error is received " in { new FindRecipientSetup {
-        server.stubFor(
-          post(urlEqualTo(url))
-            .willReturn(aResponse().withStatus(TOO_MANY_REQUESTS))
-        )
-
-        val result = await(connector.findRecipient(generatedNino, request))
-
-        result shouldBe Left(TooManyRequestsError)
-
-       }
-    }
-
-
-    "return a BadRequest error type" when {
-
-      "a BadRequest is received " in { new FindRecipientSetup {
-          server.stubFor(
-            post(urlEqualTo(url))
-              .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("Submission has not passed validation"))
-          )
-
-          val result = await(connector.findRecipient(generatedNino, request))
-
-          result shouldBe Left(BadRequestError)
-        }
-      }
-    }
-
-
-    "return a TimeOutError " when {
-
-      "a GatewayTimeout is received" in new FindRecipientSetup {
-
-        when(mockedPostConnector.httpPost.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
-          .thenReturn(Future.failed(new GatewayTimeoutException("timeout")))
-
-        val result = await(mockedPostConnector.findRecipient(generatedNino, request))
-
-        result shouldBe Left(TimeOutError)
-
-      }
-
-      "a 499 status is received" in new FindRecipientSetup {
-
-        server.stubFor(
-          post(urlEqualTo(url))
-            .willReturn(aResponse().withStatus(499).withBody("Proxy timeout"))
-        )
-
-        val result = await(connector.findRecipient(generatedNino, request))
-
-        result shouldBe Left(TimeOutError)
-      }
-
-    }
-
-    "return a BadGateway Error" when {
-
-      "a BadGateway Exception is received" in new FindRecipientSetup {
-
-        when(mockedPostConnector.httpPost.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
-          .thenReturn(Future.failed(new BadGatewayException("Bad gateway")))
-
-        val result = await(mockedPostConnector.findRecipient(generatedNino, request))
-
-        result shouldBe Left(BadGatewayError)
-      }
-
-    }
-
-    "return a ServerError type when an InternalServerError is received " in { new FindRecipientSetup {
-        server.stubFor(
-          post(urlEqualTo(url))
-            .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
-        )
-
-        val result = await(connector.findRecipient(generatedNino, request))
-
-        result shouldBe Left(ServerError)
 
       }
     }
@@ -300,7 +186,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         val json = expectedJson(reasonCode, returnCode)
 
         server.stubFor(
-          post(urlEqualTo(url))
+          get(urlEqualTo(url))
             .willReturn(ok(json.toString()))
         )
 
@@ -318,7 +204,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         val json = expectedJson(reasonCode, returnCode)
 
         server.stubFor(
-          post(urlEqualTo(url))
+          get(urlEqualTo(url))
             .willReturn(ok(json.toString()))
         )
 
@@ -336,7 +222,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         val json = expectedJson(reasonCode, returnCode)
 
         server.stubFor(
-          post(urlEqualTo(url))
+          get(urlEqualTo(url))
             .willReturn(ok(json.toString()))
         )
 
@@ -354,7 +240,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         val json = expectedJson(reasonCode, returnCode)
 
         server.stubFor(
-          post(urlEqualTo(url))
+          get(urlEqualTo(url))
             .willReturn(ok(json.toString()))
         )
 
@@ -371,7 +257,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         val json = expectedJson(reasonCode, returnCode)
 
         server.stubFor(
-          post(urlEqualTo(url))
+          get(urlEqualTo(url))
             .willReturn(ok(json.toString()))
         )
 
@@ -389,7 +275,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
       "an unsupported status code is received" in {
         new FindRecipientSetup {
           server.stubFor(
-            post(urlEqualTo(url))
+            get(urlEqualTo(url))
               .willReturn(aResponse().withStatus(413).withBody("Payload too large"))
           )
 
@@ -408,7 +294,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
           val json = expectedJson(reasonCode, returnCode)
 
           server.stubFor(
-            post(urlEqualTo(url))
+            get(urlEqualTo(url))
               .willReturn(ok(json.toString()))
           )
 

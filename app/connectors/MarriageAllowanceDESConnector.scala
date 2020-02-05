@@ -19,6 +19,7 @@ package connectors
 import java.util.UUID
 
 import errors._
+import metrics.Metrics
 import models._
 import play.api.Mode.Mode
 import play.api.data.validation.ValidationError
@@ -29,6 +30,7 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.config.ServicesConfig
 import utils.WSHttp
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -46,9 +48,7 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
     httpGet.GET[JsValue](path)
   }
 
-  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
-
-    val updatedHeaderCarrier: HeaderCarrier = createHeaderCarrier withExtraHeaders("CorrelationId" -> UUID.randomUUID().toString)
+  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
 
     //TODO make these two generic
     def extractValidationErrors: Seq[(JsPath, scala.Seq[ValidationError])] => String = errors => {
@@ -65,41 +65,50 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
     //TODO constants
     def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[DataRetrievalError, UserRecord] = {
 
-
       (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
-        case(1, 1) => Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
+        case(1, 1) =>{
+          metrics.incrementSuccessCounter(ApiType.FindRecipient)
+          Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
+        }
         case codes @ (-1011, 2016) => {
           val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino not found in merge trail")
           Logger.warn(codedErrorResponse.errorMessage)
+          metrics.incrementSuccessCounter(ApiType.FindRecipient)
           Left(codedErrorResponse)
         }
         case codes @ (-1011, 2017) => {
           val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino found in multiple merge trails")
           Logger.warn(codedErrorResponse.errorMessage)
+          metrics.incrementSuccessCounter(ApiType.FindRecipient)
           Left(codedErrorResponse)
         }
         case codes @ (-1011, 2018) => {
           val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence check failed")
           Logger.error(codedErrorResponse.errorMessage)
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
           Left(codedErrorResponse)
         }
         case codes @ (-1011, 2039) => {
           val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino must be supplied")
           Logger.error(codedErrorResponse.errorMessage)
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
           Left(codedErrorResponse)
         }
         case codes @ (-1011, 2040) => {
           val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Only one of Nino or Temporary Reference must be supplied")
           Logger.error(codedErrorResponse.errorMessage)
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
           Left(codedErrorResponse)
         }
         case codes @ (-1011, 2061) => {
           val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence Check Surname not supplied")
           Logger.error(codedErrorResponse.errorMessage)
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
           Left(codedErrorResponse)
         }
         case(returnCode, reasonCode) => {
           Logger.error(s"Unknown response code returned from DES: ReturnCode=$returnCode, ReasonCode=$reasonCode")
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
           Left(UnhandledStatusError)
         }
       }
@@ -121,14 +130,26 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
         }
     }
 
-    //TODO config derived
+    val updatedHeaderCarrier: HeaderCarrier = createHeaderCarrier withExtraHeaders("CorrelationId" -> UUID.randomUUID().toString)
     val path = url(s"/marriage-allowance/citizen/${ninoWithoutSpaces(nino)}/check")
+    val findRecipientRequestDes = FindRecipientRequestDes(findRecipientRequest)
 
-    httpPost.POST(path, findRecipientRequest)(implicitly, httpRead, updatedHeaderCarrier, ec = global) recover {
+    metrics.incrementTotalCounter(ApiType.FindRecipient)
+    val timer = metrics.startTimer(ApiType.FindRecipient)
+
+    httpPost.POST(path, findRecipientRequestDes)(implicitly, httpRead, updatedHeaderCarrier, ec = global).map { response =>
+      timer.stop()
+      response
+
+    } recover {
       case _: GatewayTimeoutException => {
+        metrics.incrementFailedCounter(ApiType.FindRecipient)
+        timer.stop()
         Left(TimeOutError)
       }
       case _: BadGatewayException => {
+        metrics.incrementFailedCounter(ApiType.FindRecipient)
+        timer.stop()
         Left(BadGatewayError)
       }
     }
@@ -157,5 +178,6 @@ object MarriageAllowanceDESConnector extends MarriageAllowanceDESConnector with 
   override val serviceUrl = baseUrl("marriage-allowance-des")
   override val urlHeaderEnvironment = config("marriage-allowance-des").getString("environment").get
   override val urlHeaderAuthorization = s"Bearer ${config("marriage-allowance-des").getString("authorization-token").get}"
+  override val metrics = Metrics
 
 }

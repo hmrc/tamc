@@ -305,54 +305,7 @@ trait MarriageAllowanceService {
   }
 
   private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
-//    metrics.incrementTotalCounter(ApiType.FindRecipient)
-//    val timer = metrics.startTimer(ApiType.FindRecipient)
-//    val desRecipientRequest = FindRecipientRequestDes(findRecipientRequest)
-//
-//    dataConnector.findRecipient(findRecipientRequest.ninoWithoutSpaces, desRecipientRequest).map {
-//      case Right(json) =>  {
-//        timer.stop()
-//        ((json
-//          \ "Jfwk1012FindCheckPerNoninocallResponse"
-//          \ "Jfwk1012FindCheckPerNoninoExport"
-//          \ "OutWCbdParameters"
-//          \ "ReturnCode").as[Int],
-//          (json
-//            \ "Jfwk1012FindCheckPerNoninocallResponse"
-//            \ "Jfwk1012FindCheckPerNoninoExport"
-//            \ "OutWCbdParameters"
-//            \ "ReasonCode").as[Int]) match {
-//          case (1, 1) =>
-//            metrics.incrementSuccessCounter(ApiType.FindRecipient)
-//            UserRecord(
-//              cid = (json
-//                \ "Jfwk1012FindCheckPerNoninocallResponse"
-//                \ "Jfwk1012FindCheckPerNoninoExport"
-//                \ "OutItpr1Person"
-//                \ "InstanceIdentifier").as[Cid],
-//              timestamp = (json
-//                \ "Jfwk1012FindCheckPerNoninocallResponse"
-//                \ "Jfwk1012FindCheckPerNoninoExport"
-//                \ "OutItpr1Person"
-//                \ "UpdateTimestamp").as[Timestamp])
-//          case (returnCode, reasonCode) =>
-//            metrics.incrementSuccessCounter(ApiType.FindRecipient)
-//            throw new FindRecipientError(returnCode, reasonCode)
-//        }
-//      }
-//      //TODO Move to controller
-//      case Left(_) => ???
-//    }
-
-
-//    dataConnector.findRecipient(findRecipientRequest.ninoWithoutSpaces, desRecipientRequest) map {
-//
-//
-//
-//    }
-
-
-    dataConnector.findRecipient(findRecipientRequest.nino, FindRecipientRequestDes(findRecipientRequest))
+    dataConnector.findRecipient(findRecipientRequest.nino, findRecipientRequest)
   }
 
   private def listRelationshipRecord(userRecord: UserRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {

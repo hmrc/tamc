@@ -17,6 +17,7 @@
 package connectors
 
 import errors._
+import metrics.Metrics
 import models._
 import play.api.Mode.Mode
 import play.api.data.validation.ValidationError
@@ -40,6 +41,7 @@ object MarriageAllowanceDataConnector extends MarriageAllowanceDataConnector wit
   override val serviceUrl = baseUrl("marriage-allowance-des")
   override val urlHeaderEnvironment = config("marriage-allowance-des").getString("environment").get
   override val urlHeaderAuthorization = s"Bearer ${config("marriage-allowance-des").getString("authorization-token").get}"
+  override val metrics = Metrics
 
 }
 
@@ -57,11 +59,8 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
     httpGet.GET[JsValue](path)
   }
 
-  def findRecipient(nino: Nino, findRecipientRequestDes: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
+  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
     implicit val hc = createHeaderCarrier
-
-    val genderQueryString = findRecipientRequestDes.gender.fold("")(gender => s"&gender=${utils.encodeQueryStringValue(gender)}")
-    val query = s"surname=${utils.encodeQueryStringValue(findRecipientRequestDes.surname)}&forename1=${utils.encodeQueryStringValue(findRecipientRequestDes.forename1)}$genderQueryString"
 
     def extractValidationErrors: Seq[(JsPath, scala.Seq[ValidationError])] => String = errors => {
       errors.map {
@@ -74,18 +73,53 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
       Left(ResponseValidationError)
     }
 
-    //TODO move away from Magic Numbers
+    //TODO constants
     def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[DataRetrievalError, UserRecord] = {
+
       (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
-        case(1, 1) => Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
-        case codes @ (-1011, 2016) => Left(FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino not found in merge trail"))
-        case codes @ (-1011, 2017) => Left(FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino found in multiple merge trails"))
-        case codes @ (-1011, 2018) => Left(FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence check failed"))
-        case codes @ (-1011, 2039) => Left(FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino must be supplied"))
-        case codes @ (-1011, 2040) => Left(FindRecipientCodedErrorResponse(codes._1, codes._2, "Only one of Nino or Temporary Reference must be supplied"))
-        case codes @ (-1011, 2061) => Left(FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence Check Surname not supplied"))
+        case(1, 1) =>{
+          metrics.incrementSuccessCounter(ApiType.FindRecipient)
+          Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
+        }
+        case codes @ (-1011, 2016) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino not found in merge trail")
+          Logger.warn(codedErrorResponse.errorMessage)
+          metrics.incrementSuccessCounter(ApiType.FindRecipient)
+          Left(codedErrorResponse)
+        }
+        case codes @ (-1011, 2017) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino found in multiple merge trails")
+          Logger.warn(codedErrorResponse.errorMessage)
+          metrics.incrementSuccessCounter(ApiType.FindRecipient)
+          Left(codedErrorResponse)
+        }
+        case codes @ (-1011, 2018) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence check failed")
+          Logger.error(codedErrorResponse.errorMessage)
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
+          Left(codedErrorResponse)
+        }
+        case codes @ (-1011, 2039) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino must be supplied")
+          Logger.error(codedErrorResponse.errorMessage)
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
+          Left(codedErrorResponse)
+        }
+        case codes @ (-1011, 2040) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Only one of Nino or Temporary Reference must be supplied")
+          Logger.error(codedErrorResponse.errorMessage)
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
+          Left(codedErrorResponse)
+        }
+        case codes @ (-1011, 2061) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence Check Surname not supplied")
+          Logger.error(codedErrorResponse.errorMessage)
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
+          Left(codedErrorResponse)
+        }
         case(returnCode, reasonCode) => {
           Logger.error(s"Unknown response code returned from DES: ReturnCode=$returnCode, ReasonCode=$reasonCode")
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
           Left(UnhandledStatusError)
         }
       }
@@ -101,8 +135,18 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
       }
     }
 
-    val path = url(s"/marriage-allowance/citizen/${ninoWithoutSpaces(nino)}/check?${query}")
-    httpGet.GET[Either[DataRetrievalError, UserRecord]](path)
+    val queryString = s"surname=${utils.encodeQueryStringValue(findRecipientRequest.lastName)}&forename1=${utils.encodeQueryStringValue(findRecipientRequest.name)}" +
+      s"&gender=${utils.encodeQueryStringValue(findRecipientRequest.gender.gender)}"
+
+    val path = url(s"/marriage-allowance/citizen/${ninoWithoutSpaces(nino)}/check?${queryString}")
+
+    metrics.incrementTotalCounter(ApiType.FindRecipient)
+    val timer = metrics.startTimer(ApiType.FindRecipient)
+
+    httpGet.GET[Either[DataRetrievalError, UserRecord]](path). map { response =>
+      timer.stop()
+      response
+    }
   }
 
   def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
