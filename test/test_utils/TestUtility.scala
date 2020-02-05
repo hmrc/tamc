@@ -23,8 +23,8 @@ import com.kenshoo.play.metrics.PlayModule
 import com.typesafe.config.Config
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import controllers.MarriageAllowanceController
+import errors.DataRetrievalError
 import errors.ErrorResponseStatus._
-import errors.FindRecipientRetrievalError
 import metrics.Metrics
 import models.ApiType.ApiType
 import models._
@@ -167,7 +167,7 @@ trait TestUtility {
       }
 
       //TODO fix
-      override def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
+      override def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
 //        findRecipientNinoToTest = Some(nino
 //        findRecipientNinoToTestCount = findRecipientNinoToTestCount + 1
 //        super.findRecipient(nino, findRecipientRequest)

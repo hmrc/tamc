@@ -16,18 +16,19 @@
 
 package errors
 
-sealed trait FindRecipientRetrievalError
+sealed trait DataRetrievalError
 
-case object ResourceNotFoundError extends FindRecipientRetrievalError
-case object BadRequestError extends FindRecipientRetrievalError
-case object ServerError extends FindRecipientRetrievalError
-case object ServiceUnavailableError extends FindRecipientRetrievalError
-case object ResponseValidationError extends FindRecipientRetrievalError
-case object TooManyRequestsError extends FindRecipientRetrievalError
-case object TimeOutError extends FindRecipientRetrievalError
-case object BadGatewayError extends FindRecipientRetrievalError
-case object UnhandledStatusError extends FindRecipientRetrievalError
+sealed trait StatusError extends DataRetrievalError
+case object ResourceNotFoundError extends StatusError
+case object BadRequestError extends StatusError
+case object ServerError extends StatusError
+case object ServiceUnavailableError extends StatusError
+case object ResponseValidationError extends StatusError
+case object TooManyRequestsError extends StatusError
+case object TimeOutError extends StatusError
+case object BadGatewayError extends StatusError
+case object UnhandledStatusError extends StatusError
 
-//TODO can this be matched upon
-case class CodedErrorResponse(returnCode: Int, reasonCode: Int, error: String) extends FindRecipientRetrievalError
-//final case class x(errorReturnCode: Int = 1, errorReasonCode: Int = 1) extends CodedErrorResponse(errorReturnCode, errorReasonCode)
+case class FindRecipientCodedErrorResponse(returnCode: Int, reasonCode: Int, message: String) extends DataRetrievalError {
+  def errorMessage: String = s"A FindRecipient error has occurred: returnCode:$returnCode, reasonCode:$reasonCode, message=$message"
+}

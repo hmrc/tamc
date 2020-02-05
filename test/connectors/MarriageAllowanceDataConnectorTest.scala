@@ -306,7 +306,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
         val result = await(connector.findRecipient(generatedNino, request))
 
-        result shouldBe Left(CodedErrorResponse(returnCode, reasonCode, "Nino must be supplied"))
+        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Nino must be supplied"))
       }
       }
 
@@ -324,7 +324,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
         val result = await(connector.findRecipient(generatedNino, request))
 
-        result shouldBe Left(CodedErrorResponse(returnCode, reasonCode, "Only one of Nino or Temporary Reference must be supplied"))
+        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Only one of Nino or Temporary Reference must be supplied"))
       }
       }
 
@@ -342,7 +342,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
         val result = await(connector.findRecipient(generatedNino, request))
 
-        result shouldBe Left(CodedErrorResponse(returnCode, reasonCode, "Confidence Check Surname not supplied"))
+        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Confidence Check Surname not supplied"))
       }
       }
 
@@ -359,7 +359,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         )
 
         val result = await(connector.findRecipient(generatedNino, request))
-        result shouldBe Left(CodedErrorResponse(returnCode, reasonCode, "Nino not found and Nino not found in merge trail"))
+        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Nino not found and Nino not found in merge trail"))
 
       }
 
@@ -377,7 +377,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
         val result = await(connector.findRecipient(generatedNino, request))
 
-        result shouldBe Left(CodedErrorResponse(returnCode, reasonCode, "Nino not found and Nino found in multiple merge trails"))
+        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Nino not found and Nino found in multiple merge trails"))
 
       }
 

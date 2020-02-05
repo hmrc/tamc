@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import config.ApplicationConfig._
-import connectors.{EmailConnector, MarriageAllowanceConnector, MarriageAllowanceDESConnector, MarriageAllowanceDataConnector}
+import connectors.{EmailConnector, MarriageAllowanceConnector, MarriageAllowanceDESConnector}
 import errors._
 import metrics.Metrics
 import models.{TaxYear => TaxYearModel, _}
@@ -54,17 +54,34 @@ trait MarriageAllowanceService {
 
   def currentTaxYear: Int = TaxYear.current.startYear
 
-  def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(UserRecord, List[TaxYearModel])] = {
-    for {
-      transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
-      Right(recipientRecord) <- getRecipientRecord(findRecipientRequest)
-      recipientRelationshipList <- listRelationship(recipientRecord.cid)
-      transferorRelationshipList <- listRelationship(transferorRecord.cid)
-      transferorYears <- convertToAvailedYears(transferorRelationshipList)
-      recipientYears <- convertToAvailedYears(recipientRelationshipList)
-      eligibleYearsBasdOnDoM <- getEligibleTaxYearList(findRecipientRequest.dateOfMarriage.get) //TODO convert dateOfMarriage to non-optional in Phase-3
-      years <- getListOfEligibleTaxYears(transferorYears, recipientYears, eligibleYearsBasdOnDoM)
-    } yield { (recipientRecord, years) }
+  def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext):
+    Future[Either[DataRetrievalError, (UserRecord, List[TaxYearModel])]] = {
+
+    def flatten[A, B](f: Future[Either[B, Future[A]]]): Future[Either[B, A]] =
+    f.flatMap({
+      case Left(b) => Future.successful(Left(b))
+      case Right(a) => a.map(Right(_))
+    })
+
+     def retrieveTaxYearModels(userRecord: UserRecord): Future[List[TaxYearModel]] = {
+       for {
+         transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
+         recipientRelationshipList <- listRelationship(userRecord.cid)
+         transferorRelationshipList <- listRelationship(transferorRecord.cid)
+         transferorYears <- convertToAvailedYears(transferorRelationshipList)
+         recipientYears <- convertToAvailedYears(recipientRelationshipList)
+         eligibleYearsBasdOnDoM <- getEligibleTaxYearList(findRecipientRequest.dateOfMarriage.get) //TODO convert dateOfMarriage to non-optional in Phase-3
+         years <- getListOfEligibleTaxYears(transferorYears, recipientYears, eligibleYearsBasdOnDoM)
+       } yield years
+     }
+
+    flatten(getRecipientRecord(findRecipientRequest) map { eitherRecipientRecord =>
+      eitherRecipientRecord.right.map { userRecord =>
+        retrieveTaxYearModels(userRecord) map { years =>
+          (userRecord, years)
+        }
+      }
+    })
   }
 
   def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder, journey: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
@@ -287,7 +304,7 @@ trait MarriageAllowanceService {
     }
   }
 
-  private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
+  private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
 //    metrics.incrementTotalCounter(ApiType.FindRecipient)
 //    val timer = metrics.startTimer(ApiType.FindRecipient)
 //    val desRecipientRequest = FindRecipientRequestDes(findRecipientRequest)

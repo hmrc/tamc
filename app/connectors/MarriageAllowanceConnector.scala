@@ -16,7 +16,7 @@
 
 package connectors
 
-import errors.FindRecipientRetrievalError
+import errors.DataRetrievalError
 import models._
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.domain.Nino
@@ -40,7 +40,7 @@ trait MarriageAllowanceConnector {
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue]
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue]
-  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]]
+  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]]
   def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse]
   def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse]
 

@@ -46,7 +46,7 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
     httpGet.GET[JsValue](path)
   }
 
-  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[FindRecipientRetrievalError, UserRecord]] = {
+  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequestDes)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
 
     val updatedHeaderCarrier: HeaderCarrier = createHeaderCarrier withExtraHeaders("CorrelationId" -> UUID.randomUUID().toString)
 
@@ -57,21 +57,47 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
       }.mkString(", ").trim
     }
 
-    def handleError: Seq[(JsPath, scala.Seq[ValidationError])] => Left[FindRecipientRetrievalError, UserRecord] =  err => {
+    def handleError: Seq[(JsPath, scala.Seq[ValidationError])] => Left[DataRetrievalError, UserRecord] =  err => {
       Logger.error(s"Not able to parse the response received from DES with error ${extractValidationErrors(err)}")
       Left(ResponseValidationError)
     }
 
     //TODO constants
-    def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[FindRecipientRetrievalError, UserRecord] = {
+    def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[DataRetrievalError, UserRecord] = {
+
+
       (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
         case(1, 1) => Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
-        case codes @ (-1011, 2016) => Left(CodedErrorResponse(codes._1, codes._2, "Nino not found and Nino not found in merge trail"))
-        case codes @ (-1011, 2017) => Left(CodedErrorResponse(codes._1, codes._2, "Nino not found and Nino found in multiple merge trails"))
-        case codes @ (-1011, 2018) => Left(CodedErrorResponse(codes._1, codes._2, "Confidence check failed"))
-        case codes @ (-1011, 2039) => Left(CodedErrorResponse(codes._1, codes._2, "Nino must be supplied"))
-        case codes @ (-1011, 2040) => Left(CodedErrorResponse(codes._1, codes._2, "Only one of Nino or Temporary Reference must be supplied"))
-        case codes @ (-1011, 2061) => Left(CodedErrorResponse(codes._1, codes._2, "Confidence Check Surname not supplied"))
+        case codes @ (-1011, 2016) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino not found in merge trail")
+          Logger.warn(codedErrorResponse.errorMessage)
+          Left(codedErrorResponse)
+        }
+        case codes @ (-1011, 2017) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino found in multiple merge trails")
+          Logger.warn(codedErrorResponse.errorMessage)
+          Left(codedErrorResponse)
+        }
+        case codes @ (-1011, 2018) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence check failed")
+          Logger.error(codedErrorResponse.errorMessage)
+          Left(codedErrorResponse)
+        }
+        case codes @ (-1011, 2039) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino must be supplied")
+          Logger.error(codedErrorResponse.errorMessage)
+          Left(codedErrorResponse)
+        }
+        case codes @ (-1011, 2040) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Only one of Nino or Temporary Reference must be supplied")
+          Logger.error(codedErrorResponse.errorMessage)
+          Left(codedErrorResponse)
+        }
+        case codes @ (-1011, 2061) => {
+          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence Check Surname not supplied")
+          Logger.error(codedErrorResponse.errorMessage)
+          Left(codedErrorResponse)
+        }
         case(returnCode, reasonCode) => {
           Logger.error(s"Unknown response code returned from DES: ReturnCode=$returnCode, ReasonCode=$reasonCode")
           Left(UnhandledStatusError)
@@ -79,10 +105,10 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
       }
     }
 
-    val httpRead = new HttpReads[Either[FindRecipientRetrievalError, UserRecord]]{
+    val httpRead = new HttpReads[Either[DataRetrievalError, UserRecord]]{
 
       //TODO logging
-      override def read(method: String, url: String, response: HttpResponse): Either[FindRecipientRetrievalError, UserRecord] =
+      override def read(method: String, url: String, response: HttpResponse): Either[DataRetrievalError, UserRecord] =
         response.status match {
           case OK => response.json.validate[FindRecipientResponseDES].fold(handleError(_), evaluateCodes(_))
           case BAD_REQUEST => Left(BadRequestError)
