@@ -16,12 +16,13 @@
 
 package service
 
-import Fixtures._
+import Fixtures.MultiYearCreateRelationshipRequestHolderFixture
 import com.codahale.metrics.Timer
-import connectors.{EmailConnector, MarriageAllowanceDataConnector}
+import connectors.{EmailConnector, MarriageAllowanceDESConnector, MarriageAllowanceDataConnector}
 import metrics.Metrics
 import models.ApiType.ApiType
 import models._
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import services.MarriageAllowanceService
 import test_utils.TestUtility
@@ -32,7 +33,38 @@ import utils.WSHttp
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
+//TODO remove the need for TestUtility
+class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite with MockitoSugar{
+
+//  val generatedNino = new Generator().nextNino
+//  val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName", gender = Gender("M"), nino = generatedNino)
+//
+//  val service = new MarriageAllowanceService {
+//    override val dataConnector = mock[MarriageAllowanceDESConnector]
+//    override val emailConnector = mock[EmailConnector]
+//    override val metrics = mock[Metrics]
+//    override val startTaxYear = START_TAX_YEAR
+//    override val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
+//  }
+
+//  "getRecipientRelationship" should {
+//
+//    "return a valid response" in {
+//
+//      val userRecord = UserRecord(cid = 123456789, timestamp = "20200116155359011123")
+//      val taxYearModel = TaxYear(2019)
+//
+//      val expectedResponse = (userRecord, List(taxYearModel))
+//
+//      when(service.dataConnector.findRecipient(generatedNino, findRecipientRequest)(ArgumentMatchers.any()))
+//        .thenReturn(Future.successful(Right(userRecord)))
+//
+//      when(service.dataConnector.findCitizen(generatedNino)(ArgumentMatchers.any()))
+//        .thenReturn(Future.successful(Right(userRecord)))
+//
+//    }
+//
+//  }
 
   "when request is sent with deceased recipient in MarriageAllowanceService" should {
     "return a BadRequestException" in {
@@ -50,7 +82,7 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with GuiceO
 
 //TODO fix
 class FakeDeceasedMarriageAllowanceService extends MarriageAllowanceService {
-  override val dataConnector = ???
+  override val dataConnector = mockDeceasedDataConnector
   override val emailConnector = mockEmailConnector
   override val metrics = Metrics
   override val startTaxYear = 2015
@@ -60,7 +92,7 @@ class FakeDeceasedMarriageAllowanceService extends MarriageAllowanceService {
 
 //TODO fix
 class FakeAuthorityMarriageAllowanceService extends MarriageAllowanceService {
-  override val dataConnector = ???
+  override val dataConnector = mockAuthorityDataConnector
   override val emailConnector = mockEmailConnector
   override val metrics = Metrics
   override val startTaxYear = 2015

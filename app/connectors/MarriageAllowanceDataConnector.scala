@@ -73,7 +73,6 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
       Left(ResponseValidationError)
     }
 
-    //TODO constants
     def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[DataRetrievalError, UserRecord] = {
 
       (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
