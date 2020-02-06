@@ -279,7 +279,8 @@ object TestData {
     Recipients.recHasAllowanceAndSpaceInName.key -> Recipients.recHasAllowanceAndSpaceInName,
     Recipients.recHasNoAllowance.key -> Recipients.recHasNoAllowance,
     Recipients.recHasNoAllowanceNoCid.key -> Recipients.recHasNoAllowanceNoCid,
-    Recipients.recCidErr.key -> Recipients.recCidErr)
+    Recipients.recCidErr.key -> Recipients.recCidErr
+    )
 
   case class FindRecipientDummy(returnCode: Int, reasonCode: Int, citizen: FindCitizenDummy, firstName: String, lastName: String, gender: String, showCid: Boolean = true) {
 
@@ -601,7 +602,7 @@ object TestData {
         TestData.mappedNino2FindCitizen(nino).json
       case (findRecipientByNinoUrl(nino, surname, forename1, gender), None) =>
         val filePath = s"/data/findRecipient/nino-${nino}_surname-${decodeQueryStringValue(surname)}_forename1-${decodeQueryStringValue(forename1)}_gender-${decodeQueryStringValue(gender)}.json"
-        TestData.mappedFindRecipient(filePath).json
+        TestData.mappedFindRecipient.getOrElse(filePath, mappedFindRecipient.head._2).json
       case (listRelationshipUrl(cid), None) =>
         val filePath = s"usercid-${cid}"
         TestData.mappedLists(filePath).json
