@@ -76,10 +76,11 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         bearerToken = Some(Authorization("test-bearer-token")))
 
       controller.debugData.httpGetCallsToTest shouldBe List(
-        findTransferorCall,
         findRecipientCall,
+        findTransferorCall,
         checkHistoricAllowanceRelationshipCall,
-        checkTransferorHistoricAllowanceRelationshipCall)
+        checkTransferorHistoricAllowanceRelationshipCall
+        )
     }
 
     "return OK if cid is found and allowance relationship exists and surname has space in between" in {
@@ -126,8 +127,8 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         bearerToken = Some(Authorization("test-bearer-token")))
 
       controller.debugData.httpGetCallsToTest shouldBe List(
-        findTransferorCall,
         findRecipientCall,
+        findTransferorCall,
         checkHistoricAllowanceRelationshipCall,
         checkTransferorHistoricAllowanceRelationshipCall)
     }
@@ -176,8 +177,8 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         bearerToken = Some(Authorization("test-bearer-token")))
 
       controller.debugData.httpGetCallsToTest shouldBe List(
-        findTransferorCall,
         findRecipientCall,
+        findTransferorCall,
         checkHistoricAllowanceRelationshipCall,
         checkTransferorHistoricAllowanceRelationshipCall)
     }

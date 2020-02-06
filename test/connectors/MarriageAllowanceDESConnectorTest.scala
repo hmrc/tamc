@@ -125,7 +125,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
               .willReturn(ok(json.toString()))
           )
           val expectedResult = UserRecord(instanceIdentifier, updateTimestamp)
-          val result = await(connector.findRecipient(generatedNino, request))
+          val result = await(connector.findRecipient(request))
 
           result shouldBe Right(expectedResult)
         }
@@ -146,7 +146,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
           val expectedResult = UserRecord(instanceIdentifier, updateTimestamp)
           val ninoWithSpaces = Nino(generatedNino.formatted)
 
-          val result = await(connector.findRecipient(ninoWithSpaces, request))
+          val result = await(connector.findRecipient(request))
 
           result shouldBe Right(expectedResult)
         }
@@ -168,7 +168,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
           .willReturn(ok(json.toString()))
       )
 
-      val result = await(connector.findRecipient(generatedNino, request))
+      val result = await(connector.findRecipient(request))
 
       server.verify(postRequestedFor(urlEqualTo(url))
         .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
@@ -206,7 +206,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
           .willReturn(ok(nonValidJson.toString()))
       )
 
-      val result = await(connector.findRecipient(generatedNino, request))
+      val result = await(connector.findRecipient(request))
 
       result shouldBe Left(ResponseValidationError)
 
@@ -219,7 +219,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
             .willReturn(aResponse().withStatus(TOO_MANY_REQUESTS))
         )
 
-        val result = await(connector.findRecipient(generatedNino, request))
+        val result = await(connector.findRecipient(request))
 
         result shouldBe Left(TooManyRequestsError)
 
@@ -235,7 +235,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
               .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("Submission has not passed validation"))
           )
 
-          val result = await(connector.findRecipient(generatedNino, request))
+          val result = await(connector.findRecipient(request))
 
           result shouldBe Left(BadRequestError)
         }
@@ -251,7 +251,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
         when(mockedPostConnector.httpPost.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
           .thenReturn(Future.failed(new GatewayTimeoutException("timeout")))
 
-        val result = await(mockedPostConnector.findRecipient(generatedNino, request))
+        val result = await(mockedPostConnector.findRecipient(request))
 
         result shouldBe Left(TimeOutError)
 
@@ -264,7 +264,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
             .willReturn(aResponse().withStatus(499).withBody("Proxy timeout"))
         )
 
-        val result = await(connector.findRecipient(generatedNino, request))
+        val result = await(connector.findRecipient(request))
 
         result shouldBe Left(TimeOutError)
       }
@@ -280,7 +280,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
         when(mockedPostConnector.httpPost.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
           .thenReturn(Future.failed(new BadGatewayException("Bad gateway")))
 
-        val result = await(mockedPostConnector.findRecipient(generatedNino, request))
+        val result = await(mockedPostConnector.findRecipient(request))
 
         result shouldBe Left(BadGatewayError)
       }
@@ -293,7 +293,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
             .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
         )
 
-        val result = await(connector.findRecipient(generatedNino, request))
+        val result = await(connector.findRecipient(request))
 
         result shouldBe Left(ServerError)
 
@@ -314,7 +314,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
             .willReturn(ok(json.toString()))
         )
 
-        val result = await(connector.findRecipient(generatedNino, request))
+        val result = await(connector.findRecipient(request))
         result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Nino not found and Nino not found in merge trail"))
 
       }
@@ -331,7 +331,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
             .willReturn(ok(json.toString()))
         )
 
-        val result = await(connector.findRecipient(generatedNino, request))
+        val result = await(connector.findRecipient(request))
 
         result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Nino not found and Nino found in multiple merge trails"))
 
@@ -349,7 +349,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
               .willReturn(ok(json.toString()))
           )
 
-          val result = await(connector.findRecipient(generatedNino, request))
+          val result = await(connector.findRecipient(request))
 
           result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Only one of Nino or Temporary Reference must be supplied"))
         }
@@ -367,7 +367,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
               .willReturn(ok(json.toString()))
           )
 
-          val result = await(connector.findRecipient(generatedNino, request))
+          val result = await(connector.findRecipient(request))
 
           result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Confidence Check Surname not supplied"))
         }
@@ -385,7 +385,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
               .willReturn(ok(json.toString()))
           )
 
-          val result = await(connector.findRecipient(generatedNino, request))
+          val result = await(connector.findRecipient(request))
 
           result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Nino must be supplied"))
         }
@@ -403,7 +403,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
               .willReturn(aResponse().withStatus(413).withBody("Payload too large"))
           )
 
-          val result = await(connector.findRecipient(generatedNino, request))
+          val result = await(connector.findRecipient(request))
 
           result shouldBe Left(UnhandledStatusError)
 
@@ -422,7 +422,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
               .willReturn(ok(json.toString()))
           )
 
-          val result = await(connector.findRecipient(generatedNino, request))
+          val result = await(connector.findRecipient(request))
 
           result shouldBe Left(UnhandledStatusError)
 

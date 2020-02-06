@@ -42,7 +42,7 @@ trait MarriageAllowanceConnector {
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue]
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue]
-  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]]
+  def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]]
   def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse]
   def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse]
 

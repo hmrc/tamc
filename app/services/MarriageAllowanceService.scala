@@ -305,7 +305,7 @@ trait MarriageAllowanceService {
   }
 
   private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
-    dataConnector.findRecipient(findRecipientRequest.nino, findRecipientRequest)
+    dataConnector.findRecipient(findRecipientRequest)
   }
 
   private def listRelationshipRecord(userRecord: UserRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {

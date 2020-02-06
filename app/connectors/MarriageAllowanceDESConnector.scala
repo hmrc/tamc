@@ -48,7 +48,7 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
     httpGet.GET[JsValue](path)
   }
 
-  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
+  def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
 
     //TODO make these two generic
     def extractValidationErrors: Seq[(JsPath, scala.Seq[ValidationError])] => String = errors => {
@@ -131,7 +131,8 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
     }
 
     val updatedHeaderCarrier: HeaderCarrier = createHeaderCarrier withExtraHeaders("CorrelationId" -> UUID.randomUUID().toString)
-    val path = url(s"/marriage-allowance/citizen/${ninoWithoutSpaces(nino)}/check")
+    val nino = ninoWithoutSpaces(findRecipientRequest.nino)
+    val path = url(s"/marriage-allowance/citizen/$nino/check")
     val findRecipientRequestDes = FindRecipientRequestDes(findRecipientRequest)
 
     metrics.incrementTotalCounter(ApiType.FindRecipient)

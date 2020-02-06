@@ -59,7 +59,7 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
     httpGet.GET[JsValue](path)
   }
 
-  def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
+  def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
     implicit val hc = createHeaderCarrier
 
     def extractValidationErrors: Seq[(JsPath, scala.Seq[ValidationError])] => String = errors => {
@@ -137,7 +137,8 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
     val queryString = s"surname=${utils.encodeQueryStringValue(findRecipientRequest.lastName)}&forename1=${utils.encodeQueryStringValue(findRecipientRequest.name)}" +
       s"&gender=${utils.encodeQueryStringValue(findRecipientRequest.gender.gender)}"
 
-    val path = url(s"/marriage-allowance/citizen/${ninoWithoutSpaces(nino)}/check?${queryString}")
+    val nino = ninoWithoutSpaces(findRecipientRequest.nino)
+    val path = url(s"/marriage-allowance/citizen/$nino/check?${queryString}")
 
     metrics.incrementTotalCounter(ApiType.FindRecipient)
     val timer = metrics.startTimer(ApiType.FindRecipient)

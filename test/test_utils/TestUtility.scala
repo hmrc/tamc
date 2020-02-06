@@ -167,12 +167,10 @@ trait TestUtility {
         super.findCitizen(nino)
       }
 
-      //TODO fix
-      override def findRecipient(nino: Nino, findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
-//        findRecipientNinoToTest = Some(nino
-//        findRecipientNinoToTestCount = findRecipientNinoToTestCount + 1
-//        super.findRecipient(nino, findRecipientRequest)
-        ???
+      override def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
+        findRecipientNinoToTest = Some(findRecipientRequest.nino)
+        findRecipientNinoToTestCount = findRecipientNinoToTestCount + 1
+        super.findRecipient(findRecipientRequest)
       }
 
       override def updateAllowanceRelationship(data: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
@@ -222,7 +220,7 @@ trait TestUtility {
 
     //TODO fix
     val fakeMarriageAllowanceService = new MarriageAllowanceService {
-      override val dataConnector = ???
+      override val dataConnector = fakeMarriageAllowanceDataConnector
       override val emailConnector = fakeEmailConnector
       override val metrics = fakeMetrics
       override val currentTaxYear: Int = time.TaxYear.taxYearFor(testingTime.toLocalDate).startYear
