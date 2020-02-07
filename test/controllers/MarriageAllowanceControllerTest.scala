@@ -16,19 +16,82 @@
 
 package controllers
 
-import models.{UpdateRelationshipResponse, UserRecord}
+import controllers.auth.AuthAction
+import errors.ErrorResponseStatus.RECIPIENT_NOT_FOUND
+import errors.TooManyRequestsError
+import models._
+import org.joda.time.LocalDate
+import org.mockito.ArgumentMatchers
+import org.mockito.Mockito._
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import play.api.test.FakeRequest
-import play.api.test.Helpers.{OK, contentAsString, defaultAwaitTimeout}
+import play.api.test.Helpers.{OK, contentAsJson, contentAsString, defaultAwaitTimeout}
+import play.api.test.{FakeHeaders, FakeRequest}
+import services.MarriageAllowanceService
 import test_utils._
-import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.play.test.UnitSpec
 
-class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
+import scala.concurrent.Future
+
+class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite with MockitoSugar {
+
+  lazy val controller = new MarriageAllowanceController {
+    override val marriageAllowanceService = mock[MarriageAllowanceService]
+    override val authAction = FakeAuthAction
+  }
+
+  trait Setup {
+    val generatedNino = new Generator().nextNino
+    val findRecipientRequest = FindRecipientRequest(name = "testName", lastName = "lastName", gender = Gender("M"), generatedNino)
+    val json = Json.toJson(findRecipientRequest)
+    val fakeRequest = FakeRequest("POST", "/", FakeHeaders(), Json.toJson(json))
+  }
+
+  "Marriage Allowance Controller" should {
+
+    "return OK when a valid UserRecord and TaxYearModel are received" in { new Setup {
+
+        val userRecord = UserRecord(cid = 123456789, timestamp = "20200116155359011123")
+        val taxYearList = List(TaxYear(2019))
+
+        when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
+        (ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Right((userRecord, taxYearList))))
+
+        val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
+
+        val expectedResponse = Json.toJson(GetRelationshipResponse(
+          user_record = Some(userRecord),
+          availableYears = Some(taxYearList),
+          status = ResponseStatus(status_code = "OK")))
+
+        status(result) shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson(expectedResponse)
+      }
+    }
+
+    //TODO update in-line with controller
+    "return a RecipientNotFound error after receiving a DataRetrievalError" in { new Setup {
+
+       when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
+        (ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Left(TooManyRequestsError)))
+
+        val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
+
+        val expectedResponse = GetRelationshipResponse(
+          status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))
+
+        status(result) shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson(expectedResponse)
+
+      }
+    }
+  }
+
+
 
   "Calling hasMarriageAllowance for Recipient" should {
 

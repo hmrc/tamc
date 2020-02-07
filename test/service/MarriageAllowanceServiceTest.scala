@@ -19,8 +19,8 @@ package service
 import Fixtures.MultiYearCreateRelationshipRequestHolderFixture
 import com.codahale.metrics.Timer
 import config.ApplicationConfig.{MA_SUPPORTED_YEARS_COUNT, START_TAX_YEAR}
-import connectors.{EmailConnector, MarriageAllowanceDESConnector, MarriageAllowanceDataConnector}
-import errors.{DataRetrievalError, TooManyRequestsError}
+import connectors.{EmailConnector, MarriageAllowanceDataConnector}
+import errors.TooManyRequestsError
 import metrics.Metrics
 import models.ApiType.ApiType
 import models._
@@ -29,7 +29,7 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.Json
 import services.MarriageAllowanceService
 import test_utils.TestUtility
 import uk.gov.hmrc.domain.Generator
