@@ -18,14 +18,21 @@ package service
 
 import Fixtures.MultiYearCreateRelationshipRequestHolderFixture
 import com.codahale.metrics.Timer
+import config.ApplicationConfig.{MA_SUPPORTED_YEARS_COUNT, START_TAX_YEAR}
 import connectors.{EmailConnector, MarriageAllowanceDESConnector, MarriageAllowanceDataConnector}
+import errors.{DataRetrievalError, TooManyRequestsError}
 import metrics.Metrics
 import models.ApiType.ApiType
 import models._
+import org.joda.time.LocalDate
+import org.mockito.ArgumentMatchers
+import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.libs.json.{JsValue, Json}
 import services.MarriageAllowanceService
 import test_utils.TestUtility
+import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, _}
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.WSHttp
@@ -34,37 +41,72 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO remove the need for TestUtility
-class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite with MockitoSugar{
+class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with MockitoSugar with GuiceOneAppPerSuite {
 
-//  val generatedNino = new Generator().nextNino
-//  val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName", gender = Gender("M"), nino = generatedNino)
-//
-//  val service = new MarriageAllowanceService {
-//    override val dataConnector = mock[MarriageAllowanceDESConnector]
-//    override val emailConnector = mock[EmailConnector]
-//    override val metrics = mock[Metrics]
-//    override val startTaxYear = START_TAX_YEAR
-//    override val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
-//  }
+  implicit val hc = HeaderCarrier()
+  val year = 2019
+  val generatedNino = new Generator().nextNino
 
-//  "getRecipientRelationship" should {
-//
-//    "return a valid response" in {
-//
-//      val userRecord = UserRecord(cid = 123456789, timestamp = "20200116155359011123")
-//      val taxYearModel = TaxYear(2019)
-//
-//      val expectedResponse = (userRecord, List(taxYearModel))
-//
-//      when(service.dataConnector.findRecipient(generatedNino, findRecipientRequest)(ArgumentMatchers.any()))
-//        .thenReturn(Future.successful(Right(userRecord)))
-//
-//      when(service.dataConnector.findCitizen(generatedNino)(ArgumentMatchers.any()))
-//        .thenReturn(Future.successful(Right(userRecord)))
-//
-//    }
-//
-//  }
+   trait Setup {
+     val cID = 123456789
+     val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
+       gender = Gender("M"), nino = generatedNino, dateOfMarriage = Some(new LocalDate(year,12,12)))
+     val userRecord = UserRecord(cid = cID, timestamp = "20200116155359011123")
+
+   }
+
+
+  lazy val service = new MarriageAllowanceService {
+    override val dataConnector = mock[MarriageAllowanceDataConnector]
+    override val emailConnector = mock[EmailConnector]
+    override val metrics = mock[Metrics]
+    override val startTaxYear = START_TAX_YEAR
+    override val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
+
+    override def currentTaxYear: Int = year
+
+  }
+
+  "getRecipientRelationship" should {
+
+    "return a valid response" in { new Setup {
+
+        val taxYearModel = TaxYear(year, Some(true))
+
+        val expectedResponse = (userRecord, List(taxYearModel))
+
+        when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any()))
+          .thenReturn(Future.successful(Right(userRecord)))
+
+        when(service.dataConnector.findCitizen(ArgumentMatchers.eq(generatedNino))(ArgumentMatchers.any()))
+          .thenReturn(Future.successful(findCitizenJson))
+
+        when(service.dataConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any()))
+          .thenReturn(Future.successful(listRelationshipdJson))
+
+        val mockTimerContext = mock[Timer.Context]
+        when(service.metrics.startTimer(ArgumentMatchers.any())).thenReturn(mockTimerContext)
+        when(mockTimerContext.stop()).thenReturn(123456789)
+
+        val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
+
+        result shouldBe Right(expectedResponse)
+
+      }
+
+    }
+
+    "return a DataRetrievalError based error" in { new Setup {
+        when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any()))
+          .thenReturn(Future.successful(Left(TooManyRequestsError)))
+
+        val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
+
+        result shouldBe Left(TooManyRequestsError)
+      }
+    }
+
+  }
 
   "when request is sent with deceased recipient in MarriageAllowanceService" should {
     "return a BadRequestException" in {
@@ -78,7 +120,121 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with GuiceO
     }
   }
 
+  val findCitizenJson = Json.parse(s"""
+
+    {"Jtpr1311PerDetailsFindcallResponse": {"Jtpr1311PerDetailsFindExport": {
+      "@exitStateType": "3",
+      "@exitStateMsg": "",
+      "@command": "",
+      "@exitState": "0",
+      "OutItpr1Person":    {
+      "InstanceIdentifier": 100013333,
+      "UpdateTimestamp": "2015",
+      "Nino": "${generatedNino.nino}",
+      "NinoStatus": null,
+      "TemporaryReference": "00B00004",
+      "Surname": "testSurname",
+      "FirstForename": "testForeName",
+      "SecondForename": "testSecondForename",
+      "Initials": "AF",
+      "Title": "MR",
+      "Honours": "BSC",
+      "Sex": "M",
+      "DateOfBirth": 19400610,
+      "DeceasedSignal": "N",
+      "OrgUnitInstance": 0
+    },
+      "OutGroupOfIrInterestArea": {"row":    [
+    {"OutRgItpr1IrInterestArea":       {
+      "Code": 2,
+      "Description": "PAY AS YOU EARN",
+      "Reference": null,
+      "Reason": "FOR TEST PAYE",
+      "StartDatetime": 2.0000403E19
+    }}]},
+      "OutGroupOfCommunications": {"row":    [
+    {"OutRgItpr1Communication":       {
+      "Code": 7,
+      "Description": "DAYTIME TELEPHONE",
+      "ContactDetails": "00000 290000"
+    }}
+      ]},
+      "OutGroupOfOccupancy": {"row":    [
+    {"OutRgItpr1Occupancy":       {
+      "StatusCode": null,
+      "StatusDescription": null,
+      "TypeOfOccupancyCode": 0,
+      "TypeOfOccupancyDescription": null,
+      "AdditionalDeliveryInformation": null,
+      "RlsSignal": null,
+      "TypeOfAddressCode": null,
+      "TypeOfAddressDescription": null,
+      "AddressLine1": null,
+      "AddressLine2": null,
+      "AddressLine3": null,
+      "AddressLine4": null,
+      "AddressLine5": null,
+      "Postcode": null,
+      "HouseIdentification": null,
+      "HomeCountry": null,
+      "ForeignCountry": null,
+      "NoLongerUsedSignal": null
+    }}
+      ]},
+      "OutItpr1Capacitor": {"InstanceIdentifier": 0},
+      "OutWCbdParameters":    {
+      "SeverityCode": "I",
+      "DataStoreStatus": 1,
+      "OriginServid": 1011,
+      "ContextString": null,
+      "ReturnCode": 1,
+      "ReasonCode": 1,
+      "Checksum": null
+    }
+    }}}""")
+
+  val listRelationshipdJson = Json.parse(
+
+    """{
+      "relationships": [
+      {
+        "participant": 1,
+        "creationTimestamp": "20150531235901",
+        "actualStartDate": "20011230",
+        "relationshipEndReason": "Death",
+        "participant1StartDate": "20011230",
+        "participant2StartDate": "20011230",
+        "actualEndDate": "20101230",
+        "participant1EndDate": "20101230",
+        "participant2EndDate": "20101230",
+        "otherParticipantInstanceIdentifier": "123456789012345",
+        "otherParticipantUpdateTimestamp": "20150531235901",
+        "participant2UKResident": true
+      },
+      {
+        "participant": 1,
+        "creationTimestamp": "20150531235901",
+        "actualStartDate": "20011230",
+        "relationshipEndReason": "Death",
+        "participant1StartDate": "20011230",
+        "participant2StartDate": "20011230",
+        "actualEndDate": "20101230",
+        "participant1EndDate": "20101230",
+        "participant2EndDate": "20101230",
+        "otherParticipantInstanceIdentifier": "123456789012345",
+        "otherParticipantUpdateTimestamp": "20150531235901",
+        "participant2UKResident": true
+      }
+      ]
+    }""")
+
 }
+
+
+
+
+
+
 
 //TODO fix
 class FakeDeceasedMarriageAllowanceService extends MarriageAllowanceService {

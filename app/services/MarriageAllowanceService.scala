@@ -337,6 +337,7 @@ trait MarriageAllowanceService {
   private def listRelationship(cid: Cid)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {
     metrics.incrementTotalCounter(ApiType.ListRelationship)
     val timer = metrics.startTimer(ApiType.ListRelationship)
+
     dataConnector.listRelationship(cid).map {
       json =>
         timer.stop()
