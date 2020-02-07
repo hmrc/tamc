@@ -19,7 +19,7 @@ package service
 import Fixtures.MultiYearCreateRelationshipRequestHolderFixture
 import com.codahale.metrics.Timer
 import config.ApplicationConfig.{MA_SUPPORTED_YEARS_COUNT, START_TAX_YEAR}
-import connectors.{EmailConnector, MarriageAllowanceDataConnector}
+import connectors.{EmailConnector, MarriageAllowanceDESConnector, MarriageAllowanceDataConnector}
 import errors.TooManyRequestsError
 import metrics.Metrics
 import models.ApiType.ApiType
@@ -27,8 +27,11 @@ import models._
 import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
+import org.scalatest.TestData
 import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerTest
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import services.MarriageAllowanceService
 import test_utils.TestUtility
@@ -41,7 +44,19 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO remove the need for TestUtility
-class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with MockitoSugar with GuiceOneAppPerSuite {
+class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with MockitoSugar with GuiceOneAppPerTest {
+
+  implicit override def newAppForTest(testData: TestData): Application = {
+
+    val builder = new GuiceApplicationBuilder()
+
+    testData.name match {
+      case testName if testName.contains("post enabled is true") => builder.configure("des.post.enabled" -> true).build()
+      case testName if testName.contains("post enabled is false") => builder.configure("des.post.enabled" -> false).build()
+      case _ => builder.build()
+    }
+  }
+
 
   implicit val hc = HeaderCarrier()
   val year = 2019
@@ -66,6 +81,18 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
     override def currentTaxYear: Int = year
 
   }
+
+  "MarriageAllowanceService" should {
+
+    "return a MarriageAllowanceDESConnector if toggle post enabled is true" in {
+      MarriageAllowanceService.getConnectorImplementation shouldBe MarriageAllowanceDESConnector
+    }
+
+    "return a MarriageAllowanceDataConnector if toggle post enabled is false" in {
+      MarriageAllowanceService.getConnectorImplementation shouldBe MarriageAllowanceDataConnector
+    }
+  }
+
 
   "getRecipientRelationship" should {
 

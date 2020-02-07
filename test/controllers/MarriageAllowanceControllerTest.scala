@@ -16,11 +16,9 @@
 
 package controllers
 
-import controllers.auth.AuthAction
 import errors.ErrorResponseStatus.RECIPIENT_NOT_FOUND
 import errors.TooManyRequestsError
 import models._
-import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
