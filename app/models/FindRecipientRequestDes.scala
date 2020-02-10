@@ -26,7 +26,7 @@ object FindRecipientRequestDes {
   implicit val formats = Json.format[FindRecipientRequestDes]
 
   def apply(findRecipientRequest: FindRecipientRequest): FindRecipientRequestDes = {
-    FindRecipientRequestDes(findRecipientRequest.lastName, findRecipientRequest.name, Some(findRecipientRequest.gender.gender))
+    FindRecipientRequestDes(findRecipientRequest.lastName, findRecipientRequest.name, gender = Some(findRecipientRequest.gender.gender))
   }
 
 }

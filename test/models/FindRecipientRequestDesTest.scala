@@ -32,7 +32,7 @@ class FindRecipientRequestDesTest extends UnitSpec {
       val generatedNino = new Generator().nextNino
 
       val findRecipientRequest = FindRecipientRequest(name, lastName, gender, generatedNino)
-      val expectedResult = FindRecipientRequestDes(lastName, name, Some(genderMale))
+      val expectedResult = FindRecipientRequestDes(surname = lastName, forename1 = name, forename2 = None, gender = Some(genderMale))
 
       FindRecipientRequestDes(findRecipientRequest) shouldBe expectedResult
 
