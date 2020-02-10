@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package models
+package connectors
 
-import play.api.libs.json.Json
+trait DESResponseCodes {
 
-
-case class FindRecipientRequestDes(surname: String, forename1: String, forename2: Option[String] = None, gender: Option[String] = None)
-
-object FindRecipientRequestDes {
-
-  implicit val formats = Json.format[FindRecipientRequestDes]
-
-  def apply(findRecipientRequest: FindRecipientRequest): FindRecipientRequestDes = {
-    FindRecipientRequestDes(findRecipientRequest.lastName, findRecipientRequest.name, Some(findRecipientRequest.gender.gender))
-  }
+  val ProcessingOK = 1
+  val ErrorReturnCode = -1011
+  val NinoNotFound = 2016
+  val MultipleNinosInMergeTrail = 2017
+  val ConfidenceCheck = 2018
+  val NinoRequired = 2039
+  val OnlyOneNinoOrTempReference = 2040
+  val SurnameNotSupplied = 2061
 
 }

@@ -40,7 +40,7 @@ import utils.WSHttp
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuite with WireMockHelper with MockitoSugar {
+class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuite with WireMockHelper with MockitoSugar with DESResponseCodes {
 
   override def fakeApplication(): Application = {
     new GuiceApplicationBuilder()
@@ -115,8 +115,8 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       "the return code and response code are both 1" in { new FindRecipientSetup {
 
-          val reasonCode = 1
-          val returnCode = 1
+          val reasonCode = ProcessingOK
+          val returnCode = ProcessingOK
 
           val json = expectedJson(reasonCode, returnCode)
 
@@ -133,8 +133,8 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       "a valid nino contains spaces" in { new FindRecipientSetup {
 
-          val reasonCode = 1
-          val returnCode = 1
+          val reasonCode = ProcessingOK
+          val returnCode = ProcessingOK
 
           val json = expectedJson(reasonCode, returnCode)
 
@@ -157,8 +157,8 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       val uuidRegex = """[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}"""
 
-      val reasonCode = 1
-      val returnCode = 1
+      val reasonCode = ProcessingOK
+      val returnCode = ProcessingOK
 
       val json = expectedJson(reasonCode, returnCode)
 
@@ -304,8 +304,8 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       "the returnCode and reasonCode state the nino is not found" in new FindRecipientSetup {
 
-        val reasonCode = 2016
-        val returnCode = -1011
+        val reasonCode = NinoNotFound
+        val returnCode = ErrorReturnCode
 
         val json = expectedJson(reasonCode, returnCode)
 
@@ -321,8 +321,8 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       "the returnCode and reasonCode state multiple ninos found" in new FindRecipientSetup {
 
-        val reasonCode = 2017
-        val returnCode = -1011
+        val reasonCode = MultipleNinosInMergeTrail
+        val returnCode = ErrorReturnCode
 
         val json = expectedJson(reasonCode, returnCode)
 
@@ -339,8 +339,8 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       "a response states only one of Nino or temporary reference must be supplied" in { new FindRecipientSetup {
 
-          val returnCode = -1011
-          val reasonCode = 2040
+          val returnCode = ErrorReturnCode
+          val reasonCode = OnlyOneNinoOrTempReference
 
           val json = expectedJson(reasonCode, returnCode)
 
@@ -357,8 +357,8 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       "a response states the confidence check surname has not been supplied" in { new FindRecipientSetup {
 
-          val returnCode = -1011
-          val reasonCode = 2061
+          val returnCode = ErrorReturnCode
+          val reasonCode = SurnameNotSupplied
 
           val json = expectedJson(reasonCode, returnCode)
 
@@ -375,8 +375,8 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       "a response states a nino must be supplied" in { new FindRecipientSetup {
 
-          val returnCode = -1011
-          val reasonCode = 2039
+          val returnCode = ErrorReturnCode
+          val reasonCode = NinoRequired
 
           val json = expectedJson(reasonCode, returnCode)
 

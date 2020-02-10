@@ -263,7 +263,6 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
 
 
 
-//TODO fix
 class FakeDeceasedMarriageAllowanceService extends MarriageAllowanceService {
   override val dataConnector = mockDeceasedDataConnector
   override val emailConnector = mockEmailConnector
@@ -273,7 +272,6 @@ class FakeDeceasedMarriageAllowanceService extends MarriageAllowanceService {
 
 }
 
-//TODO fix
 class FakeAuthorityMarriageAllowanceService extends MarriageAllowanceService {
   override val dataConnector = mockAuthorityDataConnector
   override val emailConnector = mockEmailConnector

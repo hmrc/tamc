@@ -602,7 +602,7 @@ object TestData {
         TestData.mappedNino2FindCitizen(nino).json
       case (findRecipientByNinoUrl(nino, surname, forename1, gender), None) =>
         val filePath = s"/data/findRecipient/nino-${nino}_surname-${decodeQueryStringValue(surname)}_forename1-${decodeQueryStringValue(forename1)}_gender-${decodeQueryStringValue(gender)}.json"
-        TestData.mappedFindRecipient.getOrElse(filePath, mappedFindRecipient.head._2).json
+        TestData.mappedFindRecipient(filePath).json
       case (listRelationshipUrl(cid), None) =>
         val filePath = s"usercid-${cid}"
         TestData.mappedLists(filePath).json

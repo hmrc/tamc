@@ -37,7 +37,6 @@ import uk.gov.hmrc.time.TaxYear
 import scala.concurrent.{ExecutionContext, Future}
 
 object MarriageAllowanceService extends MarriageAllowanceService {
-  //TODO config derived
   override val dataConnector = getConnectorImplementation
   override val emailConnector = EmailConnector
   override val metrics = Metrics
@@ -87,6 +86,7 @@ trait MarriageAllowanceService {
         }
       }
     })
+
   }
 
   def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder, journey: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {

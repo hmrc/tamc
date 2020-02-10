@@ -71,7 +71,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       }
     }
 
-    //TODO update in-line with controller
     "return a RecipientNotFound error after receiving a DataRetrievalError" in { new Setup {
 
        when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))

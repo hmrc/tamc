@@ -218,7 +218,6 @@ trait TestUtility {
       override def incrementFailedCounter(api: ApiType): Unit = {}
     }
 
-    //TODO fix
     val fakeMarriageAllowanceService = new MarriageAllowanceService {
       override val dataConnector = fakeMarriageAllowanceDataConnector
       override val emailConnector = fakeEmailConnector
