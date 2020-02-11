@@ -44,6 +44,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait TestUtility {
 
+
+  implicit val hc = HeaderCarrier()
+
   def bindModules: Seq[GuiceableModule] = Seq(new PlayModule)
 
   def makeFakeController(testingTime: DateTime = new DateTime(2016, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")), isErrorController: Boolean = false) = {
@@ -161,19 +164,19 @@ trait TestUtility {
       var updateAllowanceRelationshipDataToTest: Option[DesUpdateRelationshipRequest] = None
       var updateAllowanceRelationshipDataToTestCount = 0
 
-      override def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue] = {
+      override def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
         findCitizenNinoToTest = Some(nino)
         findCitizenNinoToTestCount = findCitizenNinoToTestCount + 1
         super.findCitizen(nino)
       }
 
-      override def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
+      override def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {
         findRecipientNinoToTest = Some(findRecipientRequest.nino)
         findRecipientNinoToTestCount = findRecipientNinoToTestCount + 1
         super.findRecipient(findRecipientRequest)
       }
 
-      override def updateAllowanceRelationship(data: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
+      override def updateAllowanceRelationship(data: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
         def errorResponse(reason: String, code: Int) = Future {
           new DummyHttpResponse(reason, code)
         }
@@ -191,7 +194,7 @@ trait TestUtility {
         }
       }
 
-      override def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue] = {
+      override def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
         isErrorController match {
           case true =>
             cid match {

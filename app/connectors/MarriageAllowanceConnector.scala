@@ -38,12 +38,13 @@ trait MarriageAllowanceConnector {
   def url(path: String) = s"$serviceUrl$path"
   def ninoWithoutSpaces(nino: Nino) = nino.value.replaceAll(" ", "")
 
-  def createHeaderCarrier: HeaderCarrier = HeaderCarrier(extraHeaders = Seq(("Environment" -> urlHeaderEnvironment)), authorization = Some(Authorization(urlHeaderAuthorization)))
+  def buildHeaderCarrier(hc: HeaderCarrier): HeaderCarrier =
+    hc.copy(authorization = Some(Authorization(urlHeaderAuthorization))).withExtraHeaders("Environment" -> urlHeaderEnvironment)
 
-  def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue]
-  def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue]
-  def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]]
-  def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse]
-  def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse]
+  def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue]
+  def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue]
+  def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]]
+  def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse]
+  def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse]
 
 }

@@ -58,7 +58,6 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
   }
 
 
-  implicit val hc = HeaderCarrier()
   val year = 2019
   val generatedNino = new Generator().nextNino
 
@@ -102,13 +101,13 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
 
         val expectedResponse = (userRecord, List(taxYearModel))
 
-        when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any()))
+        when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
           .thenReturn(Future.successful(Right(userRecord)))
 
-        when(service.dataConnector.findCitizen(ArgumentMatchers.eq(generatedNino))(ArgumentMatchers.any()))
+        when(service.dataConnector.findCitizen(ArgumentMatchers.eq(generatedNino))(ArgumentMatchers.any(), ArgumentMatchers.any()))
           .thenReturn(Future.successful(findCitizenJson))
 
-        when(service.dataConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any()))
+        when(service.dataConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
           .thenReturn(Future.successful(listRelationshipdJson))
 
         val mockTimerContext = mock[Timer.Context]
@@ -124,7 +123,7 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
     }
 
     "return a DataRetrievalError based error" in { new Setup {
-        when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any()))
+        when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
           .thenReturn(Future.successful(Left(TooManyRequestsError)))
 
         val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
@@ -290,7 +289,8 @@ object mockDeceasedDataConnector extends MarriageAllowanceDataConnector {
   override val urlHeaderAuthorization = "foo"
   override val metrics = Metrics
 
-  override def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
+  override def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)
+                                                     (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
     Future.failed(new BadRequestException("{\"reason\": \"Participant is deceased\"}"))
   }
 }
@@ -304,7 +304,8 @@ object mockAuthorityDataConnector extends MarriageAllowanceDataConnector {
   override val urlHeaderAuthorization = "foo"
   override val metrics = Metrics
 
-  override def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
+  override def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)
+                                                     (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
     Future.failed(new BadRequestException("{\"reason\": \"User does not have authority to retrieve requested Participant 1 record\"}"))
   }
 }

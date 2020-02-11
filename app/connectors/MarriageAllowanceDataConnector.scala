@@ -29,6 +29,7 @@ import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.config.ServicesConfig
 import utils.WSHttp
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 object MarriageAllowanceDataConnector extends MarriageAllowanceDataConnector with ServicesConfig {
@@ -59,20 +60,17 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector with DES
     Left(ResponseValidationError)
   }
 
-  def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue] = {
-    implicit val hc = createHeaderCarrier
+  def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${nino}")
-    httpGet.GET[JsValue](path)
+    httpGet.GET[JsValue](path)(implicitly, buildHeaderCarrier(hc), ec)
   }
 
-  def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue] = {
-    implicit val hc = createHeaderCarrier
+  def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${cid}/relationships?includeHistoric=${includeHistoric}")
-    httpGet.GET[JsValue](path)
+    httpGet.GET[JsValue](path)(implicitly, buildHeaderCarrier(hc), ec)
   }
 
-  def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
-    implicit val hc = createHeaderCarrier
+  def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {
 
     def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[DataRetrievalError, UserRecord] = {
 
@@ -125,7 +123,7 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector with DES
       }
     }
 
-    implicit val httpRead = new HttpReads[Either[DataRetrievalError, UserRecord]]{
+    val httpRead = new HttpReads[Either[DataRetrievalError, UserRecord]]{
 
     override def read(method: String, url: String, response: HttpResponse): Either[DataRetrievalError, UserRecord] =
       response.status match {
@@ -143,7 +141,7 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector with DES
     metrics.incrementTotalCounter(ApiType.FindRecipient)
     val timer = metrics.startTimer(ApiType.FindRecipient)
 
-    httpGet.GET(path) map { response =>
+    httpGet.GET(path)(httpRead, buildHeaderCarrier(hc), ec) map { response =>
       timer.stop()
       response
     } recover {
@@ -160,15 +158,13 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector with DES
     }
   }
 
-  def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
-    implicit val hc = createHeaderCarrier
+  def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
     val path = url(s"/marriage-allowance/02.00.00/citizen/${createRelationshipRequest.recipientCid}/relationship/${relType}")
-    httpPost.POST(path, createRelationshipRequest)
+    httpPost.POST(path, createRelationshipRequest)(MultiYearDesCreateRelationshipRequest.multiYearWrites, HttpReads.readRaw, buildHeaderCarrier(hc), ec)
   }
 
-  def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
-    implicit val hc = createHeaderCarrier
+  def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
     val path = url(s"/marriage-allowance/citizen/${updateRelationshipRequest.participant1.instanceIdentifier}/relationship")
-    httpPut.PUT(path, updateRelationshipRequest)
+    httpPut.PUT(path, updateRelationshipRequest)(DesUpdateRelationshipRequest.formats, HttpReads.readRaw, buildHeaderCarrier(hc), ec)
   }
 }

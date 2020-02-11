@@ -33,7 +33,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import test_utils.WireMockHelper
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.http.{BadGatewayException, GatewayTimeoutException, HttpGet, HttpPost}
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.WSHttp
 
@@ -83,6 +83,7 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
   val instanceIdentifier: Cid = 123456789
   val updateTimestamp: Timestamp = "20200116155359011123"
+  implicit val hc = HeaderCarrier()
 
 
   def expectedJson(reasonCode: Int, returnCode: Int): JsValue = Json.parse(
