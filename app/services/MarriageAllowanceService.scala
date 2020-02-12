@@ -61,23 +61,24 @@ trait MarriageAllowanceService {
   def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext):
     Future[Either[DataRetrievalError, (UserRecord, List[TaxYearModel])]] = {
 
-    def flatten[A, B](f: Future[Either[B, Future[A]]]): Future[Either[B, A]] =
-    f.flatMap({
-      case Left(b) => Future.successful(Left(b))
-      case Right(a) => a.map(Right(_))
-    })
+    def flatten[A, B](f: Future[Either[B, Future[A]]]): Future[Either[B, A]] = {
+      f.flatMap {
+        case Left(b) => Future.successful(Left(b))
+        case Right(a) => a.map(Right(_))
+      }
+    }
 
-     def retrieveTaxYearModels(userRecord: UserRecord): Future[List[TaxYearModel]] = {
-       for {
-         transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
-         recipientRelationshipList <- listRelationship(userRecord.cid)
-         transferorRelationshipList <- listRelationship(transferorRecord.cid)
-         transferorYears <- convertToAvailedYears(transferorRelationshipList)
-         recipientYears <- convertToAvailedYears(recipientRelationshipList)
-         eligibleYearsBasdOnDoM <- getEligibleTaxYearList(findRecipientRequest.dateOfMarriage.get) //TODO convert dateOfMarriage to non-optional in Phase-3
-         years <- getListOfEligibleTaxYears(transferorYears, recipientYears, eligibleYearsBasdOnDoM)
-       } yield years
-     }
+    def retrieveTaxYearModels(userRecord: UserRecord): Future[List[TaxYearModel]] = {
+      for {
+        transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
+        recipientRelationshipList <- listRelationship(userRecord.cid)
+        transferorRelationshipList <- listRelationship(transferorRecord.cid)
+        transferorYears <- convertToAvailedYears(transferorRelationshipList)
+        recipientYears <- convertToAvailedYears(recipientRelationshipList)
+        eligibleYearsBasdOnDoM <- getEligibleTaxYearList(findRecipientRequest.dateOfMarriage.get) //TODO convert dateOfMarriage to non-optional in Phase-3
+        years <- getListOfEligibleTaxYears(transferorYears, recipientYears, eligibleYearsBasdOnDoM)
+      } yield years
+    }
 
     flatten(getRecipientRecord(findRecipientRequest) map { eitherRecipientRecord =>
       eitherRecipientRecord.right.map { userRecord =>
@@ -86,7 +87,6 @@ trait MarriageAllowanceService {
         }
       }
     })
-
   }
 
   def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder, journey: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {

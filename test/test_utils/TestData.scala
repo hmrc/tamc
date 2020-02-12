@@ -279,8 +279,7 @@ object TestData {
     Recipients.recHasAllowanceAndSpaceInName.key -> Recipients.recHasAllowanceAndSpaceInName,
     Recipients.recHasNoAllowance.key -> Recipients.recHasNoAllowance,
     Recipients.recHasNoAllowanceNoCid.key -> Recipients.recHasNoAllowanceNoCid,
-    Recipients.recCidErr.key -> Recipients.recCidErr
-    )
+    Recipients.recCidErr.key -> Recipients.recCidErr)
 
   case class FindRecipientDummy(returnCode: Int, reasonCode: Int, citizen: FindCitizenDummy, firstName: String, lastName: String, gender: String, showCid: Boolean = true) {
 

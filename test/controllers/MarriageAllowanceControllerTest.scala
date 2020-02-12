@@ -51,7 +51,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
 
   "Marriage Allowance Controller" should {
 
-    "return OK when a valid UserRecord and TaxYearModel are received" in { new Setup {
+    "return OK when a valid UserRecord and TaxYearModel are received" in new Setup {
 
         val userRecord = UserRecord(cid = 123456789, timestamp = "20200116155359011123")
         val taxYearList = List(TaxYear(2019))
@@ -71,22 +71,21 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       }
     }
 
-    "return a RecipientNotFound error after receiving a DataRetrievalError" in { new Setup {
+    "return a RecipientNotFound error after receiving a DataRetrievalError" in  new Setup {
 
-       when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
-        (ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Left(TooManyRequestsError)))
+      when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
+      (ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Left(TooManyRequestsError)))
 
-        val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
+      val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
 
-        val expectedResponse = GetRelationshipResponse(
-          status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))
+      val expectedResponse = GetRelationshipResponse(
+        status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))
 
-        status(result) shouldBe OK
-        contentAsJson(result) shouldBe Json.toJson(expectedResponse)
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(expectedResponse)
 
-      }
     }
-  }
+
 
 
 
@@ -139,8 +138,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         findRecipientCall,
         findTransferorCall,
         checkHistoricAllowanceRelationshipCall,
-        checkTransferorHistoricAllowanceRelationshipCall
-        )
+        checkTransferorHistoricAllowanceRelationshipCall)
     }
 
     "return OK if cid is found and allowance relationship exists and surname has space in between" in {

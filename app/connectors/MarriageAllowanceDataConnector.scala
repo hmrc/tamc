@@ -31,6 +31,7 @@ import utils.WSHttp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 object MarriageAllowanceDataConnector extends MarriageAllowanceDataConnector with ServicesConfig {
   override protected def mode: Mode = Play.current.mode
@@ -46,19 +47,9 @@ object MarriageAllowanceDataConnector extends MarriageAllowanceDataConnector wit
 
 }
 
-trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector with DESResponseCodes {
+trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
 
-  private def handleValidationError[A]: Seq[(JsPath, scala.Seq[ValidationError])] => Left[DataRetrievalError, A] =  err => {
-
-    val extractValidationErrors: Seq[(JsPath, scala.Seq[ValidationError])] => String = errors => {
-      errors.map {
-        case (path, List(validationError: ValidationError, _*)) => s"$path: ${validationError.message}"
-      }.mkString(", ").trim
-    }
-
-    Logger.error(s"Not able to parse the response received from DES with error ${extractValidationErrors(err)}")
-    Left(ResponseValidationError)
-  }
+  def logger = Logger("marriageAllowanceDataConnector")
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${nino}")
@@ -154,6 +145,11 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector with DES
         metrics.incrementFailedCounter(ApiType.FindRecipient)
         timer.stop()
         Left(BadGatewayError)
+      }
+      case NonFatal(e) => {
+        metrics.incrementFailedCounter(ApiType.FindRecipient)
+        timer.stop()
+       throw e
       }
     }
   }

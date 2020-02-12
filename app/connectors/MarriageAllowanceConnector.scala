@@ -16,17 +16,28 @@
 
 package connectors
 
-import errors.DataRetrievalError
+import errors.{DataRetrievalError, ResponseValidationError}
+import metrics.Metrics
 import models._
-import play.api.libs.json.JsValue
+import play.api.Logger
+import play.api.data.validation.ValidationError
+import play.api.libs.json.{JsPath, JsValue}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.logging.Authorization
-import metrics.Metrics
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait MarriageAllowanceConnector {
+
+  val ProcessingOK = 1
+  val ErrorReturnCode = -1011
+  val NinoNotFound = 2016
+  val MultipleNinosInMergeTrail = 2017
+  val ConfidenceCheck = 2018
+  val NinoRequired = 2039
+  val OnlyOneNinoOrTempReference = 2040
+  val SurnameNotSupplied = 2061
 
   val httpGet: HttpGet
   val httpPost: HttpPost
@@ -37,6 +48,19 @@ trait MarriageAllowanceConnector {
   val metrics: Metrics
   def url(path: String) = s"$serviceUrl$path"
   def ninoWithoutSpaces(nino: Nino) = nino.value.replaceAll(" ", "")
+  def logger: Logger
+
+  def handleValidationError[A]: Seq[(JsPath, scala.Seq[ValidationError])] => Left[DataRetrievalError, A] =  err => {
+
+    val extractValidationErrors: Seq[(JsPath, scala.Seq[ValidationError])] => String = errors => {
+      errors.map {
+        case (path, List(validationError: ValidationError, _*)) => s"$path: ${validationError.message}"
+      }.mkString(", ").trim
+    }
+
+    logger.error(s"Not able to parse the response received from DES with error ${extractValidationErrors(err)}")
+    Left(ResponseValidationError)
+  }
 
   def buildHeaderCarrier(hc: HeaderCarrier): HeaderCarrier =
     hc.copy(authorization = Some(Authorization(urlHeaderAuthorization))).withExtraHeaders("Environment" -> urlHeaderEnvironment)
