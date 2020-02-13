@@ -57,17 +57,17 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
     }
   }
 
-
   val year = 2019
   val generatedNino = new Generator().nextNino
 
-   trait Setup {
-     val cID = 123456789
-     val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
-       gender = Gender("M"), nino = generatedNino, dateOfMarriage = Some(new LocalDate(year,12,12)))
-     val userRecord = UserRecord(cid = cID, timestamp = "20200116155359011123")
+  trait Setup {
 
-   }
+    val cID = 123456789
+    val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
+       gender = Gender("M"), nino = generatedNino, dateOfMarriage = Some(new LocalDate(year,12,12)))
+    val userRecord = UserRecord(cid = cID, timestamp = "20200116155359011123")
+
+  }
 
 
   lazy val service = new MarriageAllowanceService {
@@ -95,52 +95,52 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
 
   "getRecipientRelationship" should {
 
-    "return a valid response" in { new Setup {
+    "return a UserRecord, list of TaxYearModel tuple given a valid FindRecipientRequest " in  new Setup {
 
-        val taxYearModel = TaxYear(year, Some(true))
+      val taxYearModel = TaxYear(year, Some(true))
 
-        val expectedResponse = (userRecord, List(taxYearModel))
+      val expectedResponse = (userRecord, List(taxYearModel))
 
-        when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
-          .thenReturn(Future.successful(Right(userRecord)))
+      when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
+        .thenReturn(Future.successful(Right(userRecord)))
 
-        when(service.dataConnector.findCitizen(ArgumentMatchers.eq(generatedNino))(ArgumentMatchers.any(), ArgumentMatchers.any()))
-          .thenReturn(Future.successful(findCitizenJson))
+      when(service.dataConnector.findCitizen(ArgumentMatchers.eq(generatedNino))(ArgumentMatchers.any(), ArgumentMatchers.any()))
+        .thenReturn(Future.successful(findCitizenJson))
 
-        when(service.dataConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
-          .thenReturn(Future.successful(listRelationshipdJson))
+      when(service.dataConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
+        .thenReturn(Future.successful(listRelationshipdJson))
 
-        val mockTimerContext = mock[Timer.Context]
-        when(service.metrics.startTimer(ArgumentMatchers.any())).thenReturn(mockTimerContext)
-        when(mockTimerContext.stop()).thenReturn(123456789)
+      val mockTimerContext = mock[Timer.Context]
+      when(service.metrics.startTimer(ArgumentMatchers.any())).thenReturn(mockTimerContext)
+      when(mockTimerContext.stop()).thenReturn(123456789)
 
-        val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
+      val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
 
-        result shouldBe Right(expectedResponse)
-
-      }
+      result shouldBe Right(expectedResponse)
 
     }
 
-    "return a DataRetrievalError based error" in { new Setup {
+
+    "return a DataRetrievalError error type based on error returned" in new Setup {
+
         when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
           .thenReturn(Future.successful(Left(TooManyRequestsError)))
 
         val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
 
         result shouldBe Left(TooManyRequestsError)
-      }
+
     }
 
   }
 
   "when request is sent with deceased recipient in MarriageAllowanceService" should {
     "return a BadRequestException" in {
-        val service = new FakeDeceasedMarriageAllowanceService
-        val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
-        val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
-        //noException should be thrownBy await(response)
-        intercept[BadRequestException] {
+      val service = new FakeDeceasedMarriageAllowanceService
+      val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
+      val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
+
+      intercept[BadRequestException] {
           await(response)
         }
     }

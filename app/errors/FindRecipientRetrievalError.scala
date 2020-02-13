@@ -19,7 +19,6 @@ package errors
 sealed trait DataRetrievalError
 
 sealed trait StatusError extends DataRetrievalError
-case object ResourceNotFoundError extends StatusError
 case object BadRequestError extends StatusError
 case object ServerError extends StatusError
 case object ServiceUnavailableError extends StatusError

@@ -17,12 +17,13 @@
 package controllers
 
 import errors.ErrorResponseStatus.RECIPIENT_NOT_FOUND
-import errors.TooManyRequestsError
+import errors._
 import models._
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatest.prop.TableDrivenPropertyChecks._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
 import play.api.test.Helpers.{OK, contentAsJson, contentAsString, defaultAwaitTimeout}
@@ -73,16 +74,32 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
 
     "return a RecipientNotFound error after receiving a DataRetrievalError" in  new Setup {
 
-      when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
-      (ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Left(TooManyRequestsError)))
+      val records =
+        Table(
+          "DataRetrivalError",
+          BadRequestError,
+          TooManyRequestsError,
+          ServerError,
+          ServiceUnavailableError,
+          TimeOutError,
+          BadGatewayError,
+          UnhandledStatusError,
+          ResponseValidationError
+        )
 
-      val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
+      forAll(records) { retrievalError =>
 
-      val expectedResponse = GetRelationshipResponse(
-        status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))
+        when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
+        (ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Left(retrievalError)))
 
-      status(result) shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(expectedResponse)
+        val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
+
+        val expectedResponse = GetRelationshipResponse(
+          status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))
+
+        status(result) shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson(expectedResponse)
+      }
 
     }
 

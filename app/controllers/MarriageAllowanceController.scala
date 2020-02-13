@@ -49,7 +49,7 @@ trait MarriageAllowanceController extends BaseController {
             user_record = Some(recipientRecord),
             availableYears = Some(taxYears),
             status = ResponseStatus(status_code = "OK"))))
-        case Left(error: DataRetrievalError) => Ok(Json.toJson(GetRelationshipResponse(
+        case Left(_: DataRetrievalError) => Ok(Json.toJson(GetRelationshipResponse(
           status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
       } recover {
         case error =>
