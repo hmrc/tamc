@@ -48,7 +48,7 @@ trait MarriageAllowanceConnector {
   val metrics: Metrics
   def url(path: String) = s"$serviceUrl$path"
   def ninoWithoutSpaces(nino: Nino) = nino.value.replaceAll(" ", "")
-  def logger: Logger
+  val logger: Logger
 
   def handleValidationError[A]: Seq[(JsPath, scala.Seq[ValidationError])] => Left[DataRetrievalError, A] =  err => {
 

@@ -49,7 +49,7 @@ object MarriageAllowanceDataConnector extends MarriageAllowanceDataConnector wit
 
 trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
 
-  def logger = Logger("marriageAllowanceDataConnector")
+  val logger = Logger(this.getClass)
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${nino}")

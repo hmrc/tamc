@@ -36,7 +36,7 @@ import scala.util.control.NonFatal
 
 trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
 
-  def logger = Logger("marriageAllowanceDESConnector")
+  val logger = Logger(this.getClass)
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${nino}")
