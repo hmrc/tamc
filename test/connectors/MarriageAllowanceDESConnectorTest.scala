@@ -308,19 +308,6 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
       result shouldBe Left(BadGatewayError)
     }
 
-
-    "return a ServerError type when an InternalServerError is received " in new FindRecipientSetup {
-
-      server.stubFor(
-        post(urlEqualTo(url))
-          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
-      )
-
-      val result = await(connector.findRecipient(request))
-
-      result shouldBe Left(ServerError)
-    }
-
     "return a CodedErrorResponse" when {
 
       "the returnCode and reasonCode state the nino is not found" in new FindRecipientSetup {

@@ -34,7 +34,7 @@ object AppDependencies {
       "org.jsoup"                % "jsoup"              % "1.11.3",
       "org.scalatestplus.play"  %% "scalatestplus-play" % "2.0.1",
       "org.mockito"              % "mockito-core"       % "2.24.5",
-      "com.github.tomakehurst"   % "wiremock"           % "2.26.0"
+      "com.github.tomakehurst"   % "wiremock"           % "2.21.0"
     ).map(_ % "test")
 
 

@@ -254,7 +254,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         val json = expectedJson(reasonCode, returnCode)
 
         server.stubFor(
-          post(urlEqualTo(url))
+          get(urlEqualTo(url))
             .willReturn(ok(json.toString()))
         )
 
