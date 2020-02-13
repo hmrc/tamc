@@ -66,7 +66,7 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
     def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[DataRetrievalError, UserRecord] = {
 
       (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
-        case(ProcessingOK, ProcessingOK) =>{
+        case(ProcessingOK, ProcessingOK) => {
           metrics.incrementSuccessCounter(ApiType.FindRecipient)
           Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
         }
@@ -119,7 +119,11 @@ trait MarriageAllowanceDataConnector extends MarriageAllowanceConnector {
     override def read(method: String, url: String, response: HttpResponse): Either[DataRetrievalError, UserRecord] =
       response.status match {
         case OK => response.json.validate[FindRecipientResponseDES].fold(handleValidationError(_), evaluateCodes(_))
-        case _ => Left(UnhandledStatusError)
+        case _ => {
+          metrics.incrementFailedCounter(ApiType.FindRecipient)
+          logger.error(s"Des has returned the following Status Code: ${response.status}")
+          Left(UnhandledStatusError)
+        }
       }
     }
 

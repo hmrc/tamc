@@ -219,7 +219,8 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
             (SERVICE_UNAVAILABLE, ServiceUnavailableError),
             (499, TimeOutError),
             (GATEWAY_TIMEOUT, TimeOutError),
-            (413, UnhandledStatusError)
+            (413, UnhandledStatusError),
+            (BAD_GATEWAY, BadGatewayError)
           )
 
         forAll (reasonCodes) { (statusCode: Int, errorType: StatusError) =>

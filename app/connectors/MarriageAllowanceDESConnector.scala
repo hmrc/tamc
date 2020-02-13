@@ -107,15 +107,38 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
         response.status match {
           case OK => response.json.validate[FindRecipientResponseDES].fold(handleValidationError(_), evaluateCodes(_))
           case BAD_REQUEST => {
-
+            metrics.incrementFailedCounter(ApiType.FindRecipient)
             Left(BadRequestError)
           }
-          case TOO_MANY_REQUESTS => Left(TooManyRequestsError)
-          case INTERNAL_SERVER_ERROR => Left(ServerError)
-          case SERVICE_UNAVAILABLE => Left(ServiceUnavailableError)
-          case 499 | GATEWAY_TIMEOUT => Left(TimeOutError)
-          case BAD_GATEWAY => Left(BadGatewayError)
-          case _ => Left(UnhandledStatusError)
+          case TOO_MANY_REQUESTS => {
+            metrics.incrementFailedCounter(ApiType.FindRecipient)
+            Left(TooManyRequestsError)
+          }
+          case INTERNAL_SERVER_ERROR => {
+            metrics.incrementFailedCounter(ApiType.FindRecipient)
+            logger.error(s" Internal Server Error received from DES: ${response.body}")
+            Left(ServerError)
+          }
+          case SERVICE_UNAVAILABLE => {
+            metrics.incrementFailedCounter(ApiType.FindRecipient)
+            logger.error("Service Unavailable returned from DES")
+            Left(ServiceUnavailableError)
+          }
+          case 499 | GATEWAY_TIMEOUT => {
+            metrics.incrementFailedCounter(ApiType.FindRecipient)
+            logger.error("Timeout Error has been received from DES")
+            Left(TimeOutError)
+          }
+          case BAD_GATEWAY => {
+            metrics.incrementFailedCounter(ApiType.FindRecipient)
+            logger.error("Bad Gateway Error returned from DES")
+            Left(BadGatewayError)
+          }
+          case _ => {
+            metrics.incrementFailedCounter(ApiType.FindRecipient)
+            logger.error(s"Des has returned Unhandled Status Code: ${response.status}")
+            Left(UnhandledStatusError)
+          }
         }
     }
 

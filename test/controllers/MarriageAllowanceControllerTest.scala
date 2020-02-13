@@ -104,8 +104,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
     }
 
 
-
-
   "Calling hasMarriageAllowance for Recipient" should {
 
     "return OK if cid is founds" in {
