@@ -35,7 +35,7 @@ import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.WSHttp
-
+import org.scalatest.prop.TableDrivenPropertyChecks._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -86,6 +86,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
   implicit val hc = HeaderCarrier()
   val instanceIdentifier: Cid = 123456789
   val updateTimestamp: Timestamp = "20200116155359011123"
+  lazy val processingCodeOK = connector.ProcessingOK
 
 
   def expectedJson(reasonCode: Int, returnCode: Int): JsValue = Json.parse(
@@ -118,10 +119,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
       "the return code and response code are both 1" in new FindRecipientSetup {
 
-        val reasonCode = connector.ProcessingOK
-        val returnCode = connector.ProcessingOK
-
-        val json = expectedJson(reasonCode, returnCode)
+        val json = expectedJson(processingCodeOK, processingCodeOK)
 
         server.stubFor(
           get(urlEqualTo(url))
@@ -136,10 +134,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
       "a valid nino contains spaces" in new FindRecipientSetup {
 
-        val reasonCode = connector.ProcessingOK
-        val returnCode = connector.ProcessingOK
-
-        val json = expectedJson(reasonCode, returnCode)
+        val json = expectedJson(processingCodeOK, processingCodeOK)
 
         server.stubFor(
           get(urlEqualTo(url))
@@ -190,113 +185,34 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
 
     }
 
+
     "return a CodedErrorResponse" when {
 
-      "a response states a nino must be supplied" in new FindRecipientSetup {
+      "a specific return code and reason code are received" in new FindRecipientSetup {
 
-        val returnCode = connector.ErrorReturnCode
-        val reasonCode = connector.NinoRequired
+        val reasonCodes =
+          Table(
+            ("DES reason code", "DES error message"),
+            (connector.NinoRequired, "Nino must be supplied"),
+            (connector.OnlyOneNinoOrTempReference, "Only one of Nino or Temporary Reference must be supplied"),
+            (connector.SurnameNotSupplied, "Confidence Check Surname not supplied"),
+            (connector.ConfidenceCheck, "Confidence check failed"),
+            (connector.NinoNotFound, "Nino not found and Nino not found in merge trail"),
+            (connector.MultipleNinosInMergeTrail, "Nino not found and Nino found in multiple merge trails")
+          )
 
-        val json = expectedJson(reasonCode, returnCode)
+        forAll (reasonCodes) { (reasonCode: Int, errorMessage: String) =>
 
-        server.stubFor(
-          get(urlEqualTo(url))
-            .willReturn(ok(json.toString()))
-        )
+          val json = expectedJson(reasonCode, connector.ErrorReturnCode)
 
-        val result = await(connector.findRecipient(request))
+          server.stubFor(
+            get(urlEqualTo(url))
+              .willReturn(ok(json.toString()))
+          )
 
-        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Nino must be supplied"))
-
-      }
-
-      "a response states only one of Nino or temporary reference must be supplied" in new FindRecipientSetup {
-
-        val returnCode = connector.ErrorReturnCode
-        val reasonCode = connector.OnlyOneNinoOrTempReference
-
-        val json = expectedJson(reasonCode, returnCode)
-
-        server.stubFor(
-          get(urlEqualTo(url))
-            .willReturn(ok(json.toString()))
-        )
-
-        val result = await(connector.findRecipient(request))
-
-        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Only one of Nino or Temporary Reference must be supplied"))
-
-      }
-
-      "a response states the confidence check surname has not been supplied" in new FindRecipientSetup {
-
-        val returnCode = connector.ErrorReturnCode
-        val reasonCode = connector.SurnameNotSupplied
-
-        val json = expectedJson(reasonCode, returnCode)
-
-        server.stubFor(
-          get(urlEqualTo(url))
-            .willReturn(ok(json.toString()))
-        )
-
-        val result = await(connector.findRecipient(request))
-
-        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Confidence Check Surname not supplied"))
-
-      }
-
-      "a response states the confidence check failed" in new FindRecipientSetup {
-
-        val returnCode = connector.ErrorReturnCode
-        val reasonCode = connector.ConfidenceCheck
-
-        val json = expectedJson(reasonCode, returnCode)
-
-        server.stubFor(
-          get(urlEqualTo(url))
-            .willReturn(ok(json.toString()))
-        )
-
-        val result = await(connector.findRecipient(request))
-
-        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Confidence check failed"))
-
-      }
-
-      "the returnCode and reasonCode state the nino is not found" in new FindRecipientSetup {
-
-        val reasonCode = connector.NinoNotFound
-        val returnCode = connector.ErrorReturnCode
-
-        val json = expectedJson(reasonCode, returnCode)
-
-        server.stubFor(
-          get(urlEqualTo(url))
-            .willReturn(ok(json.toString()))
-        )
-
-        val result = await(connector.findRecipient(request))
-        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Nino not found and Nino not found in merge trail"))
-
-      }
-
-      "the returnCode and reasonCode state multiple ninos found" in new FindRecipientSetup {
-
-        val reasonCode = connector.MultipleNinosInMergeTrail
-        val returnCode = connector.ErrorReturnCode
-
-        val json = expectedJson(reasonCode, returnCode)
-
-        server.stubFor(
-          get(urlEqualTo(url))
-            .willReturn(ok(json.toString()))
-        )
-
-        val result = await(connector.findRecipient(request))
-
-        result shouldBe Left(FindRecipientCodedErrorResponse(returnCode, reasonCode, "Nino not found and Nino found in multiple merge trails"))
-
+          val result = await(connector.findRecipient(request))
+          result shouldBe Left(FindRecipientCodedErrorResponse(connector.ErrorReturnCode, reasonCode, errorMessage))
+        }
       }
     }
 
@@ -306,7 +222,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         new FindRecipientSetup {
           server.stubFor(
             get(urlEqualTo(url))
-              .willReturn(aResponse().withStatus(413).withBody("Payload too large"))
+              .willReturn(aResponse().withStatus(413))
           )
 
           val result = await(connector.findRecipient(request))
@@ -316,7 +232,7 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
         }
       }
 
-      "uncatered return code and reason codes are received" in new FindRecipientSetup {
+      "an unsupported return code and reason code are received" in new FindRecipientSetup {
 
         val reasonCode = 2
         val returnCode = 2
@@ -334,30 +250,36 @@ class MarriageAllowanceDataConnectorTest extends UnitSpec with GuiceOneAppPerSui
       }
     }
 
-    "return a TimeOutError when a GatewayTimeout is received" in new FindRecipientSetup {
+    "return a TimeOutError" when {
 
-      when(mockedGetConnector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
-      when(mockedGetConnector.httpGet.GET(ArgumentMatchers.contains(url))(any(), any(), any()))
-        .thenReturn(Future.failed(new GatewayTimeoutException("timeout")))
+      "a GatewayTimeout is received" in new FindRecipientSetup {
 
-      val result = await(mockedGetConnector.findRecipient(request))
+        when(mockedGetConnector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
+        when(mockedGetConnector.httpGet.GET(ArgumentMatchers.contains(url))(any(), any(), any()))
+          .thenReturn(Future.failed(new GatewayTimeoutException("timeout")))
 
-      result shouldBe Left(TimeOutError)
+        val result = await(mockedGetConnector.findRecipient(request))
 
+        result shouldBe Left(TimeOutError)
+      }
     }
 
 
-    "return a BadGateway error when a BadGatewayException is received" in new FindRecipientSetup {
+    "return a BadGateway error" when {
 
-      when(mockedGetConnector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
+      "a BadGatewayException is received" in new FindRecipientSetup {
 
-      when(mockedGetConnector.httpGet.GET(ArgumentMatchers.contains(url))(any(), any(), any()))
-        .thenReturn(Future.failed(new BadGatewayException("Bad gateway")))
+        when(mockedGetConnector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
 
-      val result = await(mockedGetConnector.findRecipient(request))
+        when(mockedGetConnector.httpGet.GET(ArgumentMatchers.contains(url))(any(), any(), any()))
+          .thenReturn(Future.failed(new BadGatewayException("Bad gateway")))
 
-      result shouldBe Left(BadGatewayError)
+        val result = await(mockedGetConnector.findRecipient(request))
+
+        result shouldBe Left(BadGatewayError)
+      }
     }
+
 
     "return a non fatal error after stopping the timer" in new FindRecipientSetup {
 
