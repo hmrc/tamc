@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ trait Metrics {
   def incrementSuccessCounter(api: ApiType.ApiType): Unit
 
   def incrementTotalCounter(api: ApiType.ApiType): Unit
+
+  def incrementFailedCounter(api: ApiType.ApiType): Unit
 }
 
 object Metrics extends Metrics with MicroserviceMetrics {
@@ -58,9 +60,15 @@ object Metrics extends Metrics with MicroserviceMetrics {
     ApiType.ListRelationship -> registry.counter("list-relationship-total"),
     ApiType.UpdateRelationship -> registry.counter("update-relationship-total"))
 
+  val failureCounters = Map(
+    ApiType.FindRecipient -> registry.counter("find-recipient-failure"))
+
+
   override def startTimer(api: ApiType): Context = timers(api).time()
 
   override def incrementSuccessCounter(api: ApiType): Unit = successCounters(api).inc()
 
   override def incrementTotalCounter(api: ApiType): Unit = totalCounters(api).inc()
+
+  override def incrementFailedCounter(api: ApiType): Unit = failureCounters(api).inc()
 }

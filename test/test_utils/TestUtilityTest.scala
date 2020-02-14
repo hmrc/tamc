@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,21 +57,6 @@ class TestUtilityTest extends UnitSpec with TestUtility with OneAppPerSuite {
         (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "FirstForename").as[String] shouldBe "Firstnamefivefivefivefivefivefivefivefivefive"
         (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "Surname").as[String] shouldBe "Lastnamefivefivefivefivefivefivefivefivefive"
       })
-    }
-
-    "sanity check for findRecipient" in {
-      val controller = makeFakeController()
-      val request = FakeRequest()
-      implicit val hc = HeaderCarrier()
-
-      val recipient = TestData.Recipients.recHasNoAllowance
-      val recipientNino = recipient.citizen.nino
-      val recipientCid = recipient.citizen.cid.cid
-
-      val recipientData = FindRecipientRequest("fgh", "asd", Gender("F"), Nino(recipientNino))
-      val result = controller.marriageAllowanceService.dataConnector.findRecipient(recipientData)
-      ScalaFutures.whenReady(result)(json =>
-        (json \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutItpr1Person" \ "InstanceIdentifier").get shouldBe JsNumber(recipientCid))
     }
 
     "sanity check for listRelationship" in {

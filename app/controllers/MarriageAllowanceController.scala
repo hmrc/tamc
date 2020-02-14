@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,14 +40,17 @@ trait MarriageAllowanceController extends BaseController {
 
   val authAction: AuthAction
 
+  //TODO refactor so that the correct response are being sent
   def getRecipientRelationship(transferorNino: Nino) = authAction.async(parse.json) { implicit request =>
     withJsonBody[FindRecipientRequest] { findRecipientRequest =>
       marriageAllowanceService.getRecipientRelationship(transferorNino, findRecipientRequest) map {
-        case (recipientRecord: UserRecord, taxYears: List[TaxYear]) =>
+        case Right((recipientRecord, taxYears)) =>
           Ok(Json.toJson(GetRelationshipResponse(
             user_record = Some(recipientRecord),
             availableYears = Some(taxYears),
             status = ResponseStatus(status_code = "OK"))))
+        case Left(_: DataRetrievalError) => Ok(Json.toJson(GetRelationshipResponse(
+          status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
       } recover {
         case error =>
           error match {

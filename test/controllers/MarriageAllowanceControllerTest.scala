@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,93 @@
 
 package controllers
 
-import models.{UpdateRelationshipResponse, UserRecord}
+import errors.ErrorResponseStatus.RECIPIENT_NOT_FOUND
+import errors._
+import models._
+import org.mockito.ArgumentMatchers
+import org.mockito.Mockito._
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
+import org.scalatest.prop.TableDrivenPropertyChecks._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import play.api.test.FakeRequest
-import play.api.test.Helpers.{OK, contentAsString, defaultAwaitTimeout}
+import play.api.test.Helpers.{OK, contentAsJson, contentAsString, defaultAwaitTimeout}
+import play.api.test.{FakeHeaders, FakeRequest}
+import services.MarriageAllowanceService
 import test_utils._
-import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.play.test.UnitSpec
 
-class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
+import scala.concurrent.Future
+
+class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite with MockitoSugar {
+
+  lazy val controller = new MarriageAllowanceController {
+    override val marriageAllowanceService = mock[MarriageAllowanceService]
+    override val authAction = FakeAuthAction
+  }
+
+  trait Setup {
+    val generatedNino = new Generator().nextNino
+    val findRecipientRequest = FindRecipientRequest(name = "testName", lastName = "lastName", gender = Gender("M"), generatedNino)
+    val json = Json.toJson(findRecipientRequest)
+    val fakeRequest = FakeRequest("POST", "/", FakeHeaders(), Json.toJson(json))
+  }
+
+  "Marriage Allowance Controller" should {
+
+    "return OK when a valid UserRecord and TaxYearModel are received" in new Setup {
+
+        val userRecord = UserRecord(cid = 123456789, timestamp = "20200116155359011123")
+        val taxYearList = List(TaxYear(2019))
+
+        when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
+        (ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Right((userRecord, taxYearList))))
+
+        val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
+
+        val expectedResponse = Json.toJson(GetRelationshipResponse(
+          user_record = Some(userRecord),
+          availableYears = Some(taxYearList),
+          status = ResponseStatus(status_code = "OK")))
+
+        status(result) shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson(expectedResponse)
+      }
+    }
+
+    "return a RecipientNotFound error after receiving a DataRetrievalError" in  new Setup {
+
+      val records =
+        Table(
+          "DataRetrivalError",
+          BadRequestError,
+          TooManyRequestsError,
+          ServerError,
+          ServiceUnavailableError,
+          TimeOutError,
+          BadGatewayError,
+          UnhandledStatusError,
+          ResponseValidationError
+        )
+
+      forAll(records) { retrievalError =>
+
+        when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
+        (ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Left(retrievalError)))
+
+        val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
+
+        val expectedResponse = GetRelationshipResponse(
+          status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))
+
+        status(result) shouldBe OK
+        contentAsJson(result) shouldBe Json.toJson(expectedResponse)
+      }
+
+    }
+
 
   "Calling hasMarriageAllowance for Recipient" should {
 
@@ -76,8 +150,8 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         bearerToken = Some(Authorization("test-bearer-token")))
 
       controller.debugData.httpGetCallsToTest shouldBe List(
-        findTransferorCall,
         findRecipientCall,
+        findTransferorCall,
         checkHistoricAllowanceRelationshipCall,
         checkTransferorHistoricAllowanceRelationshipCall)
     }
@@ -126,8 +200,8 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         bearerToken = Some(Authorization("test-bearer-token")))
 
       controller.debugData.httpGetCallsToTest shouldBe List(
-        findTransferorCall,
         findRecipientCall,
+        findTransferorCall,
         checkHistoricAllowanceRelationshipCall,
         checkTransferorHistoricAllowanceRelationshipCall)
     }
@@ -176,8 +250,8 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         bearerToken = Some(Authorization("test-bearer-token")))
 
       controller.debugData.httpGetCallsToTest shouldBe List(
-        findTransferorCall,
         findRecipientCall,
+        findTransferorCall,
         checkHistoricAllowanceRelationshipCall,
         checkTransferorHistoricAllowanceRelationshipCall)
     }

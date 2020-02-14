@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import config.ApplicationConfig._
-import connectors.{EmailConnector, MarriageAllowanceDataConnector}
+import connectors.{EmailConnector, MarriageAllowanceConnector, MarriageAllowanceDESConnector, MarriageAllowanceDataConnector}
 import errors._
 import metrics.Metrics
 import models.{TaxYear => TaxYearModel, _}
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
 import play.Logger
+import play.api.Play
 import play.api.libs.json.Json
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.emailaddress.EmailAddress
@@ -36,16 +37,20 @@ import uk.gov.hmrc.time.TaxYear
 import scala.concurrent.{ExecutionContext, Future}
 
 object MarriageAllowanceService extends MarriageAllowanceService {
-  override val dataConnector = MarriageAllowanceDataConnector
+  override val dataConnector = getConnectorImplementation
   override val emailConnector = EmailConnector
   override val metrics = Metrics
   override val startTaxYear = START_TAX_YEAR
   override val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
+
+  def getConnectorImplementation: MarriageAllowanceConnector = {
+    if(Play.current.configuration.getBoolean("des.post.enabled").getOrElse(false)) MarriageAllowanceDESConnector else MarriageAllowanceDataConnector
+  }
 }
 
 trait MarriageAllowanceService {
 
-  val dataConnector: MarriageAllowanceDataConnector
+  val dataConnector: MarriageAllowanceConnector
   val emailConnector: EmailConnector
   val metrics: Metrics
   val startTaxYear: Int
@@ -53,17 +58,35 @@ trait MarriageAllowanceService {
 
   def currentTaxYear: Int = TaxYear.current.startYear
 
-  def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(UserRecord, List[TaxYearModel])] = {
-    for {
-      transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
-      recipientRecord <- getRecipientRecord(findRecipientRequest)
-      recipientRelationshipList <- listRelationship(recipientRecord.cid)
-      transferorRelationshipList <- listRelationship(transferorRecord.cid)
-      transferorYears <- convertToAvailedYears(transferorRelationshipList)
-      recipientYears <- convertToAvailedYears(recipientRelationshipList)
-      eligibleYearsBasdOnDoM <- getEligibleTaxYearList(findRecipientRequest.dateOfMarriage.get) //TODO convert dateOfMarriage to non-optional in Phase-3
-      years <- getListOfEligibleTaxYears(transferorYears, recipientYears, eligibleYearsBasdOnDoM)
-    } yield { (recipientRecord, years) }
+  def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext):
+    Future[Either[DataRetrievalError, (UserRecord, List[TaxYearModel])]] = {
+
+    def flatten[A, B](f: Future[Either[B, Future[A]]]): Future[Either[B, A]] = {
+      f.flatMap {
+        case Left(b) => Future.successful(Left(b))
+        case Right(a) => a.map(Right(_))
+      }
+    }
+
+    def retrieveTaxYearModels(userRecord: UserRecord): Future[List[TaxYearModel]] = {
+      for {
+        transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
+        recipientRelationshipList <- listRelationship(userRecord.cid)
+        transferorRelationshipList <- listRelationship(transferorRecord.cid)
+        transferorYears <- convertToAvailedYears(transferorRelationshipList)
+        recipientYears <- convertToAvailedYears(recipientRelationshipList)
+        eligibleYearsBasdOnDoM <- getEligibleTaxYearList(findRecipientRequest.dateOfMarriage.get) //TODO convert dateOfMarriage to non-optional in Phase-3
+        years <- getListOfEligibleTaxYears(transferorYears, recipientYears, eligibleYearsBasdOnDoM)
+      } yield years
+    }
+
+    flatten(getRecipientRecord(findRecipientRequest) map { eitherRecipientRecord =>
+      eitherRecipientRecord.right.map { userRecord =>
+        retrieveTaxYearModels(userRecord) map { years =>
+          (userRecord, years)
+        }
+      }
+    })
   }
 
   def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder, journey: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
@@ -286,40 +309,8 @@ trait MarriageAllowanceService {
     }
   }
 
-  private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserRecord] = {
-    metrics.incrementTotalCounter(ApiType.FindRecipient)
-    val timer = metrics.startTimer(ApiType.FindRecipient)
-    dataConnector.findRecipient(findRecipientRequest).map {
-      json =>
-        timer.stop()
-        ((json
-          \ "Jfwk1012FindCheckPerNoninocallResponse"
-          \ "Jfwk1012FindCheckPerNoninoExport"
-          \ "OutWCbdParameters"
-          \ "ReturnCode").as[Int],
-          (json
-            \ "Jfwk1012FindCheckPerNoninocallResponse"
-            \ "Jfwk1012FindCheckPerNoninoExport"
-            \ "OutWCbdParameters"
-            \ "ReasonCode").as[Int]) match {
-              case (1, 1) =>
-                metrics.incrementSuccessCounter(ApiType.FindRecipient)
-                UserRecord(
-                  cid = (json
-                    \ "Jfwk1012FindCheckPerNoninocallResponse"
-                    \ "Jfwk1012FindCheckPerNoninoExport"
-                    \ "OutItpr1Person"
-                    \ "InstanceIdentifier").as[Cid],
-                  timestamp = (json
-                    \ "Jfwk1012FindCheckPerNoninocallResponse"
-                    \ "Jfwk1012FindCheckPerNoninoExport"
-                    \ "OutItpr1Person"
-                    \ "UpdateTimestamp").as[Timestamp])
-              case (returnCode, reasonCode) =>
-                metrics.incrementSuccessCounter(ApiType.FindRecipient)
-                throw new FindRecipientError(returnCode, reasonCode)
-            }
-    }
+  private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
+    dataConnector.findRecipient(findRecipientRequest)
   }
 
   private def listRelationshipRecord(userRecord: UserRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {
@@ -351,6 +342,7 @@ trait MarriageAllowanceService {
   private def listRelationship(cid: Cid)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {
     metrics.incrementTotalCounter(ApiType.ListRelationship)
     val timer = metrics.startTimer(ApiType.ListRelationship)
+
     dataConnector.listRelationship(cid).map {
       json =>
         timer.stop()

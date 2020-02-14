@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.kenshoo.play.metrics.PlayModule
 import com.typesafe.config.Config
 import connectors.{EmailConnector, MarriageAllowanceDataConnector}
 import controllers.MarriageAllowanceController
+import errors.DataRetrievalError
 import errors.ErrorResponseStatus._
 import metrics.Metrics
 import models.ApiType.ApiType
@@ -42,6 +43,9 @@ import uk.gov.hmrc.time
 import scala.concurrent.{ExecutionContext, Future}
 
 trait TestUtility {
+
+
+  implicit val hc = HeaderCarrier()
 
   def bindModules: Seq[GuiceableModule] = Seq(new PlayModule)
 
@@ -147,6 +151,7 @@ trait TestUtility {
       override val serviceUrl: String = "foo"
       override val urlHeaderEnvironment = "test-environment"
       override val urlHeaderAuthorization = "test-bearer-token"
+      override val metrics = Metrics
 
       var findCitizenNinoToTest: Option[Nino] = None
       var findRecipientNinoToTest: Option[Nino] = None
@@ -159,19 +164,19 @@ trait TestUtility {
       var updateAllowanceRelationshipDataToTest: Option[DesUpdateRelationshipRequest] = None
       var updateAllowanceRelationshipDataToTestCount = 0
 
-      override def findCitizen(nino: Nino)(implicit ec: ExecutionContext): Future[JsValue] = {
+      override def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
         findCitizenNinoToTest = Some(nino)
         findCitizenNinoToTestCount = findCitizenNinoToTestCount + 1
         super.findCitizen(nino)
       }
 
-      override def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext): Future[JsValue] = {
+      override def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {
         findRecipientNinoToTest = Some(findRecipientRequest.nino)
         findRecipientNinoToTestCount = findRecipientNinoToTestCount + 1
         super.findRecipient(findRecipientRequest)
       }
 
-      override def updateAllowanceRelationship(data: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext): Future[HttpResponse] = {
+      override def updateAllowanceRelationship(data: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
         def errorResponse(reason: String, code: Int) = Future {
           new DummyHttpResponse(reason, code)
         }
@@ -189,7 +194,7 @@ trait TestUtility {
         }
       }
 
-      override def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext): Future[JsValue] = {
+      override def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
         isErrorController match {
           case true =>
             cid match {
@@ -212,6 +217,8 @@ trait TestUtility {
       override def incrementSuccessCounter(api: ApiType): Unit = {}
 
       override def incrementTotalCounter(api: ApiType): Unit = {}
+
+      override def incrementFailedCounter(api: ApiType): Unit = {}
     }
 
     val fakeMarriageAllowanceService = new MarriageAllowanceService {
