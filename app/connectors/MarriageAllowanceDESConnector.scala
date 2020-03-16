@@ -45,7 +45,7 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
 
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${cid}/relationships?includeHistoric=${includeHistoric}")
-    httpGet.GET[JsValue](path)
+    httpGet.GET[JsValue](path)(implicitly, buildHeaderCarrier(hc), ec)
   }
 
   def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {
