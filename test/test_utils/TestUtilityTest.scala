@@ -16,7 +16,7 @@
 
 package test_utils
 
-import models.{Cid, FindRecipientRequest, Gender, Timestamp}
+import models.{Cid, Timestamp}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import org.scalatestplus.play.OneAppPerSuite
