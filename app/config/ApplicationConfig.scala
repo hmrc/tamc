@@ -53,7 +53,7 @@ trait ApplicationConfig {
   val EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH: String
   val EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID: String
   val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID: String
-  val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID: String 
+  val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID: String
   val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH: String
 }
 
@@ -98,7 +98,7 @@ object ApplicationConfig extends ApplicationConfig {
 
   val START_DATE_CY = "6 Ebrill"
   val END_DATE_CY = "5 Ebrill"
-  
-  override val START_TAX_YEAR = configuration.getInt("ma-start-tax-year").getOrElse(2015)
-  override val MA_SUPPORTED_YEARS_COUNT = configuration.getInt("ma-supported-years-count").getOrElse(5)
+
+  override lazy val START_TAX_YEAR = configuration.getInt("ma-start-tax-year").getOrElse(2015)
+  override lazy val MA_SUPPORTED_YEARS_COUNT = configuration.getInt("ma-supported-years-count").getOrElse(5)
 }

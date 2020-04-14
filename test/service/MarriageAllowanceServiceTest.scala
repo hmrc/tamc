@@ -18,7 +18,6 @@ package service
 
 import Fixtures.MultiYearCreateRelationshipRequestHolderFixture
 import com.codahale.metrics.Timer
-import config.ApplicationConfig.{MA_SUPPORTED_YEARS_COUNT, START_TAX_YEAR}
 import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
 import metrics.Metrics
@@ -27,16 +26,12 @@ import models._
 import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
-import org.scalatest.TestData
 import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerTest
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import services.MarriageAllowanceService
 import test_utils.TestUtility
 import uk.gov.hmrc.domain.Generator
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, _}
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.WSHttp
 
@@ -44,7 +39,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO remove the need for TestUtility
-class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with MockitoSugar with GuiceOneAppPerTest {
+class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with MockitoSugar {
 
   val year = 2019
   val generatedNino = new Generator().nextNino
@@ -63,8 +58,8 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
     override val dataConnector = mock[MarriageAllowanceDESConnector]
     override val emailConnector = mock[EmailConnector]
     override val metrics = mock[Metrics]
-    override val startTaxYear = START_TAX_YEAR
-    override val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
+    override val startTaxYear = 2015
+    override val maSupportedYearsCount = 5
 
     override def currentTaxYear: Int = year
 
