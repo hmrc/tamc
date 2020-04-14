@@ -19,7 +19,7 @@ package service
 import Fixtures.MultiYearCreateRelationshipRequestHolderFixture
 import com.codahale.metrics.Timer
 import config.ApplicationConfig.{MA_SUPPORTED_YEARS_COUNT, START_TAX_YEAR}
-import connectors.{EmailConnector, MarriageAllowanceDESConnector, MarriageAllowanceDataConnector}
+import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
 import metrics.Metrics
 import models.ApiType.ApiType
@@ -46,17 +46,6 @@ import scala.concurrent.{ExecutionContext, Future}
 //TODO remove the need for TestUtility
 class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with MockitoSugar with GuiceOneAppPerTest {
 
-  implicit override def newAppForTest(testData: TestData): Application = {
-
-    val builder = new GuiceApplicationBuilder()
-
-    testData.name match {
-      case testName if testName.contains("post enabled is true") => builder.configure("des.post.enabled" -> true).build()
-      case testName if testName.contains("post enabled is false") => builder.configure("des.post.enabled" -> false).build()
-      case _ => builder.build()
-    }
-  }
-
   val year = 2019
   val generatedNino = new Generator().nextNino
 
@@ -71,7 +60,7 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
 
 
   lazy val service = new MarriageAllowanceService {
-    override val dataConnector = mock[MarriageAllowanceDataConnector]
+    override val dataConnector = mock[MarriageAllowanceDESConnector]
     override val emailConnector = mock[EmailConnector]
     override val metrics = mock[Metrics]
     override val startTaxYear = START_TAX_YEAR
@@ -80,18 +69,6 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
     override def currentTaxYear: Int = year
 
   }
-
-  "MarriageAllowanceService" should {
-
-    "return a MarriageAllowanceDESConnector if toggle post enabled is true" in {
-      MarriageAllowanceService.getConnectorImplementation shouldBe MarriageAllowanceDESConnector
-    }
-
-    "return a MarriageAllowanceDataConnector if toggle post enabled is false" in {
-      MarriageAllowanceService.getConnectorImplementation shouldBe MarriageAllowanceDataConnector
-    }
-  }
-
 
   "getRecipientRelationship" should {
 
@@ -280,7 +257,7 @@ class FakeAuthorityMarriageAllowanceService extends MarriageAllowanceService {
 
 }
 
-object mockDeceasedDataConnector extends MarriageAllowanceDataConnector {
+object mockDeceasedDataConnector extends MarriageAllowanceDESConnector {
   override val httpGet = WSHttp
   override val httpPost = WSHttp
   override val httpPut = WSHttp
@@ -295,7 +272,7 @@ object mockDeceasedDataConnector extends MarriageAllowanceDataConnector {
   }
 }
 
-object mockAuthorityDataConnector extends MarriageAllowanceDataConnector {
+object mockAuthorityDataConnector extends MarriageAllowanceDESConnector {
   override val httpGet = WSHttp
   override val httpPost = WSHttp
   override val httpPut = WSHttp

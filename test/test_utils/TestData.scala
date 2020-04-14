@@ -285,7 +285,7 @@ object TestData {
 
     def decodeQueryStringValue(value: String) = URLDecoder.decode(value, "UTF-8")
 
-    def key = s"/data/findRecipient/nino-${citizen.nino}_surname-${decodeQueryStringValue(lastName)}_forename1-${decodeQueryStringValue(firstName)}_gender-${decodeQueryStringValue(gender)}.json"
+    def key = s"/data/findRecipient/nino-${citizen.nino}.json"
 
     def json = s"""
 {
@@ -581,7 +581,7 @@ object TestData {
   def findMockData[T](url: String, body: Option[T] = None): String = {
 
     val findCitizenByNinoUrl = """^GET-foo/marriage-allowance/citizen/((?!BG|GB|NK|KN|TN|NT|ZZ)[ABCEGHJ-PRSTW-Z][ABCEGHJ-NPRSTW-Z]\d{6}[A-D]$)""".r
-    val findRecipientByNinoUrl = """^GET-foo/marriage-allowance/citizen/((?!BG|GB|NK|KN|TN|NT|ZZ)[ABCEGHJ-PRSTW-Z][ABCEGHJ-NPRSTW-Z]\d{6}[A-D])/check\?surname=(.*)\&forename1=(.*)\&gender=(.*)""".r
+    val findRecipientByNinoUrl = """^POST-foo/marriage-allowance/citizen/((?!BG|GB|NK|KN|TN|NT|ZZ)[ABCEGHJ-PRSTW-Z][ABCEGHJ-NPRSTW-Z]\d{6}[A-D])/check""".r
     val checkAllowanceRelationshipUrl = """^GET-foo/marriage-allowance/citizen/(\d+)/relationship""".r
     val listRelationshipUrl = """^GET-foo/marriage-allowance/citizen/(\d+)/relationships\?includeHistoric=true""".r
     val createAllowanceRelationshipUrl = """^POST-foo/marriage-allowance/citizen/(\d+)/relationship""".r
@@ -599,8 +599,8 @@ object TestData {
         TestData.mappedMultiYearCreate(bodyToText).json
       case (findCitizenByNinoUrl(nino), None) =>
         TestData.mappedNino2FindCitizen(nino).json
-      case (findRecipientByNinoUrl(nino, surname, forename1, gender), None) =>
-        val filePath = s"/data/findRecipient/nino-${nino}_surname-${decodeQueryStringValue(surname)}_forename1-${decodeQueryStringValue(forename1)}_gender-${decodeQueryStringValue(gender)}.json"
+      case (findRecipientByNinoUrl(nino), Some(_)) =>
+        val filePath = s"/data/findRecipient/nino-$nino.json"
         TestData.mappedFindRecipient(filePath).json
       case (listRelationshipUrl(cid), None) =>
         val filePath = s"usercid-${cid}"
