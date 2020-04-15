@@ -21,7 +21,7 @@ import com.codahale.metrics.Timer
 import com.codahale.metrics.Timer.Context
 import com.kenshoo.play.metrics.PlayModule
 import com.typesafe.config.Config
-import connectors.{EmailConnector, MarriageAllowanceDataConnector}
+import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import controllers.MarriageAllowanceController
 import errors.DataRetrievalError
 import errors.ErrorResponseStatus._
@@ -54,6 +54,7 @@ trait TestUtility {
     val fakeHttpGet = new HttpGet with WSGet{
       override val hooks = NoneRequired
       var httpGetCallsToTest: List[HttpGETCallWithHeaders] = List()
+      var httpPostCallsToTest: List[HttpPOSTCallWithHeaders] = List()
 
       override def doGet(url: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
         val adjustedUrl = s"GET-${url}"
@@ -144,7 +145,7 @@ trait TestUtility {
       override val emailUrl = "email-url"
     }
 
-    val fakeMarriageAllowanceDataConnector = new MarriageAllowanceDataConnector {
+    val fakeMarriageAllowanceDESConnector = new MarriageAllowanceDESConnector {
       override val httpGet: HttpGet = fakeHttpGet
       override val httpPost: HttpPost = fakeHttpPost
       override val httpPut: HttpPut = fakeHttpPut
@@ -222,7 +223,7 @@ trait TestUtility {
     }
 
     val fakeMarriageAllowanceService = new MarriageAllowanceService {
-      override val dataConnector = fakeMarriageAllowanceDataConnector
+      override val dataConnector = fakeMarriageAllowanceDESConnector
       override val emailConnector = fakeEmailConnector
       override val metrics = fakeMetrics
       override val currentTaxYear: Int = time.TaxYear.taxYearFor(testingTime.toLocalDate).startYear
@@ -244,25 +245,25 @@ trait TestUtility {
     }
 
     val debugObject = new Object {
-      def findCitizenNinoToTest = fakeMarriageAllowanceDataConnector.findCitizenNinoToTest
+      def findCitizenNinoToTest = fakeMarriageAllowanceDESConnector.findCitizenNinoToTest
 
-      def findRecipientNinoToTest = fakeMarriageAllowanceDataConnector.findRecipientNinoToTest
+      def findRecipientNinoToTest = fakeMarriageAllowanceDESConnector.findRecipientNinoToTest
 
-      def findCitizenNinoToTestCount = fakeMarriageAllowanceDataConnector.findCitizenNinoToTestCount
+      def findCitizenNinoToTestCount = fakeMarriageAllowanceDESConnector.findCitizenNinoToTestCount
 
-      def findRecipientNinoToTestCount = fakeMarriageAllowanceDataConnector.findRecipientNinoToTestCount
+      def findRecipientNinoToTestCount = fakeMarriageAllowanceDESConnector.findRecipientNinoToTestCount
 
-      def checkAllowanceRelationshipCidToTest = fakeMarriageAllowanceDataConnector.checkAllowanceRelationshipCidToTest
+      def checkAllowanceRelationshipCidToTest = fakeMarriageAllowanceDESConnector.checkAllowanceRelationshipCidToTest
 
-      def checkAllowanceRelationshipCidToTestCount = fakeMarriageAllowanceDataConnector.checkAllowanceRelationshipCidToTestCount
+      def checkAllowanceRelationshipCidToTestCount = fakeMarriageAllowanceDESConnector.checkAllowanceRelationshipCidToTestCount
 
-      def createAllowanceRelationshipDataToTest = fakeMarriageAllowanceDataConnector.createAllowanceRelationshipDataToTest
+      def createAllowanceRelationshipDataToTest = fakeMarriageAllowanceDESConnector.createAllowanceRelationshipDataToTest
 
-      def createAllowanceRelationshipDataToTestCount = fakeMarriageAllowanceDataConnector.createAllowanceRelationshipDataToTestCount
+      def createAllowanceRelationshipDataToTestCount = fakeMarriageAllowanceDESConnector.createAllowanceRelationshipDataToTestCount
 
-      def updateAllowanceRelationshipDataToTest = fakeMarriageAllowanceDataConnector.updateAllowanceRelationshipDataToTest
+      def updateAllowanceRelationshipDataToTest = fakeMarriageAllowanceDESConnector.updateAllowanceRelationshipDataToTest
 
-      def updateAllowanceRelationshipDataToTestCount = fakeMarriageAllowanceDataConnector.updateAllowanceRelationshipDataToTestCount
+      def updateAllowanceRelationshipDataToTestCount = fakeMarriageAllowanceDESConnector.updateAllowanceRelationshipDataToTestCount
 
       def httpGetCallsToTest = fakeHttpGet.httpGetCallsToTest
 
