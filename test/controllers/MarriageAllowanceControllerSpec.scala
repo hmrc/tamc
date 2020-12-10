@@ -21,9 +21,12 @@ import errors._
 import models._
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
 import play.api.test.Helpers.{OK, contentAsJson, contentAsString, defaultAwaitTimeout}
@@ -33,21 +36,31 @@ import test_utils._
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.test.UnitSpec
+import play.api.inject.bind
 
 import scala.concurrent.Future
 
-class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite with MockitoSugar {
+class MarriageAllowanceControllerSpec extends UnitSpec with TestUtility with GuiceOneAppPerSuite with MockitoSugar with BeforeAndAfterEach {
 
-  lazy val controller = new MarriageAllowanceController {
-    override val marriageAllowanceService = mock[MarriageAllowanceService]
-    override val authAction = FakeAuthAction
-  }
+  val mockMarriageAllowanceService: MarriageAllowanceService = mock[MarriageAllowanceService]
+
+  override def fakeApplication(): Application = GuiceApplicationBuilder()
+    .overrides(
+      bind[MarriageAllowanceService].toInstance(mockMarriageAllowanceService)
+    ).build()
+
+  val controller = app.injector.instanceOf[MarriageAllowanceController]
 
   trait Setup {
     val generatedNino = new Generator().nextNino
     val findRecipientRequest = FindRecipientRequest(name = "testName", lastName = "lastName", gender = Gender("M"), generatedNino)
     val json = Json.toJson(findRecipientRequest)
     val fakeRequest = FakeRequest("POST", "/", FakeHeaders(), Json.toJson(json))
+  }
+
+  override def beforeEach(): Unit ={
+    super.beforeEach()
+    reset(mockMarriageAllowanceService)
   }
 
   "Marriage Allowance Controller" should {
@@ -57,7 +70,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
         val userRecord = UserRecord(cid = 123456789, timestamp = "20200116155359011123")
         val taxYearList = List(TaxYear(2019))
 
-        when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
+        when(mockMarriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
         (ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Right((userRecord, taxYearList))))
 
         val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
@@ -89,7 +102,7 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
 
       forAll(records) { retrievalError =>
 
-        when(controller.marriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
+        when(mockMarriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
         (ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Left(retrievalError)))
 
         val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
@@ -116,7 +129,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
 
-      val controller = makeFakeController()
       val testData = s"""{"name":"rty","lastName":"qwe", "nino":"${recipientNino}", "gender":"${recipientGender}", "dateOfMarriage":"01/01/2015"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)
@@ -125,29 +137,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       val json = Json.parse(contentAsString(result))
       (json \ "user_record" \ "has_allowance").asOpt[Boolean] shouldBe None
       (json \ "status" \ "status_code").as[String] shouldBe "OK"
-
-      controller.debugData.findRecipientNinoToTest shouldBe Some(Nino(recipientNino))
-      controller.debugData.findRecipientNinoToTestCount shouldBe 1
-
-      val checkHistoricAllowanceRelationshipCall = HttpGETCallWithHeaders(
-        url = s"GET-foo/marriage-allowance/citizen/${recipientCid}/relationships?includeHistoric=true",
-        env = Seq(("Environment" -> "test-environment")),
-        bearerToken = Some(Authorization("test-bearer-token")))
-
-      val findTransferorCall = HttpGETCallWithHeaders(
-        url = s"GET-foo/marriage-allowance/citizen/${transferorNino.nino}",
-        env = Seq(("Environment" -> "test-environment")),
-        bearerToken = Some(Authorization("test-bearer-token")))
-
-      val checkTransferorHistoricAllowanceRelationshipCall = HttpGETCallWithHeaders(
-        url = s"GET-foo/marriage-allowance/citizen/${transferorNinoObject.cid.cid}/relationships?includeHistoric=true",
-        env = Seq(("Environment" -> "test-environment")),
-        bearerToken = Some(Authorization("test-bearer-token")))
-
-      controller.debugData.httpGetCallsToTest shouldBe List(
-        findTransferorCall,
-        checkHistoricAllowanceRelationshipCall,
-        checkTransferorHistoricAllowanceRelationshipCall)
     }
 
     "return OK if cid is found and allowance relationship exists and surname has space in between" in {
@@ -160,7 +149,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
 
-      val controller = makeFakeController()
       val testData = s"""{"name":"rty","lastName":"qwe abc", "nino":"${recipientNino}", "gender":"${recipientGender}", "dateOfMarriage":"01/01/2015"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)
@@ -169,29 +157,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       val json = Json.parse(contentAsString(result))
       (json \ "user_record" \ "has_allowance").asOpt[Boolean] shouldBe None
       (json \ "status" \ "status_code").as[String] shouldBe "OK"
-
-      controller.debugData.findRecipientNinoToTest shouldBe Some(Nino(recipientNino))
-      controller.debugData.findRecipientNinoToTestCount shouldBe 1
-
-      val checkHistoricAllowanceRelationshipCall = HttpGETCallWithHeaders(
-        url = s"GET-foo/marriage-allowance/citizen/${recipientCid}/relationships?includeHistoric=true",
-        env = Seq(("Environment" -> "test-environment")),
-        bearerToken = Some(Authorization("test-bearer-token")))
-
-      val findTransferorCall = HttpGETCallWithHeaders(
-        url = s"GET-foo/marriage-allowance/citizen/${transferorNino.nino}",
-        env = Seq(("Environment" -> "test-environment")),
-        bearerToken = Some(Authorization("test-bearer-token")))
-
-      val checkTransferorHistoricAllowanceRelationshipCall = HttpGETCallWithHeaders(
-        url = s"GET-foo/marriage-allowance/citizen/${transferorNinoObject.cid.cid}/relationships?includeHistoric=true",
-        env = Seq(("Environment" -> "test-environment")),
-        bearerToken = Some(Authorization("test-bearer-token")))
-
-      controller.debugData.httpGetCallsToTest shouldBe List(
-        findTransferorCall,
-        checkHistoricAllowanceRelationshipCall,
-        checkTransferorHistoricAllowanceRelationshipCall)
     }
 
     "return false if cid is found and allowance relationship does not exist" in {
@@ -204,7 +169,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
 
-      val controller = makeFakeController()
       val testData = s"""{"name":"fgh","lastName":"asd", "nino":"${recipientNino}", "gender":"${recipientGender}", "dateOfMarriage":"01/01/2015"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)
@@ -213,36 +177,12 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       val json = Json.parse(contentAsString(result))
       (json \ "user_record" \ "has_allowance").asOpt[Boolean] shouldBe None
       (json \ "status" \ "status_code").as[String] shouldBe "OK"
-
-      controller.debugData.findRecipientNinoToTest shouldBe Some(Nino(recipientNino))
-      controller.debugData.findRecipientNinoToTestCount shouldBe 1
-
-      val checkHistoricAllowanceRelationshipCall = HttpGETCallWithHeaders(
-        url = s"GET-foo/marriage-allowance/citizen/${recipientCid}/relationships?includeHistoric=true",
-        env = Seq(("Environment" -> "test-environment")),
-        bearerToken = Some(Authorization("test-bearer-token")))
-
-      val findTransferorCall = HttpGETCallWithHeaders(
-        url = s"GET-foo/marriage-allowance/citizen/${transferorNino.nino}",
-        env = Seq(("Environment" -> "test-environment")),
-        bearerToken = Some(Authorization("test-bearer-token")))
-
-      val checkTransferorHistoricAllowanceRelationshipCall = HttpGETCallWithHeaders(
-        url = s"GET-foo/marriage-allowance/citizen/${transferorNinoObject.cid.cid}/relationships?includeHistoric=true",
-        env = Seq(("Environment" -> "test-environment")),
-        bearerToken = Some(Authorization("test-bearer-token")))
-
-      controller.debugData.httpGetCallsToTest shouldBe List(
-        findTransferorCall,
-        checkHistoricAllowanceRelationshipCall,
-        checkTransferorHistoricAllowanceRelationshipCall)
     }
   }
 
   "Calling list relationship for logged in person" should {
 
     "check if list contains one active and one historic relationship" in {
-      val controller = makeFakeController()
       val request = FakeRequest()
 
       val testData = TestData.Lists.oneActiveOneHistoric
@@ -287,7 +227,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
     }
 
     "check for no relationship" in {
-      val controller = makeFakeController()
       val request = FakeRequest()
 
       val testData = TestData.Lists.noRelations
@@ -312,7 +251,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
     }
 
     "check for historic relationship" in {
-      val controller = makeFakeController()
       val request = FakeRequest()
 
       val testData = TestData.Lists.oneHistoric
@@ -347,7 +285,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
     }
 
     "check for active relationship" in {
-      val controller = makeFakeController()
       val request = FakeRequest()
 
       val testData = TestData.Lists.oneActive
@@ -383,7 +320,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
     }
 
     "return TRANSFEROR-NOT-FOUND when transferor is deceased" in {
-      val controller = makeFakeController()
       val request = FakeRequest()
 
       val testData = TestData.Lists.deceased
@@ -397,7 +333,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
     }
 
     "return TRANSFEROR-NOT-FOUND when transferor not found" in {
-      val controller = makeFakeController()
       val request = FakeRequest()
 
       val testData = TestData.Lists.tansfrorNotFound
@@ -437,7 +372,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       val transferorTs = testInput.transferor.timestamp.toString
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller = makeFakeController()
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
@@ -456,7 +390,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       val transferorTs = testInput.transferor.timestamp.toString
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller = makeFakeController()
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Rejected by Recipient","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Recipient", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
@@ -475,7 +408,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       val transferorTs = testInput.transferor.timestamp.toString
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller = makeFakeController()
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Divorce/Separation","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
@@ -494,7 +426,6 @@ class MarriageAllowanceControllerTest extends UnitSpec with TestUtility with Gui
       val transferorTs = testInput.transferor.timestamp.toString
       val recipientTs = testInput.recipient.timestamp.toString
 
-      val controller = makeFakeController()
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Divorce/Separation","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Recipient", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)

@@ -19,10 +19,11 @@ package services
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.google.inject.Inject
 import config.ApplicationConfig._
 import connectors.{EmailConnector, MarriageAllowanceConnector, MarriageAllowanceDESConnector}
 import errors._
-import metrics.Metrics
+import metrics.TamcMetrics
 import models.{TaxYear => TaxYearModel, _}
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
@@ -36,22 +37,13 @@ import uk.gov.hmrc.time.TaxYear
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object MarriageAllowanceService extends MarriageAllowanceService {
-  override val dataConnector = MarriageAllowanceDESConnector
-  override val emailConnector = EmailConnector
 
-  override val metrics = Metrics
-  override val startTaxYear = START_TAX_YEAR
-  override val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
-}
+class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConnector,
+                                         emailConnector: EmailConnector,
+                                         metrics: TamcMetrics) {
 
-trait MarriageAllowanceService {
-
-  val dataConnector: MarriageAllowanceConnector
-  val emailConnector: EmailConnector
-  val metrics: Metrics
-  val startTaxYear: Int
-  val maSupportedYearsCount: Int
+  val startTaxYear = START_TAX_YEAR
+  val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
 
   def currentTaxYear: Int = TaxYear.current.startYear
 

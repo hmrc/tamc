@@ -20,7 +20,7 @@ import Fixtures.MultiYearCreateRelationshipRequestHolderFixture
 import com.codahale.metrics.Timer
 import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
-import metrics.Metrics
+import metrics.TamcMetrics
 import models.ApiType.ApiType
 import models._
 import org.joda.time.LocalDate
@@ -57,7 +57,7 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
   lazy val service = new MarriageAllowanceService {
     override val dataConnector = mock[MarriageAllowanceDESConnector]
     override val emailConnector = mock[EmailConnector]
-    override val metrics = mock[Metrics]
+    override val metrics = mock[TamcMetrics]
     override val startTaxYear = 2015
     override val maSupportedYearsCount = 5
 
@@ -290,7 +290,7 @@ object mockEmailConnector extends EmailConnector {
   }
 }
 
-object Metrics extends Metrics {
+object Metrics extends TamcMetrics {
   def startTimer(api: ApiType): Timer.Context = (new Timer).time()
 
   def incrementSuccessCounter(api: ApiType.ApiType) = {}

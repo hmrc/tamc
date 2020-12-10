@@ -18,37 +18,47 @@ package connectors
 
 import com.codahale.metrics.Timer
 import com.github.tomakehurst.wiremock.client.WireMock._
-import connectors.MarriageAllowanceDESConnector.baseUrl
 import errors._
-import metrics.Metrics
+import metrics.TamcMetrics
 import models._
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{when, verify, times}
+import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.http.Status._
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import test_utils.WireMockHelper
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.WSHttp
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuite with WireMockHelper with MockitoSugar {
+class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuite with WireMockHelper with MockitoSugar {
+
+  val mockMetrics: TamcMetrics = mock[TamcMetrics]
+  val mockHttp: HttpClient = mock[HttpClient]
 
   override def fakeApplication(): Application = {
     new GuiceApplicationBuilder()
       .configure(
         "microservice.services.marriage-allowance-des.port" -> server.port()
       )
+      .overrides(
+        bind[TamcMetrics].toInstance(mockMetrics),
+        bind[HttpClient].toInstance(mockHttp)
+      )
       .build()
   }
+
+  val connector: MarriageAllowanceDESConnector = app.injector.instanceOf[MarriageAllowanceDESConnector]
 
   trait FindRecipientSetup {
 
@@ -56,32 +66,14 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
     val url = s"/marriage-allowance/citizen/${generatedNino.nino}/check"
 
     val mockTimerContext = mock[Timer.Context]
-    when(connector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
+    when(mockMetrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
 
     def findRecipientRequest(nino: Nino = generatedNino) = {
       FindRecipientRequest(name = "testForename1", lastName = "testLastName", gender = Gender("M"), nino)
     }
   }
 
-  lazy val connector = new MarriageAllowanceDESConnector {
-    override val httpGet = WSHttp
-    override val httpPost = WSHttp
-    override val httpPut = WSHttp
-    override val serviceUrl = baseUrl("marriage-allowance-des")
-    override val urlHeaderEnvironment = "test"
-    override val urlHeaderAuthorization = "Bearer"
-    override val metrics = mock[Metrics]
-  }
 
-  lazy val mockedPostConnector = new MarriageAllowanceDESConnector {
-    override val httpGet: HttpGet = WSHttp
-    override val httpPost: HttpPost = mock[WSHttp]
-    override val httpPut = WSHttp
-    override val serviceUrl = baseUrl("marriage-allowance-des")
-    override val urlHeaderEnvironment = "test"
-    override val urlHeaderAuthorization = "Bearer"
-    override val metrics = mock[Metrics]
-  }
 
   val instanceIdentifier: Cid = 123456789
   val updateTimestamp: Timestamp = "20200116155359011123"
@@ -241,11 +233,11 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       "a GatewayTimeout is received" in new FindRecipientSetup {
 
-        when(mockedPostConnector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
-        when(mockedPostConnector.httpPost.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
+        when(mockMetrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
+        when(mockHttp.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
           .thenReturn(Future.failed(new GatewayTimeoutException("timeout")))
 
-        val result = await(mockedPostConnector.findRecipient(findRecipientRequest()))
+        val result = await(connector.findRecipient(findRecipientRequest()))
 
         result shouldBe Left(TimeOutError)
 
@@ -256,10 +248,10 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       "a BadGatewayException is received" in new FindRecipientSetup {
 
-        when(mockedPostConnector.httpPost.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
+        when(mockHttp.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
           .thenReturn(Future.failed(new BadGatewayException("Bad gateway")))
 
-        val result = await(mockedPostConnector.findRecipient(findRecipientRequest()))
+        val result = await(connector.findRecipient(findRecipientRequest()))
 
         result shouldBe Left(BadGatewayError)
       }
@@ -290,13 +282,13 @@ class MarriageAllowanceDESConnectorTest extends UnitSpec with GuiceOneAppPerSuit
 
       val nonFatalErrorMessage = "an error has occurred"
 
-      when(mockedPostConnector.httpPost.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
+      when(mockHttp.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
         .thenReturn(Future.failed(new RuntimeException(nonFatalErrorMessage)))
 
-      when(mockedPostConnector.metrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
+      when(mockMetrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
 
       val exception = intercept[RuntimeException]{
-        await(mockedPostConnector.findRecipient(findRecipientRequest()))
+        await(connector.findRecipient(findRecipientRequest()))
       }
 
       exception.getMessage shouldBe nonFatalErrorMessage

@@ -25,7 +25,7 @@ import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import controllers.MarriageAllowanceController
 import errors.DataRetrievalError
 import errors.ErrorResponseStatus._
-import metrics.Metrics
+import metrics.TamcMetrics
 import models.ApiType.ApiType
 import models._
 import org.joda.time._
@@ -210,7 +210,7 @@ trait TestUtility {
       }
     }
 
-    val fakeMetrics = new Metrics {
+    val fakeMetrics = new TamcMetrics {
       val fakeTimerContext = MockitoSugar.mock[Timer.Context]
 
       override def startTimer(api: ApiType): Context = fakeTimerContext

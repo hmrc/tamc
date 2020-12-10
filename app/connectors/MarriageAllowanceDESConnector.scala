@@ -18,34 +18,47 @@ package connectors
 
 import java.util.UUID
 
+import com.google.inject.Inject
 import errors._
-import metrics.Metrics
+import metrics.TamcMetrics
 import models._
 import play.api.Mode.Mode
 import play.api.http.Status._
 import play.api.libs.json.JsValue
-import play.api.{Configuration, Logger, Play}
+import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
-import utils.WSHttp
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
+class MarriageAllowanceDESConnector @Inject()(val runModeConfiguration: Configuration,
+                                              environment: Environment,
+                                              val metrics: TamcMetrics,
+                                              http: HttpClient)
+                                             (implicit ec: ExecutionContext)
+  extends MarriageAllowanceConnector with ServicesConfig {
+
+  override def mode: Mode = environment.mode
+
+
+  override val serviceUrl = baseUrl("marriage-allowance-des")
+  override val urlHeaderEnvironment = config("marriage-allowance-des").getString("environment").get
+  override val urlHeaderAuthorization = s"Bearer ${config("marriage-allowance-des").getString("authorization-token").get}"
+
 
   val logger = Logger(this.getClass)
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${nino}")
-    httpGet.GET[JsValue](path)(implicitly, buildHeaderCarrier(hc), ec)
+    http.GET[JsValue](path)(implicitly, buildHeaderCarrier(hc), ec)
   }
 
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${cid}/relationships?includeHistoric=${includeHistoric}")
-    httpGet.GET[JsValue](path)(implicitly, buildHeaderCarrier(hc), ec)
+    http.GET[JsValue](path)(implicitly, buildHeaderCarrier(hc), ec)
   }
 
   def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {
@@ -150,7 +163,7 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
     metrics.incrementTotalCounter(ApiType.FindRecipient)
     val timer = metrics.startTimer(ApiType.FindRecipient)
 
-    httpPost.POST(path, findRecipientRequestDes)(implicitly, httpRead, updatedHeaderCarrier, ec).map { response =>
+    http.POST(path, findRecipientRequestDes)(implicitly, httpRead, updatedHeaderCarrier, ec).map { response =>
       timer.stop()
       response
 
@@ -175,25 +188,11 @@ trait MarriageAllowanceDESConnector extends MarriageAllowanceConnector {
 
   def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
     val path = url(s"/marriage-allowance/02.00.00/citizen/${createRelationshipRequest.recipientCid}/relationship/${relType}")
-    httpPost.POST(path, createRelationshipRequest)(MultiYearDesCreateRelationshipRequest.multiYearWrites, HttpReads.readRaw, buildHeaderCarrier(hc), ec)
+    http.POST(path, createRelationshipRequest)(MultiYearDesCreateRelationshipRequest.multiYearWrites, HttpReads.readRaw, buildHeaderCarrier(hc), ec)
   }
 
   def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
     val path = url(s"/marriage-allowance/citizen/${updateRelationshipRequest.participant1.instanceIdentifier}/relationship")
-    httpPut.PUT(path, updateRelationshipRequest)(DesUpdateRelationshipRequest.formats, HttpReads.readRaw, buildHeaderCarrier(hc), ec)
+    http.PUT(path, updateRelationshipRequest)(DesUpdateRelationshipRequest.formats, HttpReads.readRaw, buildHeaderCarrier(hc), ec)
   }
-}
-
-object MarriageAllowanceDESConnector extends MarriageAllowanceDESConnector with ServicesConfig {
-  override protected def mode: Mode = Play.current.mode
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
-
-  override val httpGet = WSHttp
-  override val httpPost = WSHttp
-  override val httpPut = WSHttp
-  override val serviceUrl = baseUrl("marriage-allowance-des")
-  override val urlHeaderEnvironment = config("marriage-allowance-des").getString("environment").get
-  override val urlHeaderAuthorization = s"Bearer ${config("marriage-allowance-des").getString("authorization-token").get}"
-  override val metrics = Metrics
-
 }
