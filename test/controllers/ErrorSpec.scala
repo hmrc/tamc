@@ -16,19 +16,31 @@
 
 package controllers
 
+import models.{FindRecipientRequest, Gender}
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{BAD_REQUEST, OK, contentAsString, defaultAwaitTimeout}
-import test_utils.{TestData, TestUtility}
+import play.api.test.Helpers.{BAD_REQUEST, OK, contentAsString}
+import services.MarriageAllowanceService
+import test_utils.TestData
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.play.test.UnitSpec
 
-class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
+class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar {
 
-  override implicit lazy val app: Application = fakeApplication
+  val mockMarriageAllowanceService: MarriageAllowanceService = mock[MarriageAllowanceService]
+
+  override implicit lazy val app: Application = GuiceApplicationBuilder()
+    .overrides(
+      bind[MarriageAllowanceService].toInstance(mockMarriageAllowanceService)
+    ).build()
+
+  val controller: MarriageAllowanceController = app.injector.instanceOf[MarriageAllowanceController]
 
   "Checking user record" should {
 
@@ -42,14 +54,13 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientNino = recipient.citizen.nino
       val recipientGender = recipient.gender
 
-      val controller = makeFakeController()
       val testData = s"""{"name":"foo","lastName":"bar", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
       val request = FakeRequest().withBody(Json.parse(testData))
 
       val result = controller.getRecipientRelationship(transferorNino)(request)
       status(result) shouldBe OK
 
-      val json = Json.parse(contentAsString(result))
+      val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:RECIPIENT-NOT-FOUND"
     }
 
@@ -63,14 +74,13 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
         val recipientNino = recipient.citizen.nino
         val recipientGender = recipient.gender
 
-        val controller = makeFakeController()
         val testData = s"""{"name":"rty","lastName":"qwe", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
         val request = FakeRequest().withBody(Json.parse(testData))
 
         val result = controller.getRecipientRelationship(transferorNino)(request)
         status(result) shouldBe OK
 
-        val json = Json.parse(contentAsString(result))
+        val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
       }
 
@@ -80,14 +90,13 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
         val recipientNino = recipient.citizen.nino
         val recipientGender = recipient.gender
 
-        val controller = makeFakeController()
         val testData = s"""{"name":"rty","lastName":"qwe abc", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
         val request = FakeRequest().withBody(Json.parse(testData))
 
         val result = controller.getRecipientRelationship(transferorNino)(request)
         status(result) shouldBe OK
 
-        val json = Json.parse(contentAsString(result))
+        val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
       }
 
@@ -97,28 +106,26 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
         val recipientNino = recipient.citizen.nino
         val recipientGender = recipient.gender
 
-        val controller = makeFakeController()
         val testData = s"""{"name":"fgh","lastName":"asd", "nino":"${recipientNino}", "gender":"${recipientGender}"}"""
         val request = FakeRequest().withBody(Json.parse(testData))
 
         val result = controller.getRecipientRelationship(transferorNino)(request)
         status(result) shouldBe OK
 
-        val json = Json.parse(contentAsString(result))
+        val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
       }
 
       //TODO this requires investigating
       "return transferor deceased BadRequest when recipient not found" ignore {
 
-        val controller = makeFakeController()
         val testData = s"""{"name":"abc","lastName":"def", "nino":"AB242424B", "gender":"M"}"""
         val request = FakeRequest().withBody(Json.parse(testData))
 
         val result = controller.getRecipientRelationship(transferorNino)(request)
         status(result) shouldBe OK
 
-        val json = Json.parse(contentAsString(result))
+        val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
       }
     }
@@ -132,7 +139,6 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientNino = recipient.citizen.nino
       val recipientCid = recipient.citizen.cid.cid
 
-      val controller = makeFakeController()
       val testData = s"""{"name":"fgh","lastName":"asd", "nino":"${recipientNino}", "gender":"123"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)
@@ -142,7 +148,6 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
 
     "return bad request should be handled" in {
 
-      val controller = makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.badRequest
@@ -152,13 +157,12 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
 
-      val json = Json.parse(contentAsString(result))
+      val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:BAD-REQUEST"
     }
 
     "return NotFound should be handled" in {
 
-      val controller = makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.citizenNotFound
@@ -168,13 +172,12 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
 
-      val json = Json.parse(contentAsString(result))
+      val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:CITIZEN-NOT-FOUND"
     }
 
     "return InternalServerException should be handled" in {
 
-      val controller = makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.serverError
@@ -184,13 +187,12 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
 
-      val json = Json.parse(contentAsString(result))
+      val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "ERROR:500"
     }
 
     "return Service unavailable should be handled" in {
 
-      val controller = makeFakeController(isErrorController = true)
       val request = FakeRequest()
 
       val testData = TestData.Lists.serviceUnavailable
@@ -200,7 +202,7 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
 
-      val json = Json.parse(contentAsString(result))
+      val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "ERROR:503"
     }
 
@@ -218,13 +220,12 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientTs = testInput.transferor.timestamp.toString()
       val transferorTs = testInput.recipient.timestamp.toString()
 
-      val controller = makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
       status(result) shouldBe OK
 
-      val json = Json.parse(contentAsString(result))
+      val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:BAD-REQUEST"
     }
 
@@ -238,13 +239,12 @@ class ErrorTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientTs = testInput.transferor.timestamp.toString()
       val transferorTs = testInput.recipient.timestamp.toString()
 
-      val controller = makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
       status(result) shouldBe OK
 
-      val json = Json.parse(contentAsString(result))
+      val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:CANNOT-UPDATE-RELATIONSHIP"
     }
   }

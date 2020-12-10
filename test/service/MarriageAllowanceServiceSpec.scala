@@ -21,25 +21,26 @@ import com.codahale.metrics.Timer
 import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
 import metrics.TamcMetrics
-import models.ApiType.ApiType
 import models._
 import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import services.MarriageAllowanceService
-import test_utils.TestUtility
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.WSHttp
+import play.api.inject.bind
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-//TODO remove the need for TestUtility
-class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with MockitoSugar {
+class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite {
 
   val year = 2019
   val generatedNino = new Generator().nextNino
@@ -53,17 +54,33 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
 
   }
 
+  val mockMarriageAllowanceDESConnector: MarriageAllowanceDESConnector = mock[MarriageAllowanceDESConnector]
+  val mockTamcMetrics: TamcMetrics = mock[TamcMetrics]
+  val mockEmailConnector: EmailConnector = mock[EmailConnector]
 
-  lazy val service = new MarriageAllowanceService {
-    override val dataConnector = mock[MarriageAllowanceDESConnector]
-    override val emailConnector = mock[EmailConnector]
-    override val metrics = mock[TamcMetrics]
-    override val startTaxYear = 2015
-    override val maSupportedYearsCount = 5
+  implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
-    override def currentTaxYear: Int = year
+  override def fakeApplication(): Application = GuiceApplicationBuilder()
+    .overrides(
+      bind[MarriageAllowanceDESConnector].toInstance(mockMarriageAllowanceDESConnector),
+      bind[TamcMetrics].toInstance(mockTamcMetrics),
+      bind[EmailConnector].toInstance(mockEmailConnector)
+    ).build()
 
-  }
+  val service = app.injector.instanceOf[MarriageAllowanceService]
+
+
+
+//  lazy val service = new MarriageAllowanceService {
+//    override val dataConnector = mock[MarriageAllowanceDESConnector]
+//    override val emailConnector = mock[EmailConnector]
+//    override val metrics = mock[TamcMetrics]
+//    override val startTaxYear = 2015
+//    override val maSupportedYearsCount = 5
+//
+//    override def currentTaxYear: Int = year
+//
+//  }
 
   "getRecipientRelationship" should {
 
@@ -73,17 +90,17 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
 
       val expectedResponse = (userRecord, List(taxYearModel))
 
-      when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
+      when(mockMarriageAllowanceDESConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future.successful(Right(userRecord)))
 
-      when(service.dataConnector.findCitizen(ArgumentMatchers.eq(generatedNino))(ArgumentMatchers.any(), ArgumentMatchers.any()))
+      when(mockMarriageAllowanceDESConnector.findCitizen(ArgumentMatchers.eq(generatedNino))(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future.successful(findCitizenJson))
 
-      when(service.dataConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
+      when(mockMarriageAllowanceDESConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future.successful(listRelationshipdJson))
 
       val mockTimerContext = mock[Timer.Context]
-      when(service.metrics.startTimer(ArgumentMatchers.any())).thenReturn(mockTimerContext)
+      when(mockTamcMetrics.startTimer(ArgumentMatchers.any())).thenReturn(mockTimerContext)
       when(mockTimerContext.stop()).thenReturn(123456789)
 
       val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
@@ -95,7 +112,7 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
 
     "return a DataRetrievalError error type based on error returned" in new Setup {
 
-        when(service.dataConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
+        when(mockMarriageAllowanceDESConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
           .thenReturn(Future.successful(Left(TooManyRequestsError)))
 
         val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
@@ -108,7 +125,7 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
 
   "when request is sent with deceased recipient in MarriageAllowanceService" should {
     "return a BadRequestException" in {
-      val service = new FakeDeceasedMarriageAllowanceService
+      when(mockMarriageAllowanceDESConnector.sendMultiYearCreateRelationshipRequest(any(),any())(any(),any())).thenReturn(Future.failed(new BadRequestException("{\"reason\": \"Participant is deceased\"}")))
       val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
       val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
 
@@ -229,73 +246,59 @@ class MarriageAllowanceServiceTest extends UnitSpec with TestUtility with Mockit
 }
 
 
+//class FakeDeceasedMarriageAllowanceService extends MarriageAllowanceService {
+//  override val dataConnector = mockDeceasedDataConnector
+//  override val emailConnector = mockEmailConnector
+//  override val metrics = Metrics
+//  override val startTaxYear = 2015
+//  override val maSupportedYearsCount = 5
+//
+//}
+//
+//class FakeAuthorityMarriageAllowanceService extends MarriageAllowanceService {
+//  override val dataConnector = mockAuthorityDataConnector
+//  override val emailConnector = mockEmailConnector
+//  override val metrics = Metrics
+//  override val startTaxYear = 2015
+//  override val maSupportedYearsCount = 5
+//
+//}
+//
+//object mockDeceasedDataConnector extends MarriageAllowanceDESConnector {
+//  override val httpGet = WSHttp
+//  override val httpPost = WSHttp
+//  override val httpPut = WSHttp
+//  override val serviceUrl = ""
+//  override val urlHeaderEnvironment = ""
+//  override val urlHeaderAuthorization = "foo"
+//  override val metrics = Metrics
+//
+//  override def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)
+//                                                     (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
+//    Future.failed(new BadRequestException("{\"reason\": \"Participant is deceased\"}"))
+//  }
+//}
+//
+//object mockAuthorityDataConnector extends MarriageAllowanceDESConnector {
+//  override val httpGet = WSHttp
+//  override val httpPost = WSHttp
+//  override val httpPut = WSHttp
+//  override val serviceUrl = ""
+//  override val urlHeaderEnvironment = ""
+//  override val urlHeaderAuthorization = "foo"
+//  override val metrics = Metrics
+//
+//  override def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)
+//                                                     (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
+//    Future.failed(new BadRequestException("{\"reason\": \"User does not have authority to retrieve requested Participant 1 record\"}"))
+//  }
+//}
+//
+//object mockEmailConnector extends EmailConnector {
+//  override val httpPost = WSHttp
+//  override val emailUrl = "bar"
+//  override def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
+//    Future(HttpResponse(200,None))
+//  }
+//}
 
-
-
-
-
-class FakeDeceasedMarriageAllowanceService extends MarriageAllowanceService {
-  override val dataConnector = mockDeceasedDataConnector
-  override val emailConnector = mockEmailConnector
-  override val metrics = Metrics
-  override val startTaxYear = 2015
-  override val maSupportedYearsCount = 5
-
-}
-
-class FakeAuthorityMarriageAllowanceService extends MarriageAllowanceService {
-  override val dataConnector = mockAuthorityDataConnector
-  override val emailConnector = mockEmailConnector
-  override val metrics = Metrics
-  override val startTaxYear = 2015
-  override val maSupportedYearsCount = 5
-
-}
-
-object mockDeceasedDataConnector extends MarriageAllowanceDESConnector {
-  override val httpGet = WSHttp
-  override val httpPost = WSHttp
-  override val httpPut = WSHttp
-  override val serviceUrl = ""
-  override val urlHeaderEnvironment = ""
-  override val urlHeaderAuthorization = "foo"
-  override val metrics = Metrics
-
-  override def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)
-                                                     (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
-    Future.failed(new BadRequestException("{\"reason\": \"Participant is deceased\"}"))
-  }
-}
-
-object mockAuthorityDataConnector extends MarriageAllowanceDESConnector {
-  override val httpGet = WSHttp
-  override val httpPost = WSHttp
-  override val httpPut = WSHttp
-  override val serviceUrl = ""
-  override val urlHeaderEnvironment = ""
-  override val urlHeaderAuthorization = "foo"
-  override val metrics = Metrics
-
-  override def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)
-                                                     (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
-    Future.failed(new BadRequestException("{\"reason\": \"User does not have authority to retrieve requested Participant 1 record\"}"))
-  }
-}
-
-object mockEmailConnector extends EmailConnector {
-  override val httpPost = WSHttp
-  override val emailUrl = "bar"
-  override def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
-    Future(HttpResponse(200,None))
-  }
-}
-
-object Metrics extends TamcMetrics {
-  def startTimer(api: ApiType): Timer.Context = (new Timer).time()
-
-  def incrementSuccessCounter(api: ApiType.ApiType) = {}
-
-  def incrementTotalCounter(api: ApiType.ApiType) = {}
-
-  def incrementFailedCounter(api: ApiType) = {}
-}

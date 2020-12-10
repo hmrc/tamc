@@ -40,7 +40,7 @@ import play.api.inject.bind
 
 import scala.concurrent.Future
 
-class MarriageAllowanceControllerSpec extends UnitSpec with TestUtility with GuiceOneAppPerSuite with MockitoSugar with BeforeAndAfterEach {
+class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with BeforeAndAfterEach {
 
   val mockMarriageAllowanceService: MarriageAllowanceService = mock[MarriageAllowanceService]
 
