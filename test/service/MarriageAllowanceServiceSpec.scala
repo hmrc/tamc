@@ -42,7 +42,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite {
 
-  val year = 2019
+  val year = 2020
   val generatedNino = new Generator().nextNino
 
   trait Setup {
@@ -67,7 +67,7 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
       bind[EmailConnector].toInstance(mockEmailConnector)
     ).build()
 
-  val service = app.injector.instanceOf[MarriageAllowanceService]
+  def service = app.injector.instanceOf[MarriageAllowanceService]
 
 
 
