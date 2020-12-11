@@ -16,10 +16,13 @@
 
 package controllers
 
+import com.sun.jna.platform.win32.Sspi.TimeStamp
+import controllers.auth.AuthAction
 import errors.ErrorResponseStatus.RECIPIENT_NOT_FOUND
 import errors._
 import models._
 import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mockito.MockitoSugar
@@ -37,6 +40,7 @@ import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.test.UnitSpec
 import play.api.inject.bind
+import test_utils.TestData.Cids
 
 import scala.concurrent.Future
 
@@ -46,10 +50,11 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
 
   override def fakeApplication(): Application = GuiceApplicationBuilder()
     .overrides(
-      bind[MarriageAllowanceService].toInstance(mockMarriageAllowanceService)
+      bind[MarriageAllowanceService].toInstance(mockMarriageAllowanceService),
+      bind[AuthAction]toInstance(FakeAuthAction)
     ).build()
 
-  val controller = app.injector.instanceOf[MarriageAllowanceController]
+  lazy val controller = app.injector.instanceOf[MarriageAllowanceController]
 
   trait Setup {
     val generatedNino = new Generator().nextNino
@@ -128,7 +133,10 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val recipientNino = recipient.citizen.nino
       val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
+      val userRecord = UserRecord(recipientCid, recipient.citizen.timestamp)
 
+      when(mockMarriageAllowanceService.getRecipientRelationship(any(), any())(any(), any()))
+        .thenReturn(Future.successful(Right((userRecord, List(TaxYear(2019, Some(true)))))))
       val testData = s"""{"name":"rty","lastName":"qwe", "nino":"${recipientNino}", "gender":"${recipientGender}", "dateOfMarriage":"01/01/2015"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)
@@ -148,6 +156,10 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val recipientNino = recipient.citizen.nino
       val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
+      val userRecord = UserRecord(recipientCid, recipient.citizen.timestamp)
+
+      when(mockMarriageAllowanceService.getRecipientRelationship(any(), any())(any(), any()))
+        .thenReturn(Future.successful(Right((userRecord, List(TaxYear(2019, Some(true)))))))
 
       val testData = s"""{"name":"rty","lastName":"qwe abc", "nino":"${recipientNino}", "gender":"${recipientGender}", "dateOfMarriage":"01/01/2015"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
@@ -168,6 +180,10 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val recipientNino = recipient.citizen.nino
       val recipientCid = recipient.citizen.cid.cid
       val recipientGender = recipient.gender
+      val userRecord = UserRecord(recipientCid, recipient.citizen.timestamp)
+
+      when(mockMarriageAllowanceService.getRecipientRelationship(any(), any())(any(), any()))
+        .thenReturn(Future.successful(Right((userRecord, List(TaxYear(2019, Some(true)))))))
 
       val testData = s"""{"name":"fgh","lastName":"asd", "nino":"${recipientNino}", "gender":"${recipientGender}", "dateOfMarriage":"01/01/2015"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
@@ -197,6 +213,12 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val participiant1 = testData.counterparties(1)
       val participiant1Cid: String = participiant1.partner.cid.cid.toString
       val participiant1Ts = participiant1.partner.timestamp.toString
+      val userRecord1 = UserRecord(testCid, testTs)
+      val relRecordP0 = RelationshipRecord("Recipient", "20150531235901", "20011230", None, None, participiant0Cid, participiant0Ts)
+      val relRecordP1 = RelationshipRecord("Recipient", "20150531235901", "20011230", Some(RelationshipEndReason.Death), Some("20101230"), participiant1Cid, participiant1Ts)
+
+      when(mockMarriageAllowanceService.listRelationship(any())(any(), any()))
+        .thenReturn(Future.successful(RelationshipRecordWrapper(Seq(relRecordP0, relRecordP1), Some(userRecord1))))
 
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
@@ -234,6 +256,11 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val testCid = testData.user.cid.cid
       val testTs = testData.user.timestamp.toString
 
+      val userRecord1 = UserRecord(testCid, testTs)
+
+      when(mockMarriageAllowanceService.listRelationship(any())(any(), any()))
+        .thenReturn(Future.successful(RelationshipRecordWrapper(Seq(), Some(userRecord1))))
+
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
 
@@ -261,6 +288,11 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val participiant0 = testData.counterparties(0)
       val participiant0Cid: String = participiant0.partner.cid.cid.toString
       val participiant0Ts = participiant0.partner.timestamp.toString
+      val userRecord1 = UserRecord(testCid, testTs)
+      val relRecordP0 = RelationshipRecord("Recipient", "20150531235901", "20011230", Some(RelationshipEndReason.Cancelled), Some("20101230"), participiant0Cid, participiant0Ts)
+
+      when(mockMarriageAllowanceService.listRelationship(any())(any(), any()))
+        .thenReturn(Future.successful(RelationshipRecordWrapper(Seq(relRecordP0), Some(userRecord1))))
 
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
@@ -295,6 +327,12 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val participiant0 = testData.counterparties(0)
       val participiant0Cid: String = participiant0.partner.cid.cid.toString
       val participiant0Ts = participiant0.partner.timestamp.toString
+      val userRecord1 = UserRecord(testCid, testTs)
+      val relRecordP0 = RelationshipRecord("Recipient", "20150531235901", "20011230", None, None, participiant0Cid, participiant0Ts)
+
+      when(mockMarriageAllowanceService.listRelationship(any())(any(), any()))
+        .thenReturn(Future.successful(RelationshipRecordWrapper(Seq(relRecordP0), Some(userRecord1))))
+
 
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
@@ -324,6 +362,9 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
 
       val testData = TestData.Lists.deceased
       val testNino = Nino(testData.user.nino)
+
+      when(mockMarriageAllowanceService.listRelationship(any())(any(), any()))
+        .thenReturn(Future.failed(TransferorDeceasedError("Person you're looking for is deceased.")))
       
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
@@ -337,6 +378,9 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
 
       val testData = TestData.Lists.tansfrorNotFound
       val testNino = Nino(testData.user.nino)
+
+      when(mockMarriageAllowanceService.listRelationship(any())(any(), any()))
+        .thenReturn(Future.failed(ServerError("Person you're looking for is deceased.")))
       
       val result = controller.listRelationship(testNino)(request)
       status(result) shouldBe OK
