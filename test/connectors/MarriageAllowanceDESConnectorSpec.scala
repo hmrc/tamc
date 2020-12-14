@@ -18,12 +18,13 @@ package connectors
 
 import com.codahale.metrics.Timer
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.http.Fault
 import errors._
 import metrics.TamcMetrics
 import models._
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{times, verify, when, doNothing}
+import org.mockito.Mockito.{doNothing, times, verify, when}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -232,17 +233,16 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
       "a GatewayTimeout is received" in {
 
         when(mockMetrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
-//        when(mockHttp.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
-//          .thenReturn(Future.failed(new GatewayTimeoutException("timeout")))
 
         server.stubFor(
           post(urlEqualTo(url))
-            .willReturn(aResponse().withStatus(504).withFixedDelay(5000))
+            .willReturn(
+              aResponse().withFixedDelay(2500))
         )
 
-        val result = connector.findRecipient(findRecipientRequest())
+        val result = await(connector.findRecipient(findRecipientRequest()))
 
-        await(result) shouldBe Left(TimeOutError)
+        result shouldBe Left(TimeOutError)
 
       }
     }
@@ -251,8 +251,14 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
       "a BadGatewayException is received" in {
 
-        when(mockHttp.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
-          .thenReturn(Future.failed(new BadGatewayException("Bad gateway")))
+//        when(mockHttp.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
+//          .thenReturn(Future.failed(new BadGatewayException("Bad gateway")))
+
+        server.stubFor(
+          post(urlEqualTo(url))
+            .willReturn(
+              aResponse().withFault(Fault.RANDOM_DATA_THEN_CLOSE))
+        )
 
         val result = await(connector.findRecipient(findRecipientRequest()))
 
