@@ -21,14 +21,13 @@ import java.util.Calendar
 
 import com.google.inject.Inject
 import config.ApplicationConfig._
-import connectors.{EmailConnector, MarriageAllowanceConnector, MarriageAllowanceDESConnector}
+import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors._
 import metrics.TamcMetrics
 import models.{TaxYear => TaxYearModel, _}
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
 import play.Logger
-import play.api.Play
 import play.api.libs.json.Json
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.emailaddress.EmailAddress

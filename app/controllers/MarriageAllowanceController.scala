@@ -22,7 +22,6 @@ import errors.ErrorResponseStatus._
 import errors._
 import models._
 import play.Logger
-import play.api.Play
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import services.MarriageAllowanceService
