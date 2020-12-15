@@ -233,6 +233,8 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
       }
     }
 
+
+    //TODO These are mocking HttpClient. We shouldn't be mocking this however functioanlity exists to capture these errors.
     "return a TimeOutError " when {
 
       "a GatewayTimeout is received" in {
