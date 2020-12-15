@@ -134,7 +134,8 @@ class MarriageAllowanceDESConnector @Inject()(val runModeConfiguration: Configur
           }
           case SERVICE_UNAVAILABLE => {
             metrics.incrementFailedCounter(ApiType.FindRecipient)
-            logger.error("Service Unavailable returned from DES")
+            logger.error("Service Unavailable r" +
+              "eturned from DES")
             Left(ServiceUnavailableError)
           }
           case 499 | GATEWAY_TIMEOUT => {
