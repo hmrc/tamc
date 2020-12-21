@@ -17,11 +17,15 @@
 package config
 
 import com.google.inject.Inject
+import play.api.Mode.Mode
+import play.api.{Configuration, Environment}
 import play.api.Play.{configuration, current}
 import uk.gov.hmrc.play.config.ServicesConfig
 
-class ApplicationConfig @Inject()(servicesConfig: ServicesConfig )  {
-  import servicesConfig.baseUrl
+//TODO inject ServicesConfig
+class ApplicationConfig @Inject()(override val runModeConfiguration: Configuration, environment: Environment) extends ServicesConfig {
+
+  override def mode: Mode = environment.mode
    //TODO: some of these values aren't configuration values and will need remvoed
    val EMAIL_GDS_TEMPLATE_ID = "tamc_confirmation_template_id"
    val EMAIL_PTA_TEMPLATE_ID = "tamc_confirmation_pta"

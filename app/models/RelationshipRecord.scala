@@ -18,9 +18,7 @@ package models
 
 import play.api.libs.json.Format
 import play.api.libs.json._
-import config.ApplicationConfig
 import models.RelationshipEndReason.RelationshipEndReasonHodsReads
-import play.api.Logger
 
 case class RelationshipRecordWrapper(
   relationshipRecordList: Seq[RelationshipRecord],

@@ -19,15 +19,12 @@ package connectors
 import com.google.inject.Inject
 import config.ApplicationConfig
 import models.SendEmailRequest
-import play.api.{Configuration, Environment}
-import play.api.Mode.Mode
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EmailConnector @Inject()(val runModeConfiguration: Configuration, http: HttpClient, appConfig: ApplicationConfig)(implicit val ec: ExecutionContext) {
+class EmailConnector @Inject()(http: HttpClient, appConfig: ApplicationConfig)(implicit val ec: ExecutionContext) {
 
   val emailUrl = appConfig.EMAIL_URL
 
