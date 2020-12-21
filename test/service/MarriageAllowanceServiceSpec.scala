@@ -72,19 +72,7 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
     ).build()
 
   def service = app.injector.instanceOf[MarriageAllowanceService]
-
-
-
-//  lazy val service = new MarriageAllowanceService {
-//    override val dataConnector = mock[MarriageAllowanceDESConnector]
-//    override val emailConnector = mock[EmailConnector]
-//    override val metrics = mock[TamcMetrics]
-//    override val startTaxYear = 2015
-//    override val maSupportedYearsCount = 5
-//
-//    override def currentTaxYear: Int = year
-//
-//  }
+  
 
   "getRecipientRelationship" should {
 

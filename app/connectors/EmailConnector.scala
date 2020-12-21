@@ -27,12 +27,12 @@ import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EmailConnector @Inject()(val runModeConfiguration: Configuration, http: HttpClient, appConfig: ApplicationConfig) {
+class EmailConnector @Inject()(val runModeConfiguration: Configuration, http: HttpClient, appConfig: ApplicationConfig)(implicit val ec: ExecutionContext) {
 
   val emailUrl = appConfig.EMAIL_URL
 
   def url(path: String) = s"$emailUrl$path"
 
-  def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
+  def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HttpResponse] =
     http.POST(url("/hmrc/email"), sendEmailRequest)
 }

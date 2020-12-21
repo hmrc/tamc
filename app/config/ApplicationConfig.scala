@@ -26,8 +26,9 @@ class ApplicationConfig @Inject()(servicesConfig: ServicesConfig )  {
    val EMAIL_GDS_TEMPLATE_ID = "tamc_confirmation_template_id"
    val EMAIL_PTA_TEMPLATE_ID = "tamc_confirmation_pta"
    val EMAIL_URL = baseUrl("email")
-  
-   val EMAIL_UPDATE_CANCEL_TEMPLATE_ID = "tamc_update_cancel"
+   val AUTH_URL: String = baseUrl("auth")
+
+ val EMAIL_UPDATE_CANCEL_TEMPLATE_ID = "tamc_update_cancel"
    val EMAIL_UPDATE_REJECT_TEMPLATE_ID = "tamc_update_reject"
    val EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID = "tamc_update_divorce_transferor_boy"
    val EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID = "tamc_update_divorce_recipient_eoy"
