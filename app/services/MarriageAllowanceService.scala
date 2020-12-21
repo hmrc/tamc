@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.google.inject.Inject
-import config.ApplicationConfig._
+import config.ApplicationConfig
 import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors._
 import metrics.TamcMetrics
@@ -39,10 +39,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConnector,
                                          emailConnector: EmailConnector,
-                                         metrics: TamcMetrics) {
+                                         metrics: TamcMetrics,
+                                         appConfig: ApplicationConfig
+                                        ) {
 
-  val startTaxYear = START_TAX_YEAR
-  val maSupportedYearsCount = MA_SUPPORTED_YEARS_COUNT
+  val startTaxYear = appConfig.START_TAX_YEAR
+  val maSupportedYearsCount = appConfig.MA_SUPPORTED_YEARS_COUNT
 
   def currentTaxYear: Int = TaxYear.current.startYear
 
@@ -90,9 +92,9 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     val pickTemp = pickTemplate(isWelsh)(_,_)
     Future {
       taxYears.contains(currentTaxYear) match {
-        case true if taxYears.size == 1 => pickTemp(EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID, EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID)
-        case true if taxYears.size > 1 => pickTemp(EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID, EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID)
-        case _ => pickTemp(EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID, EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID)
+        case true if taxYears.size == 1 => pickTemp(appConfig.EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID, appConfig.EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID)
+        case true if taxYears.size > 1 => pickTemp(appConfig.EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID, appConfig.EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID)
+        case _ => pickTemp(appConfig.EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID, appConfig.EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID)
       }
     }
   }
@@ -190,8 +192,8 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
   private def getEmailTemplateId(relationship: DesRelationshipInformation, role: String, isWelsh: Boolean, isRetrospective: Boolean): (String, String, String) = {
     val pickTemp = pickTemplate(isWelsh)(_,_)
     val (startDate, endDate) = isWelsh match {
-      case true => (START_DATE_CY, END_DATE_CY)
-      case _ => (START_DATE, END_DATE)
+      case true => (appConfig.START_DATE_CY, appConfig.END_DATE_CY)
+      case _ => (appConfig.START_DATE, appConfig.END_DATE)
     }
 
     val startDateNextYear = startDate + (currentTaxYear + 1)
@@ -200,22 +202,22 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     val endDateCurrYear = endDate + currentTaxYear
 
     (relationship.relationshipEndReason, role) match {
-      case (REASON_CANCEL, _) =>
-        val template = pickTemp(EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID, EMAIL_UPDATE_CANCEL_TEMPLATE_ID)
+      case (appConfig.REASON_CANCEL, _) =>
+        val template = pickTemp(appConfig.EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID, appConfig.EMAIL_UPDATE_CANCEL_TEMPLATE_ID)
         (template, startDateNextYear, endDateNextYear)
-      case (REASON_REJECT, ROLE_RECIPIENT) =>
-        if (!isRetrospective) (pickTemp(EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID, EMAIL_UPDATE_REJECT_TEMPLATE_ID), "", "")
-        else (pickTemp(EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH, EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR), "", "")
-      case (REASON_DIVORCE, ROLE_TRANSFEROR) =>
+      case (appConfig.REASON_REJECT, appConfig.ROLE_RECIPIENT) =>
+        if (!isRetrospective) (pickTemp(appConfig.EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID, appConfig.EMAIL_UPDATE_REJECT_TEMPLATE_ID), "", "")
+        else (pickTemp(appConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH, appConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR), "", "")
+      case (appConfig.REASON_DIVORCE, appConfig.ROLE_TRANSFEROR) =>
         if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(isCurrent = true))
-          (pickTemp(EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH, EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR), startDateNextYear, endDateNextYear)
+          (pickTemp(appConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH, appConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR), startDateNextYear, endDateNextYear)
         else if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(isCurrent = false))
-          (pickTemp(EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_WELSH_TEMPLATE_ID, EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID),startDateCurrYear, "")
-        else (pickTemp(EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH, EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR), startDateCurrYear, endDateCurrYear)
-      case (REASON_DIVORCE, ROLE_RECIPIENT) =>
+          (pickTemp(appConfig.EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_WELSH_TEMPLATE_ID, appConfig.EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID),startDateCurrYear, "")
+        else (pickTemp(appConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH, appConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR), startDateCurrYear, endDateCurrYear)
+      case (appConfig.REASON_DIVORCE, appConfig.ROLE_RECIPIENT) =>
         if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(isCurrent = true))
-          (pickTemp(EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID, EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID), startDateNextYear, endDateNextYear)
-        else (pickTemp(EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH, EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR), "", endDateCurrYear)
+          (pickTemp(appConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID, appConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID), startDateNextYear, endDateNextYear)
+        else (pickTemp(appConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH, appConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR), "", endDateCurrYear)
     }
   }
 

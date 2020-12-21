@@ -18,6 +18,7 @@ package service
 
 import Fixtures.MultiYearCreateRelationshipRequestHolderFixture
 import com.codahale.metrics.Timer
+import config.ApplicationConfig
 import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
 import metrics.TamcMetrics
@@ -57,6 +58,8 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
   val mockMarriageAllowanceDESConnector: MarriageAllowanceDESConnector = mock[MarriageAllowanceDESConnector]
   val mockTamcMetrics: TamcMetrics = mock[TamcMetrics]
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
+  val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
+
 
   implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
@@ -64,7 +67,8 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
     .overrides(
       bind[MarriageAllowanceDESConnector].toInstance(mockMarriageAllowanceDESConnector),
       bind[TamcMetrics].toInstance(mockTamcMetrics),
-      bind[EmailConnector].toInstance(mockEmailConnector)
+      bind[EmailConnector].toInstance(mockEmailConnector),
+      bind[ApplicationConfig].toInstance(mockAppConfig)
     ).build()
 
   def service = app.injector.instanceOf[MarriageAllowanceService]
@@ -98,6 +102,9 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
 
       when(mockMarriageAllowanceDESConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future.successful(listRelationshipdJson))
+
+      when(mockAppConfig.START_TAX_YEAR).thenReturn(2015)
+      when(mockAppConfig.MA_SUPPORTED_YEARS_COUNT).thenReturn(5)
 
       val mockTimerContext = mock[Timer.Context]
       when(mockTamcMetrics.startTimer(ArgumentMatchers.any())).thenReturn(mockTimerContext)

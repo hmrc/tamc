@@ -17,6 +17,7 @@
 package connectors
 
 import com.google.inject.Inject
+import config.ApplicationConfig
 import models.SendEmailRequest
 import play.api.{Configuration, Environment}
 import play.api.Mode.Mode
@@ -26,11 +27,9 @@ import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EmailConnector @Inject()(val runModeConfiguration: Configuration, environment: Environment, http: HttpClient) extends ServicesConfig {
+class EmailConnector @Inject()(val runModeConfiguration: Configuration, http: HttpClient, appConfig: ApplicationConfig) {
 
-  override def mode: Mode = environment.mode
-
-  val emailUrl = baseUrl("email")
+  val emailUrl = appConfig.EMAIL_URL
 
   def url(path: String) = s"$emailUrl$path"
 

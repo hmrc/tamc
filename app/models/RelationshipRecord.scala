@@ -32,7 +32,8 @@ case class RelationshipRecord(participant: String,
                               relationshipEndReason: Option[RelationshipEndReason] = None,
                               participant1EndDate: Option[String] = None,
                               otherParticipantInstanceIdentifier: String,
-                              otherParticipantUpdateTimestamp: String) {
+                              otherParticipantUpdateTimestamp: String
+                             ) {
 
   def this(participant: Int,
            creationTimestamp: String,
@@ -42,8 +43,8 @@ case class RelationshipRecord(participant: String,
            otherParticipantInstanceIdentifier: String,
            otherParticipantUpdateTimestamp: String) =
     this(
-      if (participant == 1) ApplicationConfig.ROLE_RECIPIENT
-      else ApplicationConfig.ROLE_TRANSFEROR, creationTimestamp, participant1StartDate, relationshipEndReason, participant1EndDate, otherParticipantInstanceIdentifier, otherParticipantUpdateTimestamp)
+      if (participant == 1) "Transferor"
+      else "Recipient", creationTimestamp, participant1StartDate, relationshipEndReason, participant1EndDate, otherParticipantInstanceIdentifier, otherParticipantUpdateTimestamp)
 }
 
 object RelationshipRecord {
