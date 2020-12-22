@@ -16,23 +16,57 @@
 
 package controllers
 
+import controllers.auth.AuthAction
 import models.MultiYearDesCreateRelationshipRequest
-import org.joda.time.{DateTime, DateTimeZone}
+import org.scalatest.mockito.MockitoSugar
+import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.any
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{OK, contentAsString, defaultAwaitTimeout}
+import play.api.test.Helpers.{OK, contentAsString}
+import services.MarriageAllowanceService
+import test_utils.{FakeAuthAction, TestData}
 import test_utils.TestData.Cids
-import test_utils.{TestData, TestUtility}
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.http.{Upstream4xxResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.test.UnitSpec
 
-class MultiYearTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
+import scala.concurrent.Future
+
+class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with BeforeAndAfterEach {
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockMarrageAllowanceService)
+  }
+
+  val mockMarrageAllowanceService: MarriageAllowanceService = mock[MarriageAllowanceService]
+
+
+  override def fakeApplication(): Application = {
+    new GuiceApplicationBuilder()
+      .overrides(
+        bind[MarriageAllowanceService].toInstance(mockMarrageAllowanceService),
+        bind[AuthAction].toInstance(FakeAuthAction)
+      )
+      .build()
+  }
+
+  val controller: MarriageAllowanceController = app.injector.instanceOf[MarriageAllowanceController]
+
 
   "Calling Multi Year create relationship" should {
+
     "return OK if data is correct for current tax year" in {
+
+      when(mockMarrageAllowanceService.createMultiYearRelationship(any(),any())(any(),any()))
+        .thenReturn(Future.successful(()))
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
@@ -42,34 +76,17 @@ class MultiYearTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString()
 
-      val controller = makeFakeController()
       val testData = s"""{"request":{"transferor_cid":${transferorCid}, "transferor_timestamp": "${transferorTs}", "recipient_cid":${recipientCid}, "recipient_timestamp":"${recipientTs}", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
       status(result) shouldBe OK
-
-      val postRequests = controller.debugData.httpPostCallsToTest
-
-      postRequests.size shouldBe 1
-
-      val firstRequest = postRequests.head
-
-      firstRequest.url shouldBe s"POST-foo/marriage-allowance/02.00.00/citizen/${recipientCid}/relationship/active"
-
-      val first: MultiYearDesCreateRelationshipRequest = firstRequest.body.asInstanceOf[MultiYearDesCreateRelationshipRequest]
-
-      first.recipientCid shouldBe recipientCid.toString()
-      first.transferorCid shouldBe transferorCid.toString()
-
-      first.recipientTimestamp shouldBe recipientTs
-      first.transferorTimestamp shouldBe transferorTs
-
-      first.startDate shouldBe None
-      first.endDate shouldBe None
     }
 
     "return OK if data is correct for retrospective year 2015/16, if current tax year is set in the future (1st Jan 2017)" in {
 
+      when(mockMarrageAllowanceService.createMultiYearRelationship(any(),any())(any(),any()))
+        .thenReturn(Future.successful(()))
+
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
       val transferorCid = testInput.transferor.cid.cid
@@ -78,34 +95,17 @@ class MultiYearTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString()
 
-      val controller = makeFakeController(testingTime = new DateTime(2017, 1, 1, 0, 0, DateTimeZone.forID("Europe/London")))
       val testData = s"""{"request":{"transferor_cid":${transferorCid}, "transferor_timestamp": "${transferorTs}", "recipient_cid":${recipientCid}, "recipient_timestamp":"${recipientTs}", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
       status(result) shouldBe OK
-
-      val postRequests = controller.debugData.httpPostCallsToTest
-
-      postRequests.size shouldBe 1
-
-      val firstRequest = postRequests.head
-
-      firstRequest.url shouldBe s"POST-foo/marriage-allowance/02.00.00/citizen/${recipientCid}/relationship/retrospective"
-
-      val first: MultiYearDesCreateRelationshipRequest = firstRequest.body.asInstanceOf[MultiYearDesCreateRelationshipRequest]
-
-      first.recipientCid shouldBe recipientCid.toString()
-      first.transferorCid shouldBe transferorCid.toString()
-
-      first.recipientTimestamp shouldBe recipientTs
-      first.transferorTimestamp shouldBe transferorTs
-
-      first.startDate shouldBe Some("2015-04-06")
-      first.endDate shouldBe Some("2016-04-05")
     }
 
     "return OK if data is correct for retrospective tax year" in {
 
+      when(mockMarrageAllowanceService.createMultiYearRelationship(any(),any())(any(),any()))
+        .thenReturn(Future.successful(()))
+
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
       val transferorCid = testInput.transferor.cid.cid
@@ -114,33 +114,16 @@ class MultiYearTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString()
 
-      val controller = makeFakeController()
       val testData = s"""{"request":{"transferor_cid":${transferorCid}, "transferor_timestamp": "${transferorTs}", "recipient_cid":${recipientCid}, "recipient_timestamp":"${recipientTs}", "taxYears":[2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
       status(result) shouldBe OK
-
-      val postRequests = controller.debugData.httpPostCallsToTest
-
-      postRequests.size shouldBe 1
-
-      val firstRequest = postRequests.head
-
-      firstRequest.url shouldBe s"POST-foo/marriage-allowance/02.00.00/citizen/${recipientCid}/relationship/retrospective"
-
-      val first: MultiYearDesCreateRelationshipRequest = firstRequest.body.asInstanceOf[MultiYearDesCreateRelationshipRequest]
-
-      first.recipientCid shouldBe recipientCid.toString()
-      first.transferorCid shouldBe transferorCid.toString()
-
-      first.recipientTimestamp shouldBe recipientTs
-      first.transferorTimestamp shouldBe transferorTs
-
-      first.startDate shouldBe Some("2014-04-06")
-      first.endDate shouldBe Some("2015-04-05")
     }
 
     "return OK if data is correct for multiple years" in {
+
+      when(mockMarrageAllowanceService.createMultiYearRelationship(any(),any())(any(),any()))
+        .thenReturn(Future.successful(()))
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
@@ -150,47 +133,18 @@ class MultiYearTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString()
 
-      val controller = makeFakeController()
       val testData = s"""{"request":{"transferor_cid":${transferorCid}, "transferor_timestamp": "${transferorTs}", "recipient_cid":${recipientCid}, "recipient_timestamp":"${recipientTs}", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
       status(result) shouldBe OK
-
-      val postRequests = controller.debugData.httpPostCallsToTest
-
-      postRequests.size shouldBe 2
-
-      val firstRequest = postRequests.head
-      val secondRequest = postRequests.tail.head
-
-      firstRequest.url shouldBe s"POST-foo/marriage-allowance/02.00.00/citizen/${recipientCid}/relationship/active"
-      secondRequest.url shouldBe s"POST-foo/marriage-allowance/02.00.00/citizen/${recipientCid}/relationship/retrospective"
-
-      val first: MultiYearDesCreateRelationshipRequest = firstRequest.body.asInstanceOf[MultiYearDesCreateRelationshipRequest]
-      val second: MultiYearDesCreateRelationshipRequest = secondRequest.body.asInstanceOf[MultiYearDesCreateRelationshipRequest]
-
-      first.recipientCid shouldBe recipientCid.toString()
-      first.transferorCid shouldBe transferorCid.toString()
-
-      second.recipientCid shouldBe recipientCid.toString()
-      second.transferorCid shouldBe transferorCid.toString()
-
-      first.recipientTimestamp shouldBe recipientTs.toString()
-      first.transferorTimestamp shouldBe transferorTs.toString()
-
-      second.recipientTimestamp shouldBe TestData.MultiYearCreate.happyScenarioStep2.recipient.timestamp
-      second.transferorTimestamp shouldBe TestData.MultiYearCreate.happyScenarioStep2.transferor.timestamp
-
-      first.startDate shouldBe None
-      first.endDate shouldBe None
-
-      second.startDate shouldBe Some("2014-04-06")
-      second.endDate shouldBe Some("2015-04-05")
     }
 
 
     "return RELATION-MIGHT-BE-CREATED if data is in conflict state (409) for multiple years" in {
 
+      when(mockMarrageAllowanceService.createMultiYearRelationship(any(),any())(any(),any()))
+        .thenReturn(Future.failed(Upstream4xxResponse("Cannot update as Participant", 409, 409)))
+
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
       val transferorCid = testInput.transferor.cid.cid
@@ -199,17 +153,18 @@ class MultiYearTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString()
 
-      val controller = makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"transferor_cid":${Cids.cidConflict}, "transferor_timestamp": "${transferorTs}", "recipient_cid":${recipientCid}, "recipient_timestamp":"${recipientTs}", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val response = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
       status(response) shouldBe OK
-      val json = Json.parse(contentAsString(response))
+      val json = Json.parse(contentAsString(response)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:RELATION-MIGHT-BE-CREATED"
-
     }
 
     "return RELATION-MIGHT-BE-CREATED if request results in LTM000503 (503) for multiple years" in {
+
+      when(mockMarrageAllowanceService.createMultiYearRelationship(any(),any())(any(),any()))
+        .thenReturn(Future.failed(Upstream5xxResponse("LTM000503", 503, 503)))
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
@@ -219,14 +174,12 @@ class MultiYearTest extends UnitSpec with TestUtility with GuiceOneAppPerSuite {
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString()
 
-      val controller = makeFakeController(isErrorController = true)
       val testData = s"""{"request":{"transferor_cid":${Cids.cidServiceUnavailable}, "transferor_timestamp": "${transferorTs}", "recipient_cid":${recipientCid}, "recipient_timestamp":"${recipientTs}", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val response = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
       status(response) shouldBe OK
-      val json = Json.parse(contentAsString(response))
+      val json = Json.parse(contentAsString(response)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:RELATION-MIGHT-BE-CREATED"
-
     }
 
   }

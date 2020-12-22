@@ -16,29 +16,20 @@
 
 package connectors
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import com.google.inject.Inject
+import config.ApplicationConfig
 import models.SendEmailRequest
-import play.api.{Configuration, Play}
-import play.api.Mode.Mode
-import uk.gov.hmrc.play.config.ServicesConfig
-import utils.WSHttp
-import uk.gov.hmrc.http.{HeaderCarrier, HttpPost, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-object EmailConnector extends EmailConnector with ServicesConfig {
-  override protected def mode: Mode = Play.current.mode
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
+import scala.concurrent.{ExecutionContext, Future}
 
-  override val httpPost = WSHttp
-  override val emailUrl = baseUrl("email")
-}
+class EmailConnector @Inject()(http: HttpClient, appConfig: ApplicationConfig)(implicit val ec: ExecutionContext) {
 
-trait EmailConnector {
+  val emailUrl = appConfig.EMAIL_URL
 
-  val httpPost: HttpPost
-  val emailUrl: String
   def url(path: String) = s"$emailUrl$path"
 
-  def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] =
-    httpPost.POST(url("/hmrc/email"), sendEmailRequest)
+  def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HttpResponse] =
+    http.POST(url("/hmrc/email"), sendEmailRequest)
 }

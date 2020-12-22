@@ -17,28 +17,22 @@
 package controllers
 
 import _root_.controllers.auth.AuthAction
+import com.google.inject.Inject
 import errors.ErrorResponseStatus._
 import errors._
 import models._
 import play.Logger
-import play.api.Play
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
-object MarriageAllowanceController extends MarriageAllowanceController {
-  override val marriageAllowanceService = MarriageAllowanceService
-  override val authAction: AuthAction = Play.current.injector.instanceOf[AuthAction]
-}
 
-trait MarriageAllowanceController extends BaseController {
 
-  val marriageAllowanceService: MarriageAllowanceService
-
-  val authAction: AuthAction
+class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAllowanceService,
+                                            authAction: AuthAction) extends BaseController {
 
   //TODO refactor so that the correct response are being sent
   def getRecipientRelationship(transferorNino: Nino) = authAction.async(parse.json) { implicit request =>

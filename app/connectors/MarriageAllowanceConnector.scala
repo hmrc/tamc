@@ -17,7 +17,7 @@
 package connectors
 
 import errors.{DataRetrievalError, ResponseValidationError}
-import metrics.Metrics
+import metrics.TamcMetrics
 import models._
 import play.api.Logger
 import play.api.data.validation.ValidationError
@@ -39,13 +39,10 @@ trait MarriageAllowanceConnector {
   val OnlyOneNinoOrTempReference = 2040
   val SurnameNotSupplied = 2061
 
-  val httpGet: HttpGet
-  val httpPost: HttpPost
-  val httpPut: HttpPut
   val serviceUrl: String
   val urlHeaderEnvironment: String
   val urlHeaderAuthorization: String
-  val metrics: Metrics
+  val metrics: TamcMetrics
   def url(path: String) = s"$serviceUrl$path"
   def ninoWithoutSpaces(nino: Nino) = nino.value.replaceAll(" ", "")
   val logger: Logger

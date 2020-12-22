@@ -16,23 +16,14 @@
 
 package metrics
 
+import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.Timer.Context
-import com.codahale.metrics.{MetricRegistry, Timer}
+import com.google.inject.Inject
+import com.kenshoo.play.metrics.Metrics
 import models.ApiType
 import models.ApiType.ApiType
-import uk.gov.hmrc.play.graphite.MicroserviceMetrics
 
-trait Metrics {
-  def startTimer(api: ApiType): Timer.Context
-
-  def incrementSuccessCounter(api: ApiType.ApiType): Unit
-
-  def incrementTotalCounter(api: ApiType.ApiType): Unit
-
-  def incrementFailedCounter(api: ApiType.ApiType): Unit
-}
-
-object Metrics extends Metrics with MicroserviceMetrics {
+class TamcMetrics @Inject()(metrics: Metrics) {
 
   val registry: MetricRegistry = metrics.defaultRegistry
 
@@ -64,11 +55,11 @@ object Metrics extends Metrics with MicroserviceMetrics {
     ApiType.FindRecipient -> registry.counter("find-recipient-failure"))
 
 
-  override def startTimer(api: ApiType): Context = timers(api).time()
+  def startTimer(api: ApiType): Context = timers(api).time()
 
-  override def incrementSuccessCounter(api: ApiType): Unit = successCounters(api).inc()
+  def incrementSuccessCounter(api: ApiType): Unit = successCounters(api).inc()
 
-  override def incrementTotalCounter(api: ApiType): Unit = totalCounters(api).inc()
+  def incrementTotalCounter(api: ApiType): Unit = totalCounters(api).inc()
 
-  override def incrementFailedCounter(api: ApiType): Unit = failureCounters(api).inc()
+  def incrementFailedCounter(api: ApiType): Unit = failureCounters(api).inc()
 }

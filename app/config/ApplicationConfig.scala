@@ -16,89 +16,59 @@
 
 package config
 
+import com.google.inject.Inject
+import play.api.Mode.Mode
+import play.api.{Configuration, Environment}
 import play.api.Play.{configuration, current}
+import uk.gov.hmrc.play.config.ServicesConfig
 
-trait ApplicationConfig {
-  val EMAIL_GDS_TEMPLATE_ID: String
-  val EMAIL_PTA_TEMPLATE_ID: String
-  val EMAIL_UPDATE_CANCEL_TEMPLATE_ID: String
-  val EMAIL_UPDATE_REJECT_TEMPLATE_ID: String
-  val EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID: String
-  val EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID: String
-  val EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR: String
-  val EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR: String
-  val EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR: String
-  val EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID: String
-  val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID:String
-  val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID: String
-  val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR: String
-  val ROLE_TRANSFEROR: String
-  val ROLE_RECIPIENT: String
-  val REASON_CANCEL: String
-  val REASON_REJECT: String
-  val REASON_DIVORCE: String
-  val START_TAX_YEAR: Int
-  val MA_SUPPORTED_YEARS_COUNT: Int
-  val START_DATE: String
-  val END_DATE: String
-  val START_DATE_CY: String
-  val END_DATE_CY: String
-  
-  val EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID: String
-  val EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID: String
-  val EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_WELSH_TEMPLATE_ID: String
-  val EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID: String
-  val EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH: String
-  val EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH: String
-  val EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH: String
-  val EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID: String
-  val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID: String
-  val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID: String
-  val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH: String
-}
+//TODO inject ServicesConfig
+class ApplicationConfig @Inject()(override val runModeConfiguration: Configuration, environment: Environment) extends ServicesConfig {
 
-object ApplicationConfig extends ApplicationConfig {
-  
-  override val EMAIL_GDS_TEMPLATE_ID = "tamc_confirmation_template_id"
-  override val EMAIL_PTA_TEMPLATE_ID = "tamc_confirmation_pta"
-  
-  override val EMAIL_UPDATE_CANCEL_TEMPLATE_ID = "tamc_update_cancel"
-  override val EMAIL_UPDATE_REJECT_TEMPLATE_ID = "tamc_update_reject"
-  override val EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID = "tamc_update_divorce_transferor_boy"
-  override val EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID = "tamc_update_divorce_recipient_eoy"
-  override val EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR = "tamc_transferor_divorce_previous_yr"
-  override val EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR = "tamc_recipient_divorce_previous_yr"
-  override val EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR = "tamc_recipient_rejects_retro_yr"
-  override val EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID = "tamc_current_year"
-  override val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID = "tamc_retro_year"
-  override val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID = "tamc_current_retro_year"
-  override val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR = "tamc_transferor_divorce_current_yr"
-  
-  override val EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID = "tamc_update_cancel_cy"  
-  override val EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID = "tamc_update_reject_cy"
-  override val EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_WELSH_TEMPLATE_ID = "tamc_update_divorce_transferor_boy_cy"
-  override val EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID = "tamc_update_divorce_recipient_eoy_cy"
-  override val EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH = "tamc_transferor_divorce_previous_yr_cy"
-  override val EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH = "tamc_recipient_divorce_previous_yr_cy"
-  override val EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH = "tamc_recipient_rejects_retro_yr_cy"  
-  override val EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID = "tamc_current_year_cy"
-  override val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID = "tamc_retro_year_cy"
-  override val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID = "tamc_current_retro_year_cy"
-  override val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH = "tamc_transferor_divorce_current_yr_cy"
-  
-  override val ROLE_TRANSFEROR = "Transferor"
-  override val ROLE_RECIPIENT = "Recipient"
+  override def mode: Mode = environment.mode
+   //TODO: some of these values aren't configuration values and will need remvoed
+   val EMAIL_GDS_TEMPLATE_ID = "tamc_confirmation_template_id"
+   val EMAIL_PTA_TEMPLATE_ID = "tamc_confirmation_pta"
+   val EMAIL_URL = baseUrl("email")
+   val AUTH_URL: String = baseUrl("auth")
 
-  override val REASON_CANCEL = "Cancelled by Transferor"
-  override val REASON_REJECT = "Rejected by Recipient"
-  override val REASON_DIVORCE = "Divorce/Separation"
+ val EMAIL_UPDATE_CANCEL_TEMPLATE_ID = "tamc_update_cancel"
+   val EMAIL_UPDATE_REJECT_TEMPLATE_ID = "tamc_update_reject"
+   val EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID = "tamc_update_divorce_transferor_boy"
+   val EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID = "tamc_update_divorce_recipient_eoy"
+   val EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR = "tamc_transferor_divorce_previous_yr"
+   val EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR = "tamc_recipient_divorce_previous_yr"
+   val EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR = "tamc_recipient_rejects_retro_yr"
+   val EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID = "tamc_current_year"
+   val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID = "tamc_retro_year"
+   val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID = "tamc_current_retro_year"
+   val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR = "tamc_transferor_divorce_current_yr"
   
-  override val START_DATE = "6 April "
-  override val END_DATE = "5 April "
+   val EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID = "tamc_update_cancel_cy"
+   val EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID = "tamc_update_reject_cy"
+   val EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_WELSH_TEMPLATE_ID = "tamc_update_divorce_transferor_boy_cy"
+   val EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID = "tamc_update_divorce_recipient_eoy_cy"
+   val EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH = "tamc_transferor_divorce_previous_yr_cy"
+   val EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH = "tamc_recipient_divorce_previous_yr_cy"
+   val EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH = "tamc_recipient_rejects_retro_yr_cy"
+   val EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID = "tamc_current_year_cy"
+   val EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID = "tamc_retro_year_cy"
+   val EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID = "tamc_current_retro_year_cy"
+   val EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH = "tamc_transferor_divorce_current_yr_cy"
 
-  val START_DATE_CY = "6 Ebrill"
-  val END_DATE_CY = "5 Ebrill"
+   val ROLE_TRANSFEROR = "Transferor"
+   val ROLE_RECIPIENT = "Recipient"
 
-  override lazy val START_TAX_YEAR = configuration.getInt("ma-start-tax-year").getOrElse(2015)
-  override lazy val MA_SUPPORTED_YEARS_COUNT = configuration.getInt("ma-supported-years-count").getOrElse(5)
+   val REASON_CANCEL = "Cancelled by Transferor"
+   val REASON_REJECT = "Rejected by Recipient"
+   val REASON_DIVORCE = "Divorce/Separation"
+  
+   val START_DATE = "6 April "
+   val END_DATE = "5 April "
+
+   val START_DATE_CY = "6 Ebrill"
+   val END_DATE_CY = "5 Ebrill"
+
+   lazy val START_TAX_YEAR = configuration.getInt("ma-start-tax-year").getOrElse(2015)
+   lazy val MA_SUPPORTED_YEARS_COUNT = configuration.getInt("ma-supported-years-count").getOrElse(5)
 }
