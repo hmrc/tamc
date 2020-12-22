@@ -29,6 +29,16 @@ object MultiYearCreateRelationshipRequestHolderFixture {
     taxYears=List(2015,2016)
   )
 
+  val multiYearCreateRelationshipRequestNoTaxYear = MultiYearCreateRelationshipRequest(
+    transferor_cid = 1111.asInstanceOf[Cid],
+    transferor_timestamp="2222".asInstanceOf[Timestamp],
+    recipient_cid=3333.asInstanceOf[Cid],
+    recipient_timestamp="4444".asInstanceOf[Timestamp],
+    taxYears=List()
+  )
+
+
+
   val createRelationshipNotificationRequest = CreateRelationshipNotificationRequest(
       full_name="bob",
       email=EmailAddress("bob@yahoo.com"),
@@ -37,5 +47,7 @@ object MultiYearCreateRelationshipRequestHolderFixture {
 
 
   val multiYearCreateRelationshipRequestHolder = MultiYearCreateRelationshipRequestHolder(multiYearCreateRelationshipRequest, createRelationshipNotificationRequest)
+
+  val multiYearCreateRelationshipRequestNoTaxYearHolder = MultiYearCreateRelationshipRequestHolder(multiYearCreateRelationshipRequestNoTaxYear, createRelationshipNotificationRequest)
 
 }
