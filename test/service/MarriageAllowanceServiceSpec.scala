@@ -117,18 +117,30 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
     }
 
   }
+  "when createMultiYearRelationship" should {
+    "return unit" when {
+      "createRelationshipRequest tax year is none" in {
+        when(mockEmailConnector.sendEmail(any())(any())).thenReturn(Future.successful(HttpResponse(200)))
+        val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestNoTaxYearHolder
+        val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
 
-  "when request is sent with deceased recipient in MarriageAllowanceService" should {
-    "return a BadRequestException" in {
-      when(mockMarriageAllowanceDESConnector.sendMultiYearCreateRelationshipRequest(any(),any())(any(),any())).thenReturn(Future.failed(new BadRequestException("{\"reason\": \"Participant is deceased\"}")))
-      val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
-      val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
+          await(response) shouldBe ()
+      }
+    }
 
-      intercept[BadRequestException] {
+    "when request is sent with deceased recipient in MarriageAllowanceService" should {
+      "return a BadRequestException" in {
+        when(mockMarriageAllowanceDESConnector.sendMultiYearCreateRelationshipRequest(any(), any())(any(), any())).thenReturn(Future.failed(new BadRequestException("{\"reason\": \"Participant is deceased\"}")))
+        val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
+        val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
+
+        intercept[BadRequestException] {
           await(response)
         }
+      }
     }
   }
+
 
   val findCitizenJson = Json.parse(s"""
 
