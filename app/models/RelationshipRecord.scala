@@ -41,8 +41,9 @@ case class RelationshipRecord(participant: String,
            otherParticipantInstanceIdentifier: String,
            otherParticipantUpdateTimestamp: String) =
     this(
-      if (participant == 1) "Transferor"
-      else "Recipient", creationTimestamp, participant1StartDate, relationshipEndReason, participant1EndDate, otherParticipantInstanceIdentifier, otherParticipantUpdateTimestamp)
+      if (participant == 1) "Recipient"
+      else "Transferor", creationTimestamp, participant1StartDate, relationshipEndReason,
+        participant1EndDate, otherParticipantInstanceIdentifier, otherParticipantUpdateTimestamp)
 }
 
 object RelationshipRecord {
