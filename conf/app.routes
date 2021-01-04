@@ -1,6 +1,6 @@
 # microservice specific routes
 
-GET    /:transferorNino/list-relationship                         @controllers.MarriageAllowanceController.listRelationship(transferorNino: Nino)
-POST   /:transferorNino/get-recipient-relationship                @controllers.MarriageAllowanceController.getRecipientRelationship(transferorNino: Nino)
-PUT    /:transferorNino/create-multi-year-relationship/:journey   @controllers.MarriageAllowanceController.createMultiYearRelationship(transferorNino: Nino, journey: String)
-PUT    /:transferorNino/update-relationship                       @controllers.MarriageAllowanceController.updateRelationship(transferorNino: Nino)
+GET    /:transferorNino/list-relationship                         controllers.MarriageAllowanceController.listRelationship(transferorNino: Nino)
+POST   /:transferorNino/get-recipient-relationship                controllers.MarriageAllowanceController.getRecipientRelationship(transferorNino: Nino)
+PUT    /:transferorNino/create-multi-year-relationship/:journey   controllers.MarriageAllowanceController.createMultiYearRelationship(transferorNino: Nino, journey: String)
+PUT    /:transferorNino/update-relationship                       controllers.MarriageAllowanceController.updateRelationship(transferorNino: Nino)

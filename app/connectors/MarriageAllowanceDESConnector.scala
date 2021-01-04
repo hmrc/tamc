@@ -35,18 +35,14 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class MarriageAllowanceDESConnector @Inject()(val runModeConfiguration: Configuration,
-                                              environment: Environment,
                                               val metrics: TamcMetrics,
-                                              http: HttpClient)
+                                              http: HttpClient,
+                                              servicesConfig: ServicesConfig)
                                              (implicit ec: ExecutionContext)
-  extends MarriageAllowanceConnector with ServicesConfig {
+  extends MarriageAllowanceConnector {
 
-  override def mode: Mode = environment.mode
+  import servicesConfig.baseUrl
 
-
-  override val serviceUrl = baseUrl("marriage-allowance-des")
-  override val urlHeaderEnvironment = config("marriage-allowance-des").getString("environment").get
-  override val urlHeaderAuthorization = s"Bearer ${config("marriage-allowance-des").getString("authorization-token").get}"
 
 
   val logger = Logger(this.getClass)
