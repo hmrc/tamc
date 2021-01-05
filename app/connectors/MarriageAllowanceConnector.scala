@@ -21,7 +21,7 @@ import metrics.TamcMetrics
 import models._
 import play.api.Logger
 import play.api.data.validation.ValidationError
-import play.api.libs.json.{JsPath, JsValue}
+import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.logging.Authorization
@@ -47,9 +47,9 @@ trait MarriageAllowanceConnector {
   def ninoWithoutSpaces(nino: Nino) = nino.value.replaceAll(" ", "")
   val logger: Logger
 
-  def handleValidationError[A]: Seq[(JsPath, scala.Seq[ValidationError])] => Left[DataRetrievalError, A] =  err => {
+  def handleValidationError[A]: Seq[(JsPath, scala.Seq[JsonValidationError])] => Left[DataRetrievalError, A] =  err => {
 
-    val extractValidationErrors: Seq[(JsPath, scala.Seq[ValidationError])] => String = errors => {
+    val extractValidationErrors: Seq[(JsPath, scala.Seq[JsonValidationError])] => String = errors => {
       errors.map {
         case (path, List(validationError: ValidationError, _*)) => s"$path: ${validationError.message}"
       }.mkString(", ").trim

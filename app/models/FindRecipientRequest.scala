@@ -18,14 +18,15 @@ package models
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.domain.Nino
-import org.joda.time.LocalDate
+import java.time.LocalDate
 import play.api.libs.json.Writes
 import play.api.libs.json.Reads
 import play.api.libs.json.Format
 
 object FindRecipientRequest {
   private val pattern = "dd/MM/yyyy"
-  implicit val dateFormat = Format[LocalDate](Reads.jodaLocalDateReads(pattern), Writes.jodaLocalDateWrites(pattern))
+  //TODO this compiles but will probably return in wrong format, come back to this
+  implicit val dateFormat: Format[LocalDate] = Format[LocalDate](Reads.DefaultLocalDateReads, Writes.DefaultLocalDateWrites)
   implicit val formats = Json.format[FindRecipientRequest]
 }
 

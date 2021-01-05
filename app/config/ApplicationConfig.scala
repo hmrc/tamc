@@ -20,8 +20,6 @@ import com.google.inject.Inject
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-//TODO inject ServicesConfig
-//TODO ServicesConfig is a trait so can't inject yet. Once Bootstrap is updated.
 class ApplicationConfig @Inject()(configuration: Configuration, servicesConfig: ServicesConfig) {
 
  import servicesConfig.{baseUrl, getConfString}

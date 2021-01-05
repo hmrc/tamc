@@ -22,17 +22,20 @@ import errors.ErrorResponseStatus._
 import errors._
 import models._
 import play.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
+import scala.concurrent.ExecutionContext
 
 
 
 class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAllowanceService,
-                                            authAction: AuthAction) extends BaseController {
+                                            authAction: AuthAction,
+                                            cc: ControllerComponents)(implicit ec: ExecutionContext) extends BackendController(cc) {
 
   //TODO refactor so that the correct response are being sent
   def getRecipientRelationship(transferorNino: Nino) = authAction.async(parse.json) { implicit request =>
