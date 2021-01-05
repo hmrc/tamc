@@ -33,9 +33,6 @@ lazy val microservice = Project(appName, file("."))
     defaultSettings(),
     scalaVersion := "2.12.12",
     libraryDependencies ++= AppDependencies.all,
-    parallelExecution in Test := false,
-    fork in Test := true,
     retrieveManaged := true,
-    routesGenerator := InjectedRoutesGenerator,
     routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._")
   )

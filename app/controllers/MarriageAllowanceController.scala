@@ -16,7 +16,7 @@
 
 package controllers
 
-import _root_.controllers.auth.AuthAction
+import controllers.auth.AuthAction
 import com.google.inject.Inject
 import errors.ErrorResponseStatus._
 import errors._

@@ -17,8 +17,7 @@ object AppDependencies {
     "org.jsoup"                % "jsoup"              % "1.13.1",
     "org.scalatestplus.play"  %% "scalatestplus-play" % "3.1.0",
     "org.mockito"              % "mockito-core"        % "3.6.0",
-    "com.github.tomakehurst"   % "wiremock"           % "2.27.2"
-//    "com.github.tomakehurst"   % "wiremock-jre8"      % "2.27.0"
+    "com.github.tomakehurst"   % "wiremock-jre8"      % "2.27.0"
   ).map(_ % "test")
 
   val all: Seq[ModuleID] = compile ++ test
