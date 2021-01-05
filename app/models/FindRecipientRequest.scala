@@ -24,7 +24,6 @@ import play.api.libs.json.Reads
 import play.api.libs.json.Format
 
 object FindRecipientRequest {
-  private val pattern = "dd/MM/yyyy"
   //TODO this compiles but will probably return in wrong format, come back to this
   implicit val dateFormat: Format[LocalDate] = Format[LocalDate](Reads.DefaultLocalDateReads, Writes.DefaultLocalDateWrites)
   implicit val formats = Json.format[FindRecipientRequest]

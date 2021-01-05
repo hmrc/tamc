@@ -23,23 +23,23 @@ import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
 import metrics.TamcMetrics
 import models._
-import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.test.UnitSpec
-import play.api.inject.bind
 
+import java.time.LocalDate
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite {
 
@@ -50,7 +50,7 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
 
     val cID = 123456789
     val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
-       gender = Gender("M"), nino = generatedNino, dateOfMarriage = Some(new LocalDate(year,12,12)))
+       gender = Gender("M"), nino = generatedNino, dateOfMarriage = Some(LocalDate.of(year,12,12)))
     val userRecord = UserRecord(cid = cID, timestamp = "20200116155359011123")
 
   }

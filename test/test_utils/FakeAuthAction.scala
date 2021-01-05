@@ -17,10 +17,14 @@
 package test_utils
 
 import controllers.auth.AuthAction
-import play.api.mvc.{Request, Result}
+import play.api.mvc.{AnyContent, BodyParser, Request, Result}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object FakeAuthAction extends AuthAction {
   override protected def filter[A](request: Request[A]): Future[Option[Result]] = Future.successful(None)
+
+  override def parser: BodyParser[AnyContent] = ???
+
+  override protected def executionContext: ExecutionContext = ???
 }
