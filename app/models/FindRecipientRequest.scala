@@ -16,16 +16,21 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, JsString, Json, Reads, Writes}
 import uk.gov.hmrc.domain.Nino
 import java.time.LocalDate
-import play.api.libs.json.Writes
-import play.api.libs.json.Reads
-import play.api.libs.json.Format
+import java.time.format.DateTimeFormatter
 
 object FindRecipientRequest {
   //TODO this compiles but will probably return in wrong format, come back to this
-  implicit val dateFormat: Format[LocalDate] = Format[LocalDate](Reads.DefaultLocalDateReads, Writes.DefaultLocalDateWrites)
+  private val pattern = "dd/MM/yyyy"
+  private def writes(pattern: String): Writes[LocalDate] = {
+    val datePattern: DateTimeFormatter = DateTimeFormatter.ofPattern(pattern)
+    Writes[LocalDate] { date => JsString(date.format(datePattern))}
+
+  }
+
+  implicit val dateFormat: Format[LocalDate] = Format[LocalDate](Reads.localDateReads(pattern), writes(pattern))
   implicit val formats = Json.format[FindRecipientRequest]
 }
 

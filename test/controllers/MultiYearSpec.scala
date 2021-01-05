@@ -53,7 +53,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar 
     new GuiceApplicationBuilder()
       .overrides(
         bind[MarriageAllowanceService].toInstance(mockMarrageAllowanceService),
-        bind[AuthAction].toInstance(FakeAuthAction)
+        bind[AuthAction].to[FakeAuthAction]
       )
       .build()
   }

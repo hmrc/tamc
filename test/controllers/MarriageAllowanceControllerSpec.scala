@@ -16,7 +16,7 @@
 
 package controllers
 
-import controllers.auth.AuthAction
+import controllers.auth.{AuthAction, AuthConnector}
 import errors.ErrorResponseStatus._
 import errors._
 import models._
@@ -47,10 +47,11 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
 
   val mockMarriageAllowanceService: MarriageAllowanceService = mock[MarriageAllowanceService]
 
+
   override def fakeApplication(): Application = GuiceApplicationBuilder()
     .overrides(
       bind[MarriageAllowanceService].toInstance(mockMarriageAllowanceService),
-      bind[AuthAction]toInstance(FakeAuthAction)
+      bind[AuthAction].to[FakeAuthAction]
     ).build()
 
   lazy val controller = app.injector.instanceOf[MarriageAllowanceController]
@@ -136,6 +137,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
 
       when(mockMarriageAllowanceService.getRecipientRelationship(any(), any())(any(), any()))
         .thenReturn(Future.successful(Right((userRecord, List(TaxYear(2019, Some(true)))))))
+
       val testData = s"""{"name":"rty","lastName":"qwe", "nino":"${recipientNino}", "gender":"${recipientGender}", "dateOfMarriage":"01/01/2015"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)

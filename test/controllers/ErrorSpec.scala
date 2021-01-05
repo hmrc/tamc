@@ -46,7 +46,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with
   override def fakeApplication: Application = GuiceApplicationBuilder()
     .overrides(
       bind[MarriageAllowanceService].toInstance(mockMarriageAllowanceService),
-      bind[AuthAction].toInstance(FakeAuthAction)
+      bind[AuthAction].to[FakeAuthAction]
     ).build()
 
   val controller: MarriageAllowanceController = app.injector.instanceOf[MarriageAllowanceController]

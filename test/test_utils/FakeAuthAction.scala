@@ -16,15 +16,13 @@
 
 package test_utils
 
+import com.google.inject.Inject
 import controllers.auth.AuthAction
-import play.api.mvc.{AnyContent, BodyParser, Request, Result}
+import play.api.mvc.{AnyContent, BodyParser, BodyParsers, Request, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object FakeAuthAction extends AuthAction {
+class FakeAuthAction @Inject() (val parser: BodyParsers.Default)(implicit val executionContext: ExecutionContext) extends AuthAction {
   override protected def filter[A](request: Request[A]): Future[Option[Result]] = Future.successful(None)
 
-  override def parser: BodyParser[AnyContent] = ???
-
-  override protected def executionContext: ExecutionContext = ???
 }
