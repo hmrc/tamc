@@ -17,15 +17,14 @@
 package config
 
 import com.google.inject.Inject
-import play.api.Mode.Mode
-import play.api.{Configuration, Environment}
-import uk.gov.hmrc.play.config.ServicesConfig
+import play.api.Configuration
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 //TODO inject ServicesConfig
 //TODO ServicesConfig is a trait so can't inject yet. Once Bootstrap is updated.
-class ApplicationConfig @Inject()(override val runModeConfiguration: Configuration, environment: Environment) extends ServicesConfig {
+class ApplicationConfig @Inject()(configuration: Configuration, servicesConfig: ServicesConfig) {
 
-  override def mode: Mode = environment.mode
+ import servicesConfig.{baseUrl, getConfString}
 
   val serviceUrl: String = baseUrl("marriage-allowance-des")
   val urlHeaderEnvironment: String = getConfString("marriage-allowance-des.environment", "")
@@ -74,6 +73,6 @@ class ApplicationConfig @Inject()(override val runModeConfiguration: Configurati
    val START_DATE_CY = "6 Ebrill"
    val END_DATE_CY = "5 Ebrill"
 
-   lazy val START_TAX_YEAR: Int = runModeConfiguration.getInt("ma-start-tax-year").getOrElse(2015)
-   lazy val MA_SUPPORTED_YEARS_COUNT: Int = runModeConfiguration.getInt("ma-supported-years-count").getOrElse(5)
+   lazy val START_TAX_YEAR: Int = configuration.getOptional[Int]("ma-start-tax-year").getOrElse(2015)
+   lazy val MA_SUPPORTED_YEARS_COUNT: Int = configuration.getOptional[Int]("ma-supported-years-count").getOrElse(5)
 }
