@@ -51,7 +51,7 @@ trait MarriageAllowanceConnector {
 
     val extractValidationErrors: Seq[(JsPath, scala.Seq[JsonValidationError])] => String = errors => {
       errors.map {
-        case (path, List(validationError: ValidationError, _*)) => s"$path: ${validationError.message}"
+        case (path, List(validationError: JsonValidationError, _*)) => s"$path: ${validationError.message}"
       }.mkString(", ").trim
     }
 
