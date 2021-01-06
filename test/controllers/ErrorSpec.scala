@@ -32,7 +32,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.{BAD_REQUEST, OK, contentAsString}
 import services.MarriageAllowanceService
 import test_utils.{FakeAuthAction, TestData}
-import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.http.{BadRequestException, InternalServerException, NotFoundException, ServiceUnavailableException}
 
@@ -55,6 +55,8 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with
     super.beforeEach()
     reset(mockMarriageAllowanceService)
   }
+
+  val generatedNino = new Generator().nextNino.nino
 
   "Checking user record" should {
 
@@ -143,16 +145,15 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
       }
 
-      //TODO replace the Nino
       "return transferor deceased BadRequest when recipient not found" in {
 
-        val testData = s"""{"name":"abc","lastName":"def", "nino":"AB242424B", "gender":"M"}"""
+        val testData = s"""{"name":"abc","lastName":"def", "nino":"$generatedNino", "gender":"M"}"""
         val request = FakeRequest().withBody(Json.parse(testData))
 
-        when(mockMarriageAllowanceService.getRecipientRelationship(meq(Nino("AB242424B")), any())(any(), any()))
+        when(mockMarriageAllowanceService.getRecipientRelationship(meq(Nino(generatedNino)), any())(any(), any()))
           .thenReturn(Future.failed(TransferorDeceasedError("Transferor is deceased")))
 
-        val result = controller.getRecipientRelationship(Nino("AB242424B"))(request)
+        val result = controller.getRecipientRelationship(Nino(generatedNino))(request)
         status(result) shouldBe OK
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
