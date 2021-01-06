@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,21 @@ package controllers.auth
 
 import com.google.inject.{ImplementedBy, Inject}
 import config.ApplicationConfig
-import play.api.Mode.Mode
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc._
-import play.api.{Configuration, Environment, Logger}
+import play.api.Logger
 import uk.gov.hmrc.auth.core.{AuthorisedFunctions, ConfidenceLevel, PlayAuthConnector}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuthActionImpl @Inject()(val authConnector: AuthConnector)(implicit executionContext: ExecutionContext)
+class AuthActionImpl @Inject()(val authConnector: AuthConnector, val parser: BodyParsers.Default)
+                              (implicit val executionContext: ExecutionContext)
   extends AuthAction with AuthorisedFunctions {
 
+  private val logger: Logger = Logger(getClass)
 
   override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
@@ -41,14 +41,14 @@ class AuthActionImpl @Inject()(val authConnector: AuthConnector)(implicit execut
       Future.successful(None)
     }.recover {
       case t: Throwable =>
-        Logger.debug("Debug info - " + t.getMessage)
+        logger.debug("Debug info - " + t.getMessage)
         Some(Unauthorized)
     }
   }
 }
 
 @ImplementedBy(classOf[AuthActionImpl])
-trait AuthAction extends ActionBuilder[Request] with ActionFilter[Request]
+trait AuthAction extends ActionBuilder[Request, AnyContent] with ActionFilter[Request]
 
 class AuthConnector @Inject()(appConfig: ApplicationConfig, val http: HttpClient) extends PlayAuthConnector {
 

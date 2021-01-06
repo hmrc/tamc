@@ -1,8 +1,6 @@
-import play.routes.compiler.StaticRoutesGenerator
 import play.sbt.routes.RoutesKeys.routesGenerator
 import sbt.Keys._
-import sbt.Tests.{Group, SubProcess}
-import sbt._
+import sbt.{Resolver, _}
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
@@ -25,26 +23,16 @@ lazy val scoverageSettings = {
 }
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(Seq(play.sbt.PlayScala) ++ plugins: _*)
+  .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
   .settings(scoverageSettings,
     majorVersion := 4,
     PlayKeys.playDefaultPort := 9909,
+    resolvers ++= Seq(Resolver.bintrayRepo("hmrc", "releases")),
     scalaSettings,
     publishingSettings,
     defaultSettings(),
-    targetJvm := "jvm-1.8",
-    scalaVersion := "2.11.11",
+    scalaVersion := "2.12.12",
     libraryDependencies ++= AppDependencies.all,
-    parallelExecution in Test := false,
-    fork in Test := true,
     retrieveManaged := true,
-    routesGenerator := StaticRoutesGenerator,
     routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._")
   )
-  .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
-
-
-def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
-  tests map {
-    test => new Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = Seq("-Dtest.name=" + test.name))))
-  }

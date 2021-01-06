@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,24 @@
 package config
 
 import com.google.inject.Inject
-import play.api.Mode.Mode
-import play.api.{Configuration, Environment}
-import play.api.Play.{configuration, current}
-import uk.gov.hmrc.play.config.ServicesConfig
+import play.api.Configuration
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-//TODO inject ServicesConfig
-class ApplicationConfig @Inject()(override val runModeConfiguration: Configuration, environment: Environment) extends ServicesConfig {
+class ApplicationConfig @Inject()(configuration: Configuration, servicesConfig: ServicesConfig) {
 
-  override def mode: Mode = environment.mode
-   //TODO: some of these values aren't configuration values and will need remvoed
+ import servicesConfig.{baseUrl, getConfString}
+
+  val serviceUrl: String = baseUrl("marriage-allowance-des")
+  val urlHeaderEnvironment: String = getConfString("marriage-allowance-des.environment", "")
+  val urlHeaderAuthorization = s"Bearer ${getConfString("marriage-allowance-des.authorization-token", "")}"
+
+   //TODO: some of these values aren't configuration values and will need removed
    val EMAIL_GDS_TEMPLATE_ID = "tamc_confirmation_template_id"
    val EMAIL_PTA_TEMPLATE_ID = "tamc_confirmation_pta"
-   val EMAIL_URL = baseUrl("email")
+   val EMAIL_URL: String = baseUrl("email")
    val AUTH_URL: String = baseUrl("auth")
 
- val EMAIL_UPDATE_CANCEL_TEMPLATE_ID = "tamc_update_cancel"
+   val EMAIL_UPDATE_CANCEL_TEMPLATE_ID = "tamc_update_cancel"
    val EMAIL_UPDATE_REJECT_TEMPLATE_ID = "tamc_update_reject"
    val EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID = "tamc_update_divorce_transferor_boy"
    val EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID = "tamc_update_divorce_recipient_eoy"
@@ -69,6 +71,6 @@ class ApplicationConfig @Inject()(override val runModeConfiguration: Configurati
    val START_DATE_CY = "6 Ebrill"
    val END_DATE_CY = "5 Ebrill"
 
-   lazy val START_TAX_YEAR = configuration.getInt("ma-start-tax-year").getOrElse(2015)
-   lazy val MA_SUPPORTED_YEARS_COUNT = configuration.getInt("ma-supported-years-count").getOrElse(5)
+   lazy val START_TAX_YEAR: Int = configuration.getOptional[Int]("ma-start-tax-year").getOrElse(2015)
+   lazy val MA_SUPPORTED_YEARS_COUNT: Int = configuration.getOptional[Int]("ma-supported-years-count").getOrElse(5)
 }

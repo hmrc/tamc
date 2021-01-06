@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ object RelationshipEndReason{
   }
 
   object RelationshipEndReasonHodsReads extends Reads[RelationshipEndReason]{
+    private val logger: Logger = Logger(getClass)
     override def reads(json: JsValue): JsResult[RelationshipEndReason] = json.as[String] match{
       case "Death (either participant)" => JsSuccess(Death)
       case "Divorce/Separation" => JsSuccess(Divorce)
@@ -81,7 +82,7 @@ object RelationshipEndReason{
       case "System Closure" => JsSuccess(System)
       case "Active" => JsSuccess(Active)
       case unknown =>
-        Logger.warn(s"Unexpected reason code :'$unknown'")
+        logger.warn(s"Unexpected reason code :'$unknown'")
         JsSuccess(Default)
     }
   }

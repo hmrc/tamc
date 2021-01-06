@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,26 @@
 
 package controllers
 
-import _root_.controllers.auth.AuthAction
 import com.google.inject.Inject
+import controllers.auth.AuthAction
 import errors.ErrorResponseStatus._
 import errors._
 import models._
 import play.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-
+import scala.concurrent.ExecutionContext
 
 class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAllowanceService,
-                                            authAction: AuthAction) extends BaseController {
+                                            authAction: AuthAction,
+                                            cc: ControllerComponents)(implicit ec: ExecutionContext) extends BackendController(cc) {
 
-  //TODO refactor so that the correct response are being sent
-  def getRecipientRelationship(transferorNino: Nino) = authAction.async(parse.json) { implicit request =>
+  def getRecipientRelationship(transferorNino: Nino): Action[JsValue] = authAction.async(parse.json) { implicit request =>
     withJsonBody[FindRecipientRequest] { findRecipientRequest =>
       marriageAllowanceService.getRecipientRelationship(transferorNino, findRecipientRequest) map {
         case Right((recipientRecord, taxYears)) =>
@@ -48,15 +48,15 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
       } recover {
         case error =>
           error match {
-            case serviceError: ServiceError =>
+            case _: ServiceError =>
               Logger.warn("getRecipientRelationship failed with handled error", error.getMessage)
               Ok(Json.toJson(GetRelationshipResponse(
                 status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
-            case transfererDeceased: TransferorDeceasedError =>
+            case _: TransferorDeceasedError =>
               Logger.warn("getRecipientRelationship failed with handled error", error.getMessage)
               Ok(Json.toJson(GetRelationshipResponse(
                 status = ResponseStatus(status_code = TRANSFERER_DECEASED))))
-            case otherError =>
+            case _ =>
               Logger.error("getRecipientRelationship failed with unhandled error", error.getMessage)
               Ok(Json.toJson(GetRelationshipResponse(
                 status = ResponseStatus(status_code = OTHER_ERROR))))
@@ -65,7 +65,7 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
     }
   }
 
-  def createMultiYearRelationship(transferorNino: Nino, journey: String) = authAction.async(parse.json) {
+  def createMultiYearRelationship(transferorNino: Nino, journey: String): Action[JsValue] = authAction.async(parse.json) {
     implicit request =>
       withJsonBody[MultiYearCreateRelationshipRequestHolder] { createRelationshipRequestHolder =>
         marriageAllowanceService.createMultiYearRelationship(createRelationshipRequestHolder, journey) map {
@@ -92,29 +92,29 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
       }
   }
 
-  def listRelationship(transferorNino: Nino) = authAction.async { implicit request =>
+  def listRelationship(transferorNino: Nino): Action[AnyContent] = authAction.async { implicit request =>
     marriageAllowanceService.listRelationship(transferorNino) map {
-      case relationshipList: RelationshipRecordWrapper =>
+      relationshipList: RelationshipRecordWrapper =>
         Ok(Json.toJson(RelationshipRecordStatusWrapper(relationship_record = relationshipList, status = ResponseStatus(status_code = "OK"))))
     } recover {
       case error =>
         error match {
-          case deceasedError: TransferorDeceasedError =>
+          case _: TransferorDeceasedError =>
             Logger.warn("listRelationship failed with deceased case error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND))))
-          case serviceError: ServiceError =>
+          case _: ServiceError =>
             Logger.warn("listRelationship failed with transferor not found error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND))))
-          case notFound: NotFoundException =>
+          case _: NotFoundException =>
             Logger.warn("listRelationship failed with 404 not found error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = CITIZEN_NOT_FOUND))))
-          case badRequest: BadRequestException =>
+          case _: BadRequestException =>
             Logger.warn("listRelationship failed with 400 bad request error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
           case internalServerError: InternalServerException =>
             Logger.warn("listRelationship failed with 500 internal server error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = SERVER_ERROR))))
-          case serviceUnavailable: ServiceUnavailableException =>
+          case _: ServiceUnavailableException =>
             Logger.warn("listRelationship failed with 503 service unavailable error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVICE_UNAVILABLE))))
           case otherError =>
@@ -124,22 +124,22 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
     }
   }
 
-  def updateRelationship(transferorNino: Nino) = authAction.async(parse.json) {
+  def updateRelationship(transferorNino: Nino): Action[JsValue] = authAction.async(parse.json) {
     implicit request =>
       withJsonBody[UpdateRelationshipRequestHolder] {
         updateRelationshipRequestHolder =>
           marriageAllowanceService.updateRelationship(updateRelationshipRequestHolder) map {
-            case _ => {
+            _ => {
               Ok(Json.toJson(UpdateRelationshipResponse(
                 status = ResponseStatus(status_code = "OK"))))
             }
           } recover {
             case error =>
               error match {
-                case recipientDeceased: RecipientDeceasedError =>
+                case _: RecipientDeceasedError =>
                   Logger.warn("Update Relationship failed with 400 recipient deceased", error.getMessage)
                   Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
-                case relationshipError: UpdateRelationshipError =>
+                case _: UpdateRelationshipError =>
                   Logger.warn("Update Relationship failed with UpdateRelationshipError(runtime) error", error.getMessage)
                   Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = CANNOT_UPDATE_RELATIONSHIP))))
                 case otherError =>

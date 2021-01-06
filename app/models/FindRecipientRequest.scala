@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,20 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, JsString, Json, Reads, Writes}
 import uk.gov.hmrc.domain.Nino
-import org.joda.time.LocalDate
-import play.api.libs.json.Writes
-import play.api.libs.json.Reads
-import play.api.libs.json.Format
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 object FindRecipientRequest {
   private val pattern = "dd/MM/yyyy"
-  implicit val dateFormat = Format[LocalDate](Reads.jodaLocalDateReads(pattern), Writes.jodaLocalDateWrites(pattern))
+  private def writes(pattern: String): Writes[LocalDate] = {
+    val datePattern: DateTimeFormatter = DateTimeFormatter.ofPattern(pattern)
+    Writes[LocalDate] { date => JsString(date.format(datePattern))}
+
+  }
+
+  implicit val dateFormat: Format[LocalDate] = Format[LocalDate](Reads.localDateReads(pattern), writes(pattern))
   implicit val formats = Json.format[FindRecipientRequest]
 }
 

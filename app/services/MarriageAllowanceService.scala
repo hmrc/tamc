@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors._
 import metrics.TamcMetrics
 import models.{TaxYear => TaxYearModel, _}
-import org.joda.time.LocalDate
-import org.joda.time.format.DateTimeFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import play.Logger
 import play.api.libs.json.Json
 import uk.gov.hmrc.domain.Nino
@@ -342,7 +342,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
   }
 
   private def convertToAvailedYears(relationshipRecordWrapper: RelationshipRecordWrapper)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Int]] = {
-    val format = DateTimeFormat.forPattern("yyyyMMdd")
+    val format = DateTimeFormatter.ofPattern("yyyyMMdd")
     val relationships = relationshipRecordWrapper.relationshipRecordList
     var availedYears: List[Int] = List()
     for (record <- relationships) {

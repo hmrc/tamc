@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,35 +19,29 @@ package connectors
 import java.util.UUID
 
 import com.google.inject.Inject
+import config.ApplicationConfig
 import errors._
 import metrics.TamcMetrics
 import models._
-import play.api.Mode.Mode
 import play.api.http.Status._
 import play.api.libs.json.JsValue
-import play.api.{Configuration, Environment, Logger}
+import play.api.Logger
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class MarriageAllowanceDESConnector @Inject()(val runModeConfiguration: Configuration,
-                                              environment: Environment,
-                                              val metrics: TamcMetrics,
-                                              http: HttpClient)
+class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
+                                              http: HttpClient,
+                                              appConfig: ApplicationConfig)
                                              (implicit ec: ExecutionContext)
-  extends MarriageAllowanceConnector with ServicesConfig {
+  extends MarriageAllowanceConnector {
 
-  override def mode: Mode = environment.mode
-
-
-  override val serviceUrl = baseUrl("marriage-allowance-des")
-  override val urlHeaderEnvironment = config("marriage-allowance-des").getString("environment").get
-  override val urlHeaderAuthorization = s"Bearer ${config("marriage-allowance-des").getString("authorization-token").get}"
-
+  override val serviceUrl: String = appConfig.serviceUrl
+  override val urlHeaderEnvironment: String = appConfig.urlHeaderEnvironment
+  override val urlHeaderAuthorization = s"Bearer ${appConfig.urlHeaderAuthorization}"
 
   val logger = Logger(this.getClass)
 

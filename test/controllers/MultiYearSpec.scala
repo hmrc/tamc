@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar 
     new GuiceApplicationBuilder()
       .overrides(
         bind[MarriageAllowanceService].toInstance(mockMarrageAllowanceService),
-        bind[AuthAction].toInstance(FakeAuthAction)
+        bind[AuthAction].to[FakeAuthAction]
       )
       .build()
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,37 +23,34 @@ import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
 import metrics.TamcMetrics
 import models._
-import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.test.UnitSpec
-import play.api.inject.bind
+import java.time.LocalDate
+import play.api.test.Injecting
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite {
+class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite with Injecting {
 
   val year = 2020
   val generatedNino = new Generator().nextNino
+  val cID = 123456789
+  val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
+     gender = Gender("M"), nino = generatedNino, dateOfMarriage = Some(LocalDate.of(year,12,12)))
+  val userRecord = UserRecord(cid = cID, timestamp = "20200116155359011123")
 
-  trait Setup {
-
-    val cID = 123456789
-    val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
-       gender = Gender("M"), nino = generatedNino, dateOfMarriage = Some(new LocalDate(year,12,12)))
-    val userRecord = UserRecord(cid = cID, timestamp = "20200116155359011123")
-
-  }
 
   val mockMarriageAllowanceDESConnector: MarriageAllowanceDESConnector = mock[MarriageAllowanceDESConnector]
   val mockTamcMetrics: TamcMetrics = mock[TamcMetrics]
@@ -71,12 +68,12 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
       bind[ApplicationConfig].toInstance(mockAppConfig)
     ).build()
 
-  def service = app.injector.instanceOf[MarriageAllowanceService]
+  def service = inject[MarriageAllowanceService]
   
 
   "getRecipientRelationship" should {
 
-    "return a UserRecord, list of TaxYearModel tuple given a valid FindRecipientRequest " in  new Setup {
+    "return a UserRecord, list of TaxYearModel tuple given a valid FindRecipientRequest " in {
 
       val taxYearModel = TaxYear(year, Some(true))
 
@@ -105,7 +102,7 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
     }
 
 
-    "return a DataRetrievalError error type based on error returned" in new Setup {
+    "return a DataRetrievalError error type based on error returned" in {
 
         when(mockMarriageAllowanceDESConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
           .thenReturn(Future.successful(Left(TooManyRequestsError)))
@@ -121,6 +118,7 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
     "return unit" when {
       "createRelationshipRequest tax year is none" in {
         when(mockEmailConnector.sendEmail(any())(any())).thenReturn(Future.successful(HttpResponse(200)))
+
         val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestNoTaxYearHolder
         val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
 
@@ -131,6 +129,7 @@ class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with Guice
     "when request is sent with deceased recipient in MarriageAllowanceService" should {
       "return a BadRequestException" in {
         when(mockMarriageAllowanceDESConnector.sendMultiYearCreateRelationshipRequest(any(), any())(any(), any())).thenReturn(Future.failed(new BadRequestException("{\"reason\": \"Participant is deceased\"}")))
+
         val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
         val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
 

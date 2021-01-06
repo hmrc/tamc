@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package test_utils
 
+import com.google.inject.Inject
 import controllers.auth.AuthAction
-import play.api.mvc.{Request, Result}
+import play.api.mvc.{AnyContent, BodyParser, BodyParsers, Request, Result}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-object FakeAuthAction extends AuthAction {
+class FakeAuthAction @Inject() (val parser: BodyParsers.Default)(implicit val executionContext: ExecutionContext) extends AuthAction {
   override protected def filter[A](request: Request[A]): Future[Option[Result]] = Future.successful(None)
+
 }
