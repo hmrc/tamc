@@ -20,7 +20,6 @@ import errors.{DataRetrievalError, ResponseValidationError}
 import metrics.TamcMetrics
 import models._
 import play.api.Logger
-import play.api.data.validation.ValidationError
 import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._

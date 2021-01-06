@@ -22,7 +22,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 object FindRecipientRequest {
-  //TODO this compiles but will probably return in wrong format, come back to this
   private val pattern = "dd/MM/yyyy"
   private def writes(pattern: String): Writes[LocalDate] = {
     val datePattern: DateTimeFormatter = DateTimeFormatter.ofPattern(pattern)
