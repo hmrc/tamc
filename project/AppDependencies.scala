@@ -8,7 +8,7 @@ object AppDependencies {
     ws,
     "uk.gov.hmrc" %% "domain"                     % "5.10.0-play-26",
     "uk.gov.hmrc" %% "emailaddress"               % "3.5.0",
-    "uk.gov.hmrc" %% "bootstrap-backend-play-26"  % "3.2.0",
+    "uk.gov.hmrc" %% "bootstrap-backend-play-26"  % "5.2.0",
     "uk.gov.hmrc" %% "tax-year"                   % "1.2.0"
   )
 

@@ -36,7 +36,7 @@ import play.api.test.{FakeHeaders, FakeRequest}
 import services.MarriageAllowanceService
 import test_utils._
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.http.Authorization
 import uk.gov.hmrc.play.test.UnitSpec
 import play.api.inject.bind
 import test_utils.TestData.Cids

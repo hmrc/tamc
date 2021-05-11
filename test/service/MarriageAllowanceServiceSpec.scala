@@ -44,7 +44,7 @@ import scala.concurrent.Future
 
 class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite with Injecting {
 
-  val year = 2020
+  val year = 2021
   val generatedNino = new Generator().nextNino
   val cID = 123456789
   val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",

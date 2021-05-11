@@ -47,12 +47,12 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${nino}")
-    http.GET[JsValue](path)(implicitly, buildHeaderCarrier(hc), ec)
+    http.GET[JsValue](path, Seq(), explicitHeaders)(implicitly, implicitly, ec)
   }
 
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${cid}/relationships?includeHistoric=${includeHistoric}")
-    http.GET[JsValue](path)(implicitly, buildHeaderCarrier(hc), ec)
+    http.GET[JsValue](path, Seq(), explicitHeaders)(implicitly, hc, ec)
   }
 
   def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {
@@ -149,7 +149,6 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
         }
     }
 
-    val updatedHeaderCarrier: HeaderCarrier = buildHeaderCarrier(hc).withExtraHeaders("CorrelationId" -> UUID.randomUUID().toString)
     val nino = ninoWithoutSpaces(findRecipientRequest.nino)
     val path = url(s"/marriage-allowance/citizen/$nino/check")
     val findRecipientRequestDes = FindRecipientRequestDes(findRecipientRequest)
@@ -157,7 +156,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
     metrics.incrementTotalCounter(ApiType.FindRecipient)
     val timer = metrics.startTimer(ApiType.FindRecipient)
 
-    http.POST(path, findRecipientRequestDes)(implicitly, httpRead, updatedHeaderCarrier, ec).map { response =>
+    http.POST(path, findRecipientRequestDes, explicitHeaders)(implicitly, httpRead, implicitly, ec).map { response =>
       timer.stop()
       response
 
@@ -182,11 +181,11 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
 
   def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
     val path = url(s"/marriage-allowance/02.00.00/citizen/${createRelationshipRequest.recipientCid}/relationship/${relType}")
-    http.POST(path, createRelationshipRequest)(MultiYearDesCreateRelationshipRequest.multiYearWrites, HttpReads.readRaw, buildHeaderCarrier(hc), ec)
+    http.POST(path, createRelationshipRequest, explicitHeaders)(MultiYearDesCreateRelationshipRequest.multiYearWrites, HttpReads.readRaw, hc, ec)
   }
 
   def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
     val path = url(s"/marriage-allowance/citizen/${updateRelationshipRequest.participant1.instanceIdentifier}/relationship")
-    http.PUT(path, updateRelationshipRequest)(DesUpdateRelationshipRequest.formats, HttpReads.readRaw, buildHeaderCarrier(hc), ec)
+    http.PUT(path, updateRelationshipRequest, explicitHeaders)(DesUpdateRelationshipRequest.formats, HttpReads.readRaw, hc, ec)
   }
 }
