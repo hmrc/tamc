@@ -36,3 +36,10 @@ lazy val microservice = Project(appName, file("."))
     retrieveManaged := true,
     routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._")
   )
+  .configs(IntegrationTest)
+  .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)
+  .settings(
+    unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest)(base => Seq(base / "it")).value,
+    addTestReportOption(IntegrationTest, "int-test-reports"),
+    parallelExecution in IntegrationTest := false
+  )
