@@ -29,12 +29,12 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{BAD_REQUEST, OK, contentAsString}
+import play.api.test.Helpers._
 import services.MarriageAllowanceService
 import test_utils.{FakeAuthAction, TestData}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.http.{BadRequestException, InternalServerException, NotFoundException, ServiceUnavailableException}
+import uk.gov.hmrc.http.{BadRequestException, InternalServerException, NotFoundException, ServiceUnavailableException, UpstreamErrorResponse}
 
 import scala.concurrent.Future
 
@@ -226,7 +226,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with
         val testCid = testData.user.cid.cid
 
         when(mockMarriageAllowanceService.listRelationship(meq(testNino))(any(), any()))
-          .thenReturn(Future.failed(new InternalServerException("Internal Server")))
+          .thenReturn(Future.failed(UpstreamErrorResponse("InternalServerError", INTERNAL_SERVER_ERROR)))
 
         val result = controller.listRelationship(testNino)(request)
         status(result) shouldBe OK
@@ -241,10 +241,9 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with
 
         val testData = TestData.Lists.serviceUnavailable
         val testNino = Nino(testData.user.nino)
-        val testCid = testData.user.cid.cid
 
         when(mockMarriageAllowanceService.listRelationship(meq(testNino))(any(), any()))
-          .thenReturn(Future.failed(new ServiceUnavailableException("Service Unavailable")))
+          .thenReturn(Future.failed(UpstreamErrorResponse("Service Unavailable", SERVICE_UNAVAILABLE)))
 
         val result = controller.listRelationship(testNino)(request)
         status(result) shouldBe OK
