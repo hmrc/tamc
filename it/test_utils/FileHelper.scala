@@ -2,7 +2,7 @@ package test_utils
 
 import scala.io.{BufferedSource, Source}
 
-object FilerHelper {
+object FileHelper {
 
   def loadFile(name: String): String = {
     var source: BufferedSource = null
