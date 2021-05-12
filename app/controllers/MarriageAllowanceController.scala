@@ -26,6 +26,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.http.UpstreamErrorResponse.WithStatusCode
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -46,21 +47,18 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
         case Left(_: DataRetrievalError) => Ok(Json.toJson(GetRelationshipResponse(
           status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
       } recover {
+        case error: ServiceError =>
+          Logger.warn("getRecipientRelationship failed with handled error", error.getMessage)
+          Ok(Json.toJson(GetRelationshipResponse(
+            status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
+        case error: TransferorDeceasedError =>
+          Logger.warn("getRecipientRelationship failed with handled error", error.getMessage)
+          Ok(Json.toJson(GetRelationshipResponse(
+            status = ResponseStatus(status_code = TRANSFERER_DECEASED))))
         case error =>
-          error match {
-            case _: ServiceError =>
-              Logger.warn("getRecipientRelationship failed with handled error", error.getMessage)
-              Ok(Json.toJson(GetRelationshipResponse(
-                status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
-            case _: TransferorDeceasedError =>
-              Logger.warn("getRecipientRelationship failed with handled error", error.getMessage)
-              Ok(Json.toJson(GetRelationshipResponse(
-                status = ResponseStatus(status_code = TRANSFERER_DECEASED))))
-            case _ =>
-              Logger.error("getRecipientRelationship failed with unhandled error", error.getMessage)
-              Ok(Json.toJson(GetRelationshipResponse(
-                status = ResponseStatus(status_code = OTHER_ERROR))))
-          }
+          Logger.error("getRecipientRelationship failed with unhandled error", error.getMessage)
+          Ok(Json.toJson(GetRelationshipResponse(
+            status = ResponseStatus(status_code = OTHER_ERROR))))
       }
     }
   }
@@ -111,10 +109,10 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
           case _: BadRequestException =>
             Logger.warn("listRelationship failed with 400 bad request error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
-          case internalServerError: InternalServerException =>
+          case WithStatusCode(INTERNAL_SERVER_ERROR, _) =>
             Logger.warn("listRelationship failed with 500 internal server error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = SERVER_ERROR))))
-          case _: ServiceUnavailableException =>
+          case WithStatusCode(SERVICE_UNAVAILABLE, _) =>
             Logger.warn("listRelationship failed with 503 service unavailable error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVICE_UNAVILABLE))))
           case otherError =>

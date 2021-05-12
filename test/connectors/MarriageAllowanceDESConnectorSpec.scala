@@ -40,10 +40,10 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Random
 
 class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuite with WireMockHelper with MockitoSugar with BeforeAndAfterEach {
 
-  //TODO look at using wiremock
   val mockMetrics: TamcMetrics = mock[TamcMetrics]
   val mockHttp: HttpClient = mock[HttpClient]
   val mockTimerContext: Timer.Context = mock[Timer.Context]
@@ -57,6 +57,7 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
   override def fakeApplication(): Application = {
     new GuiceApplicationBuilder()
       .configure(
+        "microservice.services.marriage-allowance-des.host" -> "127.0.0.1",
         "microservice.services.marriage-allowance-des.port" -> server.port(),
         "microservice.services.marriage-allowance-des.environment" -> "test",
         "microservice.services.marriage-allowance-des.authorization-token" -> "Bearer"
@@ -70,18 +71,15 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
   val generatedNino = new Generator().nextNino
   val url = s"/marriage-allowance/citizen/${generatedNino.nino}/check"
 
-
-
   def findRecipientRequest(nino: Nino = generatedNino) = {
     FindRecipientRequest(name = "testForename1", lastName = "testLastName", gender = Gender("M"), nino)
   }
-
 
   val instanceIdentifier: Cid = 123456789
   val updateTimestamp: Timestamp = "20200116155359011123"
   implicit val hc = HeaderCarrier()
   lazy val processingCodeOK = connector.ProcessingOK
-
+  val uuidRegex = """[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}"""
 
   def expectedJson(reasonCode: Int, returnCode: Int): JsValue = Json.parse(
     s"""{
@@ -124,8 +122,13 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
         val result = await(connector.findRecipient(findRecipientRequest()))
 
         result shouldBe Right(expectedResult)
-      }
 
+        server.verify(
+          postRequestedFor(urlEqualTo(url))
+            .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+            .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
+            .withHeader("CorrelationId", matching(uuidRegex)))
+      }
 
       "a valid nino is provided, which contains spaces" in {
 
@@ -147,7 +150,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
     "contain the correct headers to send to DES" in {
 
-      val uuidRegex = """[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}"""
       val json = expectedJson(processingCodeOK, processingCodeOK)
 
 
@@ -362,5 +364,101 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
       }
     }
 
+  }
+
+  "findCitizen" should {
+    val url = s"/marriage-allowance/citizen/$generatedNino"
+
+    "pass correct headers to des" in {
+
+      server.stubFor(
+        get(urlEqualTo(url))
+          .willReturn(ok("{}"))
+      )
+
+      await(connector.findCitizen(generatedNino))
+
+      server.verify(
+        getRequestedFor(urlEqualTo(url))
+          .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+          .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
+          .withHeader("CorrelationId", matching(uuidRegex))
+      )
+    }
+  }
+
+  "listRelationship" should {
+    val cid = Random.nextLong()
+    val url = s"/marriage-allowance/citizen/${cid}/relationships?includeHistoric=true"
+
+    "pass correct headers to des" in {
+
+      server.stubFor(
+        get(urlEqualTo(url))
+          .willReturn(ok("{}"))
+      )
+
+      await(connector.listRelationship(cid))
+
+      server.verify(
+        getRequestedFor(urlEqualTo(url))
+          .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+          .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
+          .withHeader("CorrelationId", matching(uuidRegex))
+      )
+    }
+  }
+
+  "sendMultiYearCreateRelationshipRequest" should {
+    val relType = Random.alphanumeric.take(5).mkString
+    val recipientCid = Random.alphanumeric.take(5).mkString
+    val relationshipRequest =
+      MultiYearDesCreateRelationshipRequest(recipientCid, "", "", "", None, None)
+    val url = s"/marriage-allowance/02.00.00/citizen/$recipientCid/relationship/$relType"
+
+    "pass correct headers to des" in {
+
+      server.stubFor(
+        post(urlEqualTo(url))
+          .willReturn(ok("{}"))
+      )
+
+      await(connector.sendMultiYearCreateRelationshipRequest(relType, relationshipRequest))
+
+      server.verify(
+        postRequestedFor(urlEqualTo(url))
+          .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+          .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
+          .withHeader("CorrelationId", matching(uuidRegex))
+      )
+    }
+  }
+
+  "updateAllowanceRelationship" should {
+
+    val instanceId = Random.alphanumeric.take(5).mkString
+    val url = s"/marriage-allowance/citizen/$instanceId/relationship"
+    val relationshipRequest = DesUpdateRelationshipRequest(
+      DesRecipientInformation(instanceId, ""),
+      DesTransferorInformation(""),
+      DesRelationshipInformation("", "", "")
+    )
+
+    "pass correct headers to des" in {
+
+      server.stubFor(
+        put(urlEqualTo(url))
+          .willReturn(ok("{}"))
+      )
+
+      await(connector.updateAllowanceRelationship(relationshipRequest))
+
+      server.verify(
+        putRequestedFor(urlEqualTo(url))
+          .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+          .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
+          .withHeader("CorrelationId", matching(uuidRegex))
+      )
+    }
   }
 }

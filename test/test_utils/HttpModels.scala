@@ -19,7 +19,7 @@ package test_utils
 import models.DesUpdateRelationshipRequest
 import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.http.Authorization
 
 case class HttpGETCallWithHeaders(url: String, env: Seq[(String, String)] = Seq(), bearerToken: Option[Authorization] = None)
 case class HttpPOSTCallWithHeaders(url: String, body: Any, env: Seq[(String, String)] = Seq(), bearerToken: Option[Authorization] = None)

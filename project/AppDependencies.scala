@@ -8,7 +8,7 @@ object AppDependencies {
     ws,
     "uk.gov.hmrc" %% "domain"                     % "5.10.0-play-26",
     "uk.gov.hmrc" %% "emailaddress"               % "3.5.0",
-    "uk.gov.hmrc" %% "bootstrap-backend-play-26"  % "3.2.0",
+    "uk.gov.hmrc" %% "bootstrap-backend-play-26"  % "5.2.0",
     "uk.gov.hmrc" %% "tax-year"                   % "1.2.0"
   )
 
@@ -18,7 +18,7 @@ object AppDependencies {
     "org.scalatestplus.play"  %% "scalatestplus-play" % "3.1.0",
     "org.mockito"              % "mockito-core"        % "3.6.0",
     "com.github.tomakehurst"   % "wiremock-jre8"      % "2.27.0"
-  ).map(_ % "test")
+  ).map(_ % "test,it")
 
   val all: Seq[ModuleID] = compile ++ test
 }

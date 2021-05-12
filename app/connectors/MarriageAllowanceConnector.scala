@@ -23,8 +23,9 @@ import play.api.Logger
 import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.http.logging.Authorization
+import uk.gov.hmrc.http.Authorization
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 trait MarriageAllowanceConnector {
@@ -60,6 +61,9 @@ trait MarriageAllowanceConnector {
 
   def buildHeaderCarrier(hc: HeaderCarrier): HeaderCarrier =
     hc.copy(authorization = Some(Authorization(urlHeaderAuthorization))).withExtraHeaders("Environment" -> urlHeaderEnvironment)
+
+  def explicitHeaders: List[(String, String)] =
+    List(HeaderNames.authorisation -> urlHeaderAuthorization, "Environment" -> urlHeaderEnvironment, "CorrelationId" -> UUID.randomUUID().toString)
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue]
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue]
