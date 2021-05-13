@@ -9,7 +9,7 @@ import play.api.libs.json.Json
 import play.api.mvc.AnyContentAsJson
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{status => getStatus, _}
-import test_utils.FilerHelper._
+import test_utils.FileHelper._
 import test_utils.IntegrationSpec
 import uk.gov.hmrc.domain.Generator
 
