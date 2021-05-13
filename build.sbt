@@ -27,7 +27,6 @@ lazy val microservice = Project(appName, file("."))
   .settings(scoverageSettings,
     majorVersion := 4,
     PlayKeys.playDefaultPort := 9909,
-    resolvers ++= Seq(Resolver.bintrayRepo("hmrc", "releases")),
     scalaSettings,
     publishingSettings,
     defaultSettings(),
