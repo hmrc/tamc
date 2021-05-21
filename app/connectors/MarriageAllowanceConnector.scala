@@ -62,8 +62,13 @@ trait MarriageAllowanceConnector {
   def buildHeaderCarrier(hc: HeaderCarrier): HeaderCarrier =
     hc.copy(authorization = Some(Authorization(urlHeaderAuthorization))).withExtraHeaders("Environment" -> urlHeaderEnvironment)
 
-  def explicitHeaders: List[(String, String)] =
-    List(HeaderNames.authorisation -> urlHeaderAuthorization, "Environment" -> urlHeaderEnvironment, "CorrelationId" -> UUID.randomUUID().toString)
+  def explicitHeaders(implicit hc: HeaderCarrier): List[(String, String)] =
+    List(
+      HeaderNames.authorisation -> urlHeaderAuthorization,
+      HeaderNames.xRequestId    -> hc.requestId.fold("-")(_.value),
+      HeaderNames.xSessionId    -> hc.sessionId.fold("-")(_.value),
+      "Environment"             -> urlHeaderEnvironment,
+      "CorrelationId"           -> UUID.randomUUID().toString)
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue]
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue]

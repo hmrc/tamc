@@ -77,7 +77,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
   val instanceIdentifier: Cid = 123456789
   val updateTimestamp: Timestamp = "20200116155359011123"
-  implicit val hc = HeaderCarrier()
+  val requestId = RequestId(Random.alphanumeric.take(10).mkString)
+  val sessionId = SessionId(Random.alphanumeric.take(10).mkString)
+  implicit val hc = HeaderCarrier().copy(requestId = Some(requestId), sessionId = Some(sessionId))
   lazy val processingCodeOK = connector.ProcessingOK
   val uuidRegex = """[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}"""
 
@@ -125,7 +127,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
         server.verify(
           postRequestedFor(urlEqualTo(url))
-            .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+            .withHeader(HeaderNames.authorisation, equalTo(connector.urlHeaderAuthorization))
+            .withHeader(HeaderNames.xRequestId, equalTo(requestId.value))
+            .withHeader(HeaderNames.xSessionId, equalTo(sessionId.value))
             .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
             .withHeader("CorrelationId", matching(uuidRegex)))
       }
@@ -161,7 +165,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
       val result = await(connector.findRecipient(findRecipientRequest()))
 
       server.verify(postRequestedFor(urlEqualTo(url))
-        .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+        .withHeader(HeaderNames.authorisation, equalTo(connector.urlHeaderAuthorization))
+        .withHeader(HeaderNames.xRequestId, equalTo(requestId.value))
+        .withHeader(HeaderNames.xSessionId, equalTo(sessionId.value))
         .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
         .withHeader("CorrelationId", matching(uuidRegex))
       )
@@ -380,7 +386,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
       server.verify(
         getRequestedFor(urlEqualTo(url))
-          .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+          .withHeader(HeaderNames.authorisation, equalTo(connector.urlHeaderAuthorization))
+          .withHeader(HeaderNames.xRequestId, equalTo(requestId.value))
+          .withHeader(HeaderNames.xSessionId, equalTo(sessionId.value))
           .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
           .withHeader("CorrelationId", matching(uuidRegex))
       )
@@ -402,7 +410,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
       server.verify(
         getRequestedFor(urlEqualTo(url))
-          .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+          .withHeader(HeaderNames.authorisation, equalTo(connector.urlHeaderAuthorization))
+          .withHeader(HeaderNames.xRequestId, equalTo(requestId.value))
+          .withHeader(HeaderNames.xSessionId, equalTo(sessionId.value))
           .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
           .withHeader("CorrelationId", matching(uuidRegex))
       )
@@ -427,7 +437,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
       server.verify(
         postRequestedFor(urlEqualTo(url))
-          .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+          .withHeader(HeaderNames.authorisation, equalTo(connector.urlHeaderAuthorization))
+          .withHeader(HeaderNames.xRequestId, equalTo(requestId.value))
+          .withHeader(HeaderNames.xSessionId, equalTo(sessionId.value))
           .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
           .withHeader("CorrelationId", matching(uuidRegex))
       )
@@ -455,7 +467,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
       server.verify(
         putRequestedFor(urlEqualTo(url))
-          .withHeader("Authorization", equalTo(connector.urlHeaderAuthorization))
+          .withHeader(HeaderNames.authorisation, equalTo(connector.urlHeaderAuthorization))
+          .withHeader(HeaderNames.xRequestId, equalTo(requestId.value))
+          .withHeader(HeaderNames.xSessionId, equalTo(sessionId.value))
           .withHeader("Environment", equalTo(connector.urlHeaderEnvironment))
           .withHeader("CorrelationId", matching(uuidRegex))
       )
