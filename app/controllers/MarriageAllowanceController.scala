@@ -109,10 +109,10 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
           case _: BadRequestException =>
             Logger.warn("listRelationship failed with 400 bad request error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
-          case WithStatusCode(INTERNAL_SERVER_ERROR, _) =>
+          case WithStatusCode(INTERNAL_SERVER_ERROR) =>
             Logger.warn("listRelationship failed with 500 internal server error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = SERVER_ERROR))))
-          case WithStatusCode(SERVICE_UNAVAILABLE, _) =>
+          case WithStatusCode(SERVICE_UNAVAILABLE) =>
             Logger.warn("listRelationship failed with 503 service unavailable error", error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVICE_UNAVILABLE))))
           case otherError =>

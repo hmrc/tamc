@@ -16,7 +16,7 @@
 
 package controllers
 
-import controllers.auth.{AuthAction, AuthConnector}
+import controllers.auth.AuthAction
 import errors.ErrorResponseStatus._
 import errors._
 import models._
@@ -24,10 +24,10 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
@@ -36,14 +36,10 @@ import play.api.test.{FakeHeaders, FakeRequest}
 import services.MarriageAllowanceService
 import test_utils._
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.http.Authorization
-import uk.gov.hmrc.play.test.UnitSpec
-import play.api.inject.bind
-import test_utils.TestData.Cids
 
 import scala.concurrent.Future
 
-class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with BeforeAndAfterEach {
+class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEach {
 
   val mockMarriageAllowanceService: MarriageAllowanceService = mock[MarriageAllowanceService]
 

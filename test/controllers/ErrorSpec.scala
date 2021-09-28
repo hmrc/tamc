@@ -19,7 +19,6 @@ package controllers
 import controllers.auth.AuthAction
 import errors.{FindRecipientCodedErrorResponse, RecipientDeceasedError, TransferorDeceasedError, UpdateRelationshipError}
 import org.mockito.ArgumentMatchers.{any, eq => meq}
-import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -31,15 +30,14 @@ import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.MarriageAllowanceService
-import test_utils.{FakeAuthAction, TestData}
+import test_utils.{FakeAuthAction, TestData, UnitSpec}
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.http.{BadRequestException, InternalServerException, NotFoundException, ServiceUnavailableException, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{BadRequestException, NotFoundException, UpstreamErrorResponse}
 
 import scala.concurrent.Future
 
 //TODO All these tests are testing MarriageAllowanceController, surely this should already be tested.
-class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with BeforeAndAfterEach {
+class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEach {
 
   val mockMarriageAllowanceService: MarriageAllowanceService = mock[MarriageAllowanceService]
 

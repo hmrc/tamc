@@ -16,12 +16,10 @@
 
 package models
 
-import java.io.FileNotFoundException
-
 import models.RelationshipEndReason._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json._
-import uk.gov.hmrc.play.test.UnitSpec
+import test_utils.UnitSpec
 
 class RelationshipEndReasonTest extends UnitSpec with GuiceOneAppPerSuite{
 
@@ -53,8 +51,8 @@ class RelationshipEndReasonTest extends UnitSpec with GuiceOneAppPerSuite{
   }
   "writes" should{
     "write the value to the Json correctly" in{
-      Json.toJson(Death) shouldBe JsString(Death.value)
-      Json.toJson(InvalidParticipant) shouldBe JsString(InvalidParticipant.value)
+      Json.toJson[RelationshipEndReason](Death) shouldBe JsString(Death.value)
+      Json.toJson[RelationshipEndReason](InvalidParticipant) shouldBe JsString(InvalidParticipant.value)
     }
   }
 }

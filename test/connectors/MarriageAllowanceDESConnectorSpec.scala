@@ -25,7 +25,6 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when, reset => resetMock}
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
@@ -33,16 +32,15 @@ import play.api.http.Status._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.{Injector, bind}
 import play.api.libs.json.{JsValue, Json}
-import test_utils.WireMockHelper
+import test_utils.{UnitSpec, WireMockHelper}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Random
 
-class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuite with WireMockHelper with MockitoSugar with BeforeAndAfterEach {
+class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuite with WireMockHelper with BeforeAndAfterEach {
 
   val mockMetrics: TamcMetrics = mock[TamcMetrics]
   val mockHttp: HttpClient = mock[HttpClient]

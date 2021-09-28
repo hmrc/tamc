@@ -18,28 +18,25 @@ package controllers.auth
 
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.{Action, AnyContent, Controller}
+import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Injecting}
+import test_utils.UnitSpec
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import javax.inject.Inject
 import scala.concurrent.Future
 import scala.language.postfixOps
 
-class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with Injecting {
+class AuthActionSpec@Inject()(cc: ControllerComponents) extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
   val mockAuthConnector: AuthConnector = mock[AuthConnector]
   val authAction: AuthAction = inject[AuthAction]
-
-  class Harness(authAction: AuthAction) extends Controller {
-    def onPageLoad(): Action[AnyContent] = authAction { request => Ok("") }
-  }
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
@@ -47,6 +44,10 @@ class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar
         bind[AuthConnector].toInstance(mockAuthConnector)
       )
       .build()
+
+  class Harness(authAction: AuthAction) extends BackendController(cc) {
+    def onPageLoad(): Action[AnyContent] = authAction { _ => Ok("") }
+  }
 
 
   "A user with no active session" should {

@@ -17,7 +17,7 @@
 package models
 
 import uk.gov.hmrc.domain.Generator
-import uk.gov.hmrc.play.test.UnitSpec
+import test_utils.UnitSpec
 
 class FindRecipientRequestDesTest extends UnitSpec {
 
