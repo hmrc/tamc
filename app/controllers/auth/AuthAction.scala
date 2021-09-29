@@ -20,7 +20,7 @@ import com.google.inject.{ImplementedBy, Inject}
 import config.ApplicationConfig
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc._
-import play.api.Logger
+import play.api.Logging
 import uk.gov.hmrc.auth.core.{AuthorisedFunctions, ConfidenceLevel, PlayAuthConnector}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
@@ -30,9 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AuthActionImpl @Inject()(val authConnector: AuthConnector, val parser: BodyParsers.Default)
                               (implicit val executionContext: ExecutionContext)
-  extends AuthAction with AuthorisedFunctions {
-
-  private val logger: Logger = Logger(getClass)
+  extends AuthAction with AuthorisedFunctions with Logging {
 
   override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)

@@ -22,18 +22,17 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents}
+import play.api.mvc.Results.Ok
+import play.api.mvc.{Action, AnyContent}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Injecting}
 import test_utils.UnitSpec
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import javax.inject.Inject
 import scala.concurrent.Future
 import scala.language.postfixOps
 
-class AuthActionSpec@Inject()(cc: ControllerComponents) extends UnitSpec with GuiceOneAppPerSuite with Injecting {
+class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
   val mockAuthConnector: AuthConnector = mock[AuthConnector]
   val authAction: AuthAction = inject[AuthAction]
@@ -45,7 +44,7 @@ class AuthActionSpec@Inject()(cc: ControllerComponents) extends UnitSpec with Gu
       )
       .build()
 
-  class Harness(authAction: AuthAction) extends BackendController(cc) {
+  class Harness() {
     def onPageLoad(): Action[AnyContent] = authAction { _ => Ok("") }
   }
 
@@ -54,7 +53,7 @@ class AuthActionSpec@Inject()(cc: ControllerComponents) extends UnitSpec with Gu
     "return UNAUTHORIZED" in {
       when(mockAuthConnector.authorise(any(), any())(any(), any()))
         .thenReturn(Future.failed(new SessionRecordNotFound))
-      val controller = new Harness(authAction)
+      val controller = new Harness()
       val result = controller.onPageLoad()(FakeRequest("", ""))
       status(result) shouldBe UNAUTHORIZED
     }
@@ -64,7 +63,7 @@ class AuthActionSpec@Inject()(cc: ControllerComponents) extends UnitSpec with Gu
     "return UNAUTHORIZED" in {
       when(mockAuthConnector.authorise(any(), any())(any(), any()))
         .thenReturn(Future.failed(InsufficientConfidenceLevel()))
-      val controller = new Harness(authAction)
+      val controller = new Harness()
       val result = controller.onPageLoad()(FakeRequest("", ""))
       status(result) shouldBe UNAUTHORIZED
     }
@@ -75,7 +74,7 @@ class AuthActionSpec@Inject()(cc: ControllerComponents) extends UnitSpec with Gu
       when(mockAuthConnector.authorise[Unit](any(), any())(any(), any()))
         .thenReturn(Future.successful(()))
 
-      val controller = new Harness(authAction)
+      val controller = new Harness()
 
       val result = controller.onPageLoad()(FakeRequest("", ""))
       status(result) shouldBe OK
