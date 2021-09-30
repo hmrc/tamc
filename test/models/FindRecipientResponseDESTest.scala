@@ -17,7 +17,7 @@
 package models
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.play.test.UnitSpec
+import test_utils.UnitSpec
 
 class FindRecipientResponseDESTest extends UnitSpec {
 

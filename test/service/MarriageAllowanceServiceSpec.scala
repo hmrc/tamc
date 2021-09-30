@@ -26,23 +26,22 @@ import models._
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
+import play.api.test.Injecting
 import services.MarriageAllowanceService
+import test_utils.UnitSpec
 import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.test.UnitSpec
-import java.time.LocalDate
-import play.api.test.Injecting
 
+import java.time.LocalDate
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class MarriageAllowanceServiceSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite with Injecting {
+class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
   val year = 2021
   val generatedNino = new Generator().nextNino

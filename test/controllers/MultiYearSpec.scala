@@ -18,9 +18,8 @@ package controllers
 
 import controllers.auth.AuthAction
 import models.MultiYearDesCreateRelationshipRequest
-import org.scalatest.mockito.MockitoSugar
-import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
@@ -31,15 +30,15 @@ import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{OK, contentAsString}
 import services.MarriageAllowanceService
-import test_utils.{FakeAuthAction, TestData}
 import test_utils.TestData.Cids
+import test_utils.{FakeAuthAction, TestData}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{Upstream4xxResponse, Upstream5xxResponse}
-import uk.gov.hmrc.play.test.UnitSpec
+import test_utils.UnitSpec
 
 import scala.concurrent.Future
 
-class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with BeforeAndAfterEach {
+class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEach {
 
   override def beforeEach(): Unit = {
     super.beforeEach()

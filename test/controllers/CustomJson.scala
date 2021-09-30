@@ -18,7 +18,7 @@ package controllers
 
 import models.MultiYearDesCreateRelationshipRequest
 import play.api.libs.json.Json
-import uk.gov.hmrc.play.test.UnitSpec
+import test_utils.UnitSpec
 
 class CustomJson extends UnitSpec {
   "MultiYearDesCreateRelationshipRequest be properly transformed to JSON" should {

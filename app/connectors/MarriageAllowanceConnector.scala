@@ -19,7 +19,7 @@ package connectors
 import errors.{DataRetrievalError, ResponseValidationError}
 import metrics.TamcMetrics
 import models._
-import play.api.Logger
+import play.api.Logging
 import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.Authorization
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-trait MarriageAllowanceConnector {
+trait MarriageAllowanceConnector extends Logging {
 
   val ProcessingOK = 1
   val ErrorReturnCode = -1011
@@ -45,7 +45,6 @@ trait MarriageAllowanceConnector {
   val metrics: TamcMetrics
   def url(path: String) = s"$serviceUrl$path"
   def ninoWithoutSpaces(nino: Nino) = nino.value.replaceAll(" ", "")
-  val logger: Logger
 
   def handleValidationError[A]: Seq[(JsPath, scala.Seq[JsonValidationError])] => Left[DataRetrievalError, A] =  err => {
 

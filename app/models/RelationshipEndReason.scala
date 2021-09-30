@@ -16,7 +16,7 @@
 
 package models
 
-import play.api.Logger
+import play.api.Logging
 import play.api.libs.json._
 
 sealed trait RelationshipEndReason {
@@ -66,8 +66,7 @@ object RelationshipEndReason{
     override def writes(o: RelationshipEndReason): JsValue = JsString(o.value)
   }
 
-  object RelationshipEndReasonHodsReads extends Reads[RelationshipEndReason]{
-    private val logger: Logger = Logger(getClass)
+  object RelationshipEndReasonHodsReads extends Reads[RelationshipEndReason] with Logging {
     override def reads(json: JsValue): JsResult[RelationshipEndReason] = json.as[String] match{
       case "Death (either participant)" => JsSuccess(Death)
       case "Divorce/Separation" => JsSuccess(Divorce)

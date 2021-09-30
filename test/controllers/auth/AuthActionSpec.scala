@@ -18,28 +18,24 @@ package controllers.auth
 
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.{Action, AnyContent, Controller}
+import play.api.mvc.Results.Ok
+import play.api.mvc.{Action, AnyContent}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Injecting}
+import test_utils.UnitSpec
 import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 import scala.language.postfixOps
 
-class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with Injecting {
+class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
   val mockAuthConnector: AuthConnector = mock[AuthConnector]
   val authAction: AuthAction = inject[AuthAction]
-
-  class Harness(authAction: AuthAction) extends Controller {
-    def onPageLoad(): Action[AnyContent] = authAction { request => Ok("") }
-  }
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
@@ -48,12 +44,16 @@ class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar
       )
       .build()
 
+  class Harness() {
+    def onPageLoad(): Action[AnyContent] = authAction { _ => Ok("") }
+  }
+
 
   "A user with no active session" should {
     "return UNAUTHORIZED" in {
       when(mockAuthConnector.authorise(any(), any())(any(), any()))
         .thenReturn(Future.failed(new SessionRecordNotFound))
-      val controller = new Harness(authAction)
+      val controller = new Harness()
       val result = controller.onPageLoad()(FakeRequest("", ""))
       status(result) shouldBe UNAUTHORIZED
     }
@@ -63,7 +63,7 @@ class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar
     "return UNAUTHORIZED" in {
       when(mockAuthConnector.authorise(any(), any())(any(), any()))
         .thenReturn(Future.failed(InsufficientConfidenceLevel()))
-      val controller = new Harness(authAction)
+      val controller = new Harness()
       val result = controller.onPageLoad()(FakeRequest("", ""))
       status(result) shouldBe UNAUTHORIZED
     }
@@ -74,7 +74,7 @@ class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar
       when(mockAuthConnector.authorise[Unit](any(), any())(any(), any()))
         .thenReturn(Future.successful(()))
 
-      val controller = new Harness(authAction)
+      val controller = new Harness()
 
       val result = controller.onPageLoad()(FakeRequest("", ""))
       status(result) shouldBe OK

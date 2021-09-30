@@ -25,7 +25,7 @@ import metrics.TamcMetrics
 import models._
 import play.api.http.Status._
 import play.api.libs.json.JsValue
-import play.api.Logger
+import play.api.Logging
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.HttpClient
@@ -37,13 +37,11 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
                                               http: HttpClient,
                                               appConfig: ApplicationConfig)
                                              (implicit ec: ExecutionContext)
-  extends MarriageAllowanceConnector {
+  extends MarriageAllowanceConnector with Logging {
 
   override val serviceUrl: String = appConfig.serviceUrl
   override val urlHeaderEnvironment: String = appConfig.urlHeaderEnvironment
   override val urlHeaderAuthorization = s"Bearer ${appConfig.urlHeaderAuthorization}"
-
-  val logger = Logger(this.getClass)
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${nino}")
