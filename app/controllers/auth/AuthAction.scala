@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import play.api.mvc._
 import play.api.Logging
 import uk.gov.hmrc.auth.core.{AuthorisedFunctions, ConfidenceLevel, PlayAuthConnector}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.HeaderCarrierConverter
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +33,7 @@ class AuthActionImpl @Inject()(val authConnector: AuthConnector, val parser: Bod
   extends AuthAction with AuthorisedFunctions with Logging {
 
   override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
     authorised(ConfidenceLevel.L200) {
       Future.successful(None)

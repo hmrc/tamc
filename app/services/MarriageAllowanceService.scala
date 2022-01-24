@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     } yield { Unit }
   }
 
-  private def getEmailTemplateId(taxYears: List[Int], isWelsh: Boolean)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] = {
+  private def getEmailTemplateId(taxYears: List[Int], isWelsh: Boolean)(implicit ec: ExecutionContext): Future[String] = {
     val pickTemp = pickTemplate(isWelsh)(_,_)
     Future {
       taxYears.contains(currentTaxYear) match {
@@ -341,7 +341,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     }
   }
 
-  private def convertToAvailedYears(relationshipRecordWrapper: RelationshipRecordWrapper)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Int]] = {
+  private def convertToAvailedYears(relationshipRecordWrapper: RelationshipRecordWrapper)(implicit ec: ExecutionContext): Future[List[Int]] = {
     val format = DateTimeFormatter.ofPattern("yyyyMMdd")
     val relationships = relationshipRecordWrapper.relationshipRecordList
     var availedYears: List[Int] = List()
