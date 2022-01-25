@@ -62,14 +62,14 @@ class PatternLayoutJsonEncoder @Inject()(configuration: Configuration) extends P
     )
     event.getMDCPropertyMap.toMap foreach { case (k, v) => eventNode.put(k.toLowerCase, v) }
 
-    s"${mapper.writeValueAsString(eventNode)}$LINE_SEPARATOR".getBytes(StandardCharsets.UTF_8)
+    s"${mapper.writeValueAsString(eventNode)}${System.lineSeparator}".getBytes(StandardCharsets.UTF_8)
   }
 
   override def footerBytes(): Array[Byte] =
-    LINE_SEPARATOR.getBytes(StandardCharsets.UTF_8)
+    System.lineSeparator.getBytes(StandardCharsets.UTF_8)
 
   override def headerBytes(): Array[Byte] =
-    LINE_SEPARATOR.getBytes(StandardCharsets.UTF_8)
+    System.lineSeparator.getBytes(StandardCharsets.UTF_8)
 
   override def start() {
     val patternLayout = new PatternLayout()
