@@ -16,18 +16,12 @@
 
 package services
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
 import com.google.inject.Inject
 import config.ApplicationConfig
 import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors._
 import metrics.TamcMetrics
 import models.{TaxYear => TaxYearModel, _}
-
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import play.Logger
 import play.api.Logging
 import play.api.libs.json.Json
 import uk.gov.hmrc.domain.Nino
@@ -35,6 +29,10 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.time.TaxYear
 
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import scala.concurrent.{ExecutionContext, Future}
 
 

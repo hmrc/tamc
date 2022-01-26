@@ -16,24 +16,23 @@
 
 package uk.gov.hmrc.play.logging.tamc
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.core.JsonGenerator.Feature
-import ch.qos.logback.core.pattern.PatternLayoutEncoderBase
+import ch.qos.logback.classic.PatternLayout
 import ch.qos.logback.classic.spi.{ILoggingEvent, ThrowableProxyUtil}
+import ch.qos.logback.core.pattern.PatternLayoutEncoderBase
+import com.fasterxml.jackson.core.json.JsonWriteFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.inject.Inject
+import org.apache.commons.lang3.time.FastDateFormat
+import play.api.Configuration
+
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
-
-import org.apache.commons.lang3.time.FastDateFormat
-import org.apache.commons.io.IOUtils._
-import play.api.Configuration
-import ch.qos.logback.classic.PatternLayout
-import com.google.inject.Inject
 
 class PatternLayoutJsonEncoder @Inject()(configuration: Configuration) extends PatternLayoutEncoderBase[ILoggingEvent] {
 
   import scala.collection.JavaConversions._
 
-  private val mapper = new ObjectMapper().configure(Feature.ESCAPE_NON_ASCII, true)
+  private val mapper = new ObjectMapper().configure(JsonWriteFeature.ESCAPE_NON_ASCII.mappedFeature(), true)
 
   lazy val appName = configuration.getOptional[String]("appName").getOrElse("APP NAME NOT SET")
 
