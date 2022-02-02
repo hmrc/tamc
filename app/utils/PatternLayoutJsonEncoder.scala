@@ -30,7 +30,7 @@ import java.nio.charset.StandardCharsets
 
 class PatternLayoutJsonEncoder @Inject()(configuration: Configuration) extends PatternLayoutEncoderBase[ILoggingEvent] {
 
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
   private val mapper = new ObjectMapper().configure(JsonWriteFeature.ESCAPE_NON_ASCII.mappedFeature(), true)
 
@@ -56,10 +56,10 @@ class PatternLayoutJsonEncoder @Inject()(configuration: Configuration) extends P
     eventNode.put("thread", event.getThreadName)
     eventNode.put("level", event.getLevel.toString)
 
-    Option(getContext).map(c =>
-      c.getCopyOfPropertyMap.toMap foreach { case (k, v) => eventNode.put(k.toLowerCase, v) }
+    Option(getContext).foreach(c =>
+      c.getCopyOfPropertyMap.asScala.toMap foreach { case (k, v) => eventNode.put(k.toLowerCase, v) }
     )
-    event.getMDCPropertyMap.toMap foreach { case (k, v) => eventNode.put(k.toLowerCase, v) }
+    event.getMDCPropertyMap.asScala.toMap foreach { case (k, v) => eventNode.put(k.toLowerCase, v) }
 
     s"${mapper.writeValueAsString(eventNode)}${System.lineSeparator}".getBytes(StandardCharsets.UTF_8)
   }

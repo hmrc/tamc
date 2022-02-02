@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,9 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.{OK, contentAsString}
 import services.MarriageAllowanceService
 import test_utils.TestData.Cids
-import test_utils.{FakeAuthAction, TestData}
+import test_utils.{FakeAuthAction, TestData, UnitSpec}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.{Upstream4xxResponse, Upstream5xxResponse}
-import test_utils.UnitSpec
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import scala.concurrent.Future
 
@@ -71,11 +70,10 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
       val transferorNino = Nino(testInput.transferor.nino)
       val transferorCid = testInput.transferor.cid.cid
       val transferorTs = testInput.transferor.timestamp.toString()
-      val recipientNino = Nino(testInput.recipient.nino)
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString()
 
-      val testData = s"""{"request":{"transferor_cid":${transferorCid}, "transferor_timestamp": "${transferorTs}", "recipient_cid":${recipientCid}, "recipient_timestamp":"${recipientTs}", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
+      val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"${recipientTs}", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
       status(result) shouldBe OK
@@ -90,11 +88,10 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
       val transferorNino = Nino(testInput.transferor.nino)
       val transferorCid = testInput.transferor.cid.cid
       val transferorTs = testInput.transferor.timestamp.toString()
-      val recipientNino = Nino(testInput.recipient.nino)
       val recipientCid = testInput.recipient.cid.cid
       val recipientTs = testInput.recipient.timestamp.toString()
 
-      val testData = s"""{"request":{"transferor_cid":${transferorCid}, "transferor_timestamp": "${transferorTs}", "recipient_cid":${recipientCid}, "recipient_timestamp":"${recipientTs}", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
+      val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
       status(result) shouldBe OK
@@ -142,7 +139,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
     "return RELATION-MIGHT-BE-CREATED if data is in conflict state (409) for multiple years" in {
 
       when(mockMarrageAllowanceService.createMultiYearRelationship(any(),any())(any(),any()))
-        .thenReturn(Future.failed(Upstream4xxResponse("Cannot update as Participant", 409, 409)))
+        .thenReturn(Future.failed(UpstreamErrorResponse("Cannot update as Participant", 409, 409)))
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
@@ -163,7 +160,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
     "return RELATION-MIGHT-BE-CREATED if request results in LTM000503 (503) for multiple years" in {
 
       when(mockMarrageAllowanceService.createMultiYearRelationship(any(),any())(any(),any()))
-        .thenReturn(Future.failed(Upstream5xxResponse("LTM000503", 503, 503)))
+        .thenReturn(Future.failed(UpstreamErrorResponse("LTM000503", 503, 503)))
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
