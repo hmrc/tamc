@@ -58,3 +58,4 @@ lazy val microservice = Project(appName, file("."))
   )
 scalacOptions ++= Seq("-P:silencer:pathFilters=routes")
 scalacOptions ++= suppressedImports
+scalacOptions ++= Seq("-deprecation", "-feature")

@@ -122,7 +122,7 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
         val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestNoTaxYearHolder
         val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
 
-          await(response) shouldBe ()
+          await(response) shouldBe a[Unit]
       }
     }
 
