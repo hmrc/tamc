@@ -28,6 +28,7 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.time.TaxYear
+import scala.language.postfixOps
 
 import java.text.SimpleDateFormat
 import java.time.LocalDate

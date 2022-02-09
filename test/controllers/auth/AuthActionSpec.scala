@@ -30,7 +30,6 @@ import test_utils.UnitSpec
 import uk.gov.hmrc.auth.core._
 
 import scala.concurrent.Future
-//import scala.language.postfixOps
 
 class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
