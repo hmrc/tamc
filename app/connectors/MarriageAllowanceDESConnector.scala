@@ -41,12 +41,12 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/$nino")
-    http.GET[JsValue](path, Seq(), explicitHeaders)(HttpReads.Implicits.readJsValue, hc, ec)
+    http.GET[JsValue](path, Seq(), explicitHeaders)(implicitly, implicitly, ec)
   }
 
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
     val path = url(s"/marriage-allowance/citizen/${cid}/relationships?includeHistoric=${includeHistoric}")
-    http.GET[JsValue](path, Seq(), explicitHeaders)(HttpReads.Implicits.readJsValue, hc, ec)
+    http.GET[JsValue](path, Seq(), explicitHeaders)(implicitly, hc, ec)
   }
 
   def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {

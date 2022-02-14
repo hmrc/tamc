@@ -9,7 +9,7 @@ object AppDependencies {
     "uk.gov.hmrc"   %% "domain"                      % "6.2.0-play-28",
     "uk.gov.hmrc"   %% "emailaddress"                % "3.5.0",
     "uk.gov.hmrc"   %% "bootstrap-backend-play-28"   % "5.18.0",
-    "uk.gov.hmrc"   %% "tax-year"                    % "1.2.0",
+    "uk.gov.hmrc"   %% "tax-year"                    % "1.2.0"
   )
 
   val test: Seq[ModuleID] = Seq(
