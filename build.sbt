@@ -1,6 +1,6 @@
-import play.sbt.routes.RoutesKeys.routesGenerator
-import sbt.Keys.{scalacOptions, _}
-import sbt.{Resolver, _}
+
+import sbt._
+import sbt.Keys._
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
