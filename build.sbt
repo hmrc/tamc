@@ -1,6 +1,6 @@
-import play.sbt.routes.RoutesKeys.routesGenerator
+
+import sbt._
 import sbt.Keys._
-import sbt.{Resolver, _}
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
@@ -11,6 +11,20 @@ import uk.gov.hmrc.{SbtArtifactory, SbtAutoBuildPlugin}
 val appName = "tamc"
 
 lazy val plugins: Seq[Plugins] = Seq.empty
+
+val suppressedImports = Seq("-P:silencer:lineContentFilters=import _root_.play.twirl.api.TwirlFeatureImports._",
+  "-P:silencer:lineContentFilters=import _root_.play.twirl.api.TwirlHelperImports._",
+  "-P:silencer:lineContentFilters=import _root_.play.twirl.api.Html",
+  "-P:silencer:lineContentFilters=import _root_.play.twirl.api.JavaScript",
+  "-P:silencer:lineContentFilters=import _root_.play.twirl.api.Txt",
+  "-P:silencer:lineContentFilters=import _root_.play.twirl.api.Xml",
+  "-P:silencer:lineContentFilters=import models._",
+  "-P:silencer:lineContentFilters=import controllers._",
+  "-P:silencer:lineContentFilters=import play.api.i18n._",
+  "-P:silencer:lineContentFilters=import views.html._",
+  "-P:silencer:lineContentFilters=import play.api.templates.PlayMagic._",
+  "-P:silencer:lineContentFilters=import play.api.mvc._",
+  "-P:silencer:lineContentFilters=import play.api.data._")
 
 lazy val scoverageSettings = {
   import scoverage.ScoverageKeys
@@ -38,7 +52,10 @@ lazy val microservice = Project(appName, file("."))
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)
   .settings(
-    unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest)(base => Seq(base / "it")).value,
+    IntegrationTest / unmanagedSourceDirectories := (IntegrationTest / baseDirectory)(base => Seq(base / "it")).value,
     addTestReportOption(IntegrationTest, "int-test-reports"),
-    parallelExecution in IntegrationTest := false
+    IntegrationTest / parallelExecution := false
   )
+scalacOptions ++= Seq("-P:silencer:pathFilters=routes")
+scalacOptions ++= suppressedImports
+scalacOptions ++= Seq("-deprecation", "-feature")

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
   lazy val connector: MarriageAllowanceDESConnector = app.injector.instanceOf[MarriageAllowanceDESConnector]
 
-
   val generatedNino = new Generator().nextNino
   val url = s"/marriage-allowance/citizen/${generatedNino.nino}/check"
 
@@ -103,7 +102,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
             }
           }
       }""")
-
 
   "findRecipient" should {
 
@@ -159,8 +157,7 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
         post(urlEqualTo(url))
           .willReturn(ok(json.toString()))
       )
-
-      val result = await(connector.findRecipient(findRecipientRequest()))
+      await(connector.findRecipient(findRecipientRequest()))
 
       server.verify(postRequestedFor(urlEqualTo(url))
         .withHeader(HeaderNames.authorisation, equalTo(connector.urlHeaderAuthorization))
@@ -170,7 +167,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
         .withHeader("CorrelationId", matching(uuidRegex))
       )
     }
-
 
     "return a ResponseValidator error given non valid Json" in {
 
@@ -238,7 +234,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
         }
       }
     }
-
 
     //TODO These are mocking HttpClient. We shouldn't be mocking this however functioanlity exists to capture these errors.
     "return a TimeOutError " when {
@@ -367,7 +362,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
         }
       }
     }
-
   }
 
   "findCitizen" should {

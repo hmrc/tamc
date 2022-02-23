@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,9 +169,8 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
 
       val recipient = TestData.Recipients.recHasNoAllowance
       val recipientNino = recipient.citizen.nino
-      val recipientCid = recipient.citizen.cid.cid
 
-      val testData = s"""{"name":"fgh","lastName":"asd", "nino":"${recipientNino}", "gender":"123"}"""
+      val testData = s"""{"name":"fgh","lastName":"asd", "nino":"$recipientNino", "gender":"123"}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.getRecipientRelationship(transferorNino)(request)
 
@@ -185,7 +184,6 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
 
         val testData = TestData.Lists.badRequest
         val testNino = Nino(testData.user.nino)
-        val testCid = testData.user.cid.cid
 
         when(mockMarriageAllowanceService.listRelationship(meq(testNino))(any(), any()))
           .thenReturn(Future.failed(new BadRequestException("Bad Request")))
@@ -203,7 +201,6 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
 
         val testData = TestData.Lists.citizenNotFound
         val testNino = Nino(testData.user.nino)
-        val testCid = testData.user.cid.cid
 
         when(mockMarriageAllowanceService.listRelationship(meq(testNino))(any(), any()))
           .thenReturn(Future.failed(new NotFoundException("Not Found")))
@@ -221,7 +218,6 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
 
         val testData = TestData.Lists.serverError
         val testNino = Nino(testData.user.nino)
-        val testCid = testData.user.cid.cid
 
         when(mockMarriageAllowanceService.listRelationship(meq(testNino))(any(), any()))
           .thenReturn(Future.failed(UpstreamErrorResponse("InternalServerError", INTERNAL_SERVER_ERROR)))
@@ -257,17 +253,15 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
     "handle Bad request and show transferor is deceased" in {
 
       val testInput = TestData.Updates.badRequest
-      val recipientNino = Nino(testInput.transferor.nino)
       val recipientCid = testInput.transferor.cid.cid
       val transferorNino = Nino(testInput.recipient.nino)
-      val transferorCid = testInput.recipient.cid.cid
       val recipientTs = testInput.transferor.timestamp.toString()
       val transferorTs = testInput.recipient.timestamp.toString()
 
       when(mockMarriageAllowanceService.updateRelationship(any())(any(), any()))
         .thenReturn(Future.failed(RecipientDeceasedError("Recipient Deceased")))
 
-      val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
+      val testData = s"""{"request":{"participant1":{"instanceIdentifier":"$recipientCid","updateTimestamp":"$recipientTs"},"participant2":{"updateTimestamp":"$transferorTs"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
       status(result) shouldBe OK
@@ -279,17 +273,15 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
     "handle Update relationship error" in {
 
       val testInput = TestData.Updates.citizenNotFound
-      val recipientNino = Nino(testInput.transferor.nino)
       val recipientCid = testInput.transferor.cid.cid
       val transferorNino = Nino(testInput.recipient.nino)
-      val transferorCid = testInput.recipient.cid.cid
       val recipientTs = testInput.transferor.timestamp.toString()
       val transferorTs = testInput.recipient.timestamp.toString()
 
       when(mockMarriageAllowanceService.updateRelationship(any())(any(), any()))
         .thenReturn(Future.failed(UpdateRelationshipError("Update Relationship Error")))
 
-      val testData = s"""{"request":{"participant1":{"instanceIdentifier":"${recipientCid}","updateTimestamp":"${recipientTs}"},"participant2":{"updateTimestamp":"${transferorTs}"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
+      val testData = s"""{"request":{"participant1":{"instanceIdentifier":"$recipientCid","updateTimestamp":"$recipientTs"},"participant2":{"updateTimestamp":"$transferorTs"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
       status(result) shouldBe OK

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,16 @@
 
 package connectors
 
-import java.util.UUID
-
 import com.google.inject.Inject
 import config.ApplicationConfig
 import errors._
 import metrics.TamcMetrics
 import models._
+import play.api.Logging
 import play.api.http.Status._
 import play.api.libs.json.JsValue
-import play.api.Logging
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http._
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.{HttpClient, _}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -36,7 +33,6 @@ import scala.util.control.NonFatal
 class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
                                               http: HttpClient,
                                               appConfig: ApplicationConfig)
-                                             (implicit ec: ExecutionContext)
   extends MarriageAllowanceConnector with Logging {
 
   override val serviceUrl: String = appConfig.serviceUrl
@@ -44,7 +40,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
   override val urlHeaderAuthorization = s"Bearer ${appConfig.urlHeaderAuthorization}"
 
   def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
-    val path = url(s"/marriage-allowance/citizen/${nino}")
+    val path = url(s"/marriage-allowance/citizen/$nino")
     http.GET[JsValue](path, Seq(), explicitHeaders)(implicitly, implicitly, ec)
   }
 

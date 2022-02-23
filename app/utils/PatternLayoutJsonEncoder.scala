@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,23 @@
 
 package uk.gov.hmrc.play.logging.tamc
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.core.JsonGenerator.Feature
-import ch.qos.logback.core.pattern.PatternLayoutEncoderBase
+import ch.qos.logback.classic.PatternLayout
 import ch.qos.logback.classic.spi.{ILoggingEvent, ThrowableProxyUtil}
+import ch.qos.logback.core.pattern.PatternLayoutEncoderBase
+import com.fasterxml.jackson.core.json.JsonWriteFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.inject.Inject
+import org.apache.commons.lang3.time.FastDateFormat
+import play.api.Configuration
+
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 
-import org.apache.commons.lang3.time.FastDateFormat
-import org.apache.commons.io.IOUtils._
-import play.api.Configuration
-import ch.qos.logback.classic.PatternLayout
-import com.google.inject.Inject
-
 class PatternLayoutJsonEncoder @Inject()(configuration: Configuration) extends PatternLayoutEncoderBase[ILoggingEvent] {
 
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
-  private val mapper = new ObjectMapper().configure(Feature.ESCAPE_NON_ASCII, true)
+  private val mapper = new ObjectMapper().configure(JsonWriteFeature.ESCAPE_NON_ASCII.mappedFeature(), true)
 
   lazy val appName = configuration.getOptional[String]("appName").getOrElse("APP NAME NOT SET")
 
@@ -57,19 +56,19 @@ class PatternLayoutJsonEncoder @Inject()(configuration: Configuration) extends P
     eventNode.put("thread", event.getThreadName)
     eventNode.put("level", event.getLevel.toString)
 
-    Option(getContext).map(c =>
-      c.getCopyOfPropertyMap.toMap foreach { case (k, v) => eventNode.put(k.toLowerCase, v) }
+    Option(getContext).foreach(c =>
+      c.getCopyOfPropertyMap.asScala.toMap foreach { case (k, v) => eventNode.put(k.toLowerCase, v) }
     )
-    event.getMDCPropertyMap.toMap foreach { case (k, v) => eventNode.put(k.toLowerCase, v) }
+    event.getMDCPropertyMap.asScala.toMap foreach { case (k, v) => eventNode.put(k.toLowerCase, v) }
 
-    s"${mapper.writeValueAsString(eventNode)}$LINE_SEPARATOR".getBytes(StandardCharsets.UTF_8)
+    s"${mapper.writeValueAsString(eventNode)}${System.lineSeparator}".getBytes(StandardCharsets.UTF_8)
   }
 
   override def footerBytes(): Array[Byte] =
-    LINE_SEPARATOR.getBytes(StandardCharsets.UTF_8)
+    System.lineSeparator.getBytes(StandardCharsets.UTF_8)
 
   override def headerBytes(): Array[Byte] =
-    LINE_SEPARATOR.getBytes(StandardCharsets.UTF_8)
+    System.lineSeparator.getBytes(StandardCharsets.UTF_8)
 
   override def start() {
     val patternLayout = new PatternLayout()

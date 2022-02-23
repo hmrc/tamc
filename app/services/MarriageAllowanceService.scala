@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,24 @@
 
 package services
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
 import com.google.inject.Inject
 import config.ApplicationConfig
 import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors._
 import metrics.TamcMetrics
 import models.{TaxYear => TaxYearModel, _}
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import play.Logger
+import play.api.Logging
 import play.api.libs.json.Json
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.time.TaxYear
+import scala.language.postfixOps
 
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -41,7 +41,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
                                          emailConnector: EmailConnector,
                                          metrics: TamcMetrics,
                                          appConfig: ApplicationConfig
-                                        ) {
+                                        ) extends Logging {
 
   val startTaxYear = appConfig.START_TAX_YEAR
   val maSupportedYearsCount = appConfig.MA_SUPPORTED_YEARS_COUNT
@@ -88,7 +88,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     } yield { Unit }
   }
 
-  private def getEmailTemplateId(taxYears: List[Int], isWelsh: Boolean)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[String] = {
+  private def getEmailTemplateId(taxYears: List[Int], isWelsh: Boolean)(implicit ec: ExecutionContext): Future[String] = {
     val pickTemp = pickTemplate(isWelsh)(_,_)
     Future {
       taxYears.contains(currentTaxYear) match {
@@ -238,10 +238,10 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
   private def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     emailConnector.sendEmail(sendEmailRequest) map {
       case _ =>
-        Logger.info("Sending email")
+        logger.info("Sending email")
     } recover {
       case error =>
-        Logger.warn("Cannot send email", error.getMessage)
+        logger.warn("Cannot send email")
     }
   }
 
@@ -341,7 +341,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     }
   }
 
-  private def convertToAvailedYears(relationshipRecordWrapper: RelationshipRecordWrapper)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Int]] = {
+  private def convertToAvailedYears(relationshipRecordWrapper: RelationshipRecordWrapper)(implicit ec: ExecutionContext): Future[List[Int]] = {
     val format = DateTimeFormatter.ofPattern("yyyyMMdd")
     val relationships = relationshipRecordWrapper.relationshipRecordList
     var availedYears: List[Int] = List()
