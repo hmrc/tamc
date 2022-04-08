@@ -25,7 +25,9 @@ import play.api.Logging
 import play.api.http.Status._
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.{HttpClient, _}
+import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReadsInstances.readEitherOf
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -39,9 +41,18 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
   override val urlHeaderEnvironment: String = appConfig.urlHeaderEnvironment
   override val urlHeaderAuthorization = s"Bearer ${appConfig.urlHeaderAuthorization}"
 
-  def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
+  def findCitizen(nino: Nino)(
+    implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
     val path = url(s"/marriage-allowance/citizen/$nino")
-    http.GET[JsValue](path, Seq(), explicitHeaders)(implicitly, implicitly, ec)
+    http
+      .GET[Either[UpstreamErrorResponse, HttpResponse]](path, Seq(), explicitHeaders)
+      .map {
+        case Right(response) => Right(response.json)
+        case Left(error) => Left(error)
+      }
+      .recover {
+        case error: HttpException => Left(UpstreamErrorResponse(error.message, BAD_GATEWAY))
+      }
   }
 
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
@@ -173,13 +184,36 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
     }
   }
 
-  def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
+  def sendMultiYearCreateRelationshipRequest(
+    relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(
+    implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
     val path = url(s"/marriage-allowance/02.00.00/citizen/${createRelationshipRequest.recipientCid}/relationship/${relType}")
-    http.POST(path, createRelationshipRequest, explicitHeaders)(MultiYearDesCreateRelationshipRequest.multiYearWrites, HttpReads.readRaw, hc, ec)
+    http
+      .POST[MultiYearDesCreateRelationshipRequest, Either[UpstreamErrorResponse, HttpResponse]](
+        path, createRelationshipRequest, explicitHeaders
+      )
+      .map {
+        case Right(response) => Right(response.json)
+        case Left(error) => Left(error)
+      }
+      .recover {
+        case error: HttpException => Left(UpstreamErrorResponse(error.message, BAD_GATEWAY))
+      }
   }
 
-  def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse] = {
+  def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(
+    implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] = {
     val path = url(s"/marriage-allowance/citizen/${updateRelationshipRequest.participant1.instanceIdentifier}/relationship")
-    http.PUT(path, updateRelationshipRequest, explicitHeaders)(DesUpdateRelationshipRequest.formats, HttpReads.readRaw, hc, ec)
+    http
+      .PUT[DesUpdateRelationshipRequest, Either[UpstreamErrorResponse, HttpResponse]](
+        path, updateRelationshipRequest, explicitHeaders
+      )
+      .map {
+        case Right(response) => Right(())
+        case Left(error) => Left(error)
+      }
+      .recover {
+        case error: HttpException => Left(UpstreamErrorResponse(error.message, BAD_GATEWAY))
+      }
   }
 }

@@ -138,10 +138,15 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
             startDate = Some(TaxYear(taxYear).starts.toString()),
             endDate = Some(TaxYear(taxYear).finishes.toString())))
         }
-       dataConnector.sendMultiYearCreateRelationshipRequest(request._1, request._2).map {
-          httpResponse =>
+      dataConnector
+        .sendMultiYearCreateRelationshipRequest(request._1, request._2)
+        .transform {
+          result =>
             timer.stop()
-            val json = httpResponse.json
+            result
+        }
+        .map {
+          case Right(json) =>
             (json \ "status").as[String] match {
               case ("Processing OK") =>
                 metrics.incrementSuccessCounter(ApiType.CreateRelationship)
@@ -151,6 +156,8 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
               case error =>
                 throw MultiYearCreateRelationshipError(error)
             }
+          case Left(error) =>
+            throw error
         }
     }
 
@@ -255,48 +262,52 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
   private def getTransferorRecord(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserRecord] = {
     metrics.incrementTotalCounter(ApiType.FindCitizen)
     val timer = metrics.startTimer(ApiType.FindCitizen)
-    dataConnector.findCitizen(nino).map {
-      json =>
-        timer.stop()
-        ((json
-          \ "Jtpr1311PerDetailsFindcallResponse"
-          \ "Jtpr1311PerDetailsFindExport"
-          \ "OutWCbdParameters"
-          \ "ReturnCode").as[Int],
-          (json
+    dataConnector
+      .findCitizen(nino)
+      .map {
+        case Right(json) =>
+          timer.stop()
+          ((json
             \ "Jtpr1311PerDetailsFindcallResponse"
             \ "Jtpr1311PerDetailsFindExport"
             \ "OutWCbdParameters"
-            \ "ReasonCode").as[Int]) match {
-              case (1, 1) =>
-                metrics.incrementSuccessCounter(ApiType.FindCitizen)
-                ((json
-                  \ "Jtpr1311PerDetailsFindcallResponse"
-                  \ "Jtpr1311PerDetailsFindExport"
-                  \ "OutItpr1Person"
-                  \ "DeceasedSignal").as[String]) match {
-                    case ("N") =>
-                      UserRecord(
-                        cid = (json
-                          \ "Jtpr1311PerDetailsFindcallResponse"
-                          \ "Jtpr1311PerDetailsFindExport"
-                          \ "OutItpr1Person"
-                          \ "InstanceIdentifier").as[Cid],
-                        timestamp = (json
-                          \ "Jtpr1311PerDetailsFindcallResponse"
-                          \ "Jtpr1311PerDetailsFindExport"
-                          \ "OutItpr1Person"
-                          \ "UpdateTimestamp").as[Timestamp],
-                        name = Some(CitizenName(
-                          (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "FirstForename").asOpt[String],
-                          (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "Surname").asOpt[String])))
-                    case (_) => throw new TransferorDeceasedError("Service returned response with deceased indicator as Y or null ")
-                  }
-              case (returnCode, reasonCode) =>
-                metrics.incrementSuccessCounter(ApiType.FindCitizen)
-                throw new FindTransferorError(returnCode, reasonCode)
-            }
-    }
+            \ "ReturnCode").as[Int],
+            (json
+              \ "Jtpr1311PerDetailsFindcallResponse"
+              \ "Jtpr1311PerDetailsFindExport"
+              \ "OutWCbdParameters"
+              \ "ReasonCode").as[Int]) match {
+                case (1, 1) =>
+                  metrics.incrementSuccessCounter(ApiType.FindCitizen)
+                  ((json
+                    \ "Jtpr1311PerDetailsFindcallResponse"
+                    \ "Jtpr1311PerDetailsFindExport"
+                    \ "OutItpr1Person"
+                    \ "DeceasedSignal").as[String]) match {
+                      case ("N") =>
+                        UserRecord(
+                          cid = (json
+                            \ "Jtpr1311PerDetailsFindcallResponse"
+                            \ "Jtpr1311PerDetailsFindExport"
+                            \ "OutItpr1Person"
+                            \ "InstanceIdentifier").as[Cid],
+                          timestamp = (json
+                            \ "Jtpr1311PerDetailsFindcallResponse"
+                            \ "Jtpr1311PerDetailsFindExport"
+                            \ "OutItpr1Person"
+                            \ "UpdateTimestamp").as[Timestamp],
+                          name = Some(CitizenName(
+                            (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "FirstForename").asOpt[String],
+                            (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "Surname").asOpt[String])))
+                      case (_) => throw new TransferorDeceasedError("Service returned response with deceased indicator as Y or null ")
+                    }
+                case (returnCode, reasonCode) =>
+                  metrics.incrementSuccessCounter(ApiType.FindCitizen)
+                  throw new FindTransferorError(returnCode, reasonCode)
+              }
+        case Left(error) =>
+          throw error
+      }
   }
 
   private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
@@ -317,16 +328,26 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
   private def sendUpdateRelationshipRequest(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     metrics.incrementTotalCounter(ApiType.UpdateRelationship)
     val timer = metrics.startTimer(ApiType.UpdateRelationship)
-    dataConnector.updateAllowanceRelationship(updateRelationshipRequest).map {
-      httpResponse =>
-        timer.stop()
-        httpResponse.status match {
-          case 200  => metrics.incrementSuccessCounter(ApiType.UpdateRelationship)
-                      Future.successful(Unit)
-          case 400  => throw RecipientDeceasedError("Service returned response with 400 - recipient deceased")
-          case _    => throw UpdateRelationshipError("An unexpected error has occured while updating the relationship")
-        }
-    }
+    dataConnector
+      .updateAllowanceRelationship(updateRelationshipRequest)
+      .transform {
+        result =>
+          timer.stop()
+          result
+      }
+      .flatMap {
+        case Right(()) =>
+          metrics.incrementSuccessCounter(ApiType.UpdateRelationship)
+          Future.successful(())
+        case Left(error) if error.statusCode == 400 =>
+          Future.failed(
+            RecipientDeceasedError("Service returned response with 400 - recipient deceased")
+          )
+        case Left(error) =>
+          Future.failed(
+            UpdateRelationshipError("An unexpected error has occured while updating the relationship")
+          )
+      }
   }
 
   private def listRelationship(cid: Cid)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {
