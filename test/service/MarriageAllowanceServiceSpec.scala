@@ -83,7 +83,7 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
         .thenReturn(Future.successful(Right(userRecord)))
 
       when(mockMarriageAllowanceDESConnector.findCitizen(ArgumentMatchers.eq(generatedNino))(ArgumentMatchers.any(), ArgumentMatchers.any()))
-        .thenReturn(Future.successful(findCitizenJson))
+        .thenReturn(Future.successful(Right(findCitizenJson)))
 
       when(mockMarriageAllowanceDESConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future.successful(listRelationshipdJson))
