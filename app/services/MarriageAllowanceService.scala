@@ -320,7 +320,8 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     dataConnector.findRecipient(findRecipientRequest)
   }
 
-  private def listRelationshipRecord(userRecord: UserRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {
+  private def listRelationshipRecord(userRecord: UserRecord)(
+    implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {
     metrics.incrementTotalCounter(ApiType.ListRelationship)
     val timer = metrics.startTimer(ApiType.ListRelationship)
     dataConnector
@@ -334,7 +335,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
         case Right(json) =>
           metrics.incrementSuccessCounter(ApiType.ListRelationship)
           Future.successful(
-            Json.parse("" + json + "")
+            json
               .as[RelationshipRecordWrapper]
               .copy(userRecord = Some(userRecord))
           )
@@ -371,12 +372,19 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
   private def listRelationship(cid: Cid)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {
     metrics.incrementTotalCounter(ApiType.ListRelationship)
     val timer = metrics.startTimer(ApiType.ListRelationship)
-
-    dataConnector.listRelationship(cid).map {
-      json =>
-        timer.stop()
-        metrics.incrementSuccessCounter(ApiType.ListRelationship)
-        Json.parse("" + json + "").as[RelationshipRecordWrapper]
+    dataConnector
+      .listRelationship(cid)
+      .transform {
+        result =>
+          timer.stop()
+          result
+      }
+      .flatMap {
+        case Right(json) =>
+          metrics.incrementSuccessCounter(ApiType.ListRelationship)
+          Future.successful(json.as[RelationshipRecordWrapper])
+        case Left(error) =>
+          Future.failed(error)
     }
   }
 
