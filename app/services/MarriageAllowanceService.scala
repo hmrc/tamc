@@ -242,14 +242,20 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
 
   }
 
-  private def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
-    emailConnector.sendEmail(sendEmailRequest) map {
-      case _ =>
-        logger.info("Sending email")
-    } recover {
-      case error =>
-        logger.warn("Cannot send email")
-    }
+  private def sendEmail(sendEmailRequest: SendEmailRequest)(
+    implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
+    emailConnector
+      .sendEmail(sendEmailRequest)
+      .map {
+        case Right(()) =>
+          logger.info("Sending email")
+        case Left(error) =>
+          logger.warn(s"Cannot send email: $error")
+      }
+      .recover {
+        case error =>
+          logger.warn(s"Cannot send email: $error")
+      }
   }
 
   def listRelationship(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {
