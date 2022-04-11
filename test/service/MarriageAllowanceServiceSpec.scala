@@ -43,7 +43,7 @@ import scala.concurrent.Future
 
 class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
-  val year = 2021
+  val year = LocalDate.now.getYear
   val generatedNino = new Generator().nextNino
   val cID = 123456789
   val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",

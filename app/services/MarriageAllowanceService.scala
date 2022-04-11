@@ -23,7 +23,6 @@ import errors._
 import metrics.TamcMetrics
 import models.{TaxYear => TaxYearModel, _}
 import play.api.Logging
-import play.api.libs.json.Json
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
