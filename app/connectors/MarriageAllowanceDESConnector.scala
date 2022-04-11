@@ -55,9 +55,18 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
       }
   }
 
-  def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue] = {
+  def listRelationship(cid: Cid, includeHistoric: Boolean = true)(
+    implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
     val path = url(s"/marriage-allowance/citizen/${cid}/relationships?includeHistoric=${includeHistoric}")
-    http.GET[JsValue](path, Seq(), explicitHeaders)(implicitly, hc, ec)
+    http
+      .GET[Either[UpstreamErrorResponse, HttpResponse]](path, Seq(), explicitHeaders)
+      .map {
+        case Right(response) => Right(response.json)
+        case Left(error) => Left(error)
+      }
+      .recover {
+        case error: HttpException => Left(UpstreamErrorResponse(error.message, BAD_GATEWAY))
+      }
   }
 
   def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {

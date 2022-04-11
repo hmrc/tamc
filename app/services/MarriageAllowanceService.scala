@@ -323,11 +323,23 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
   private def listRelationshipRecord(userRecord: UserRecord)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {
     metrics.incrementTotalCounter(ApiType.ListRelationship)
     val timer = metrics.startTimer(ApiType.ListRelationship)
-    dataConnector.listRelationship(userRecord.cid).map {
-      json =>
-        timer.stop()
-        metrics.incrementSuccessCounter(ApiType.ListRelationship)
-        Json.parse("" + json + "").as[RelationshipRecordWrapper].copy(userRecord = Some(userRecord))
+    dataConnector
+      .listRelationship(userRecord.cid)
+      .transform {
+        result =>
+          timer.stop()
+          result
+      }
+      .flatMap {
+        case Right(json) =>
+          metrics.incrementSuccessCounter(ApiType.ListRelationship)
+          Future.successful(
+            Json.parse("" + json + "")
+              .as[RelationshipRecordWrapper]
+              .copy(userRecord = Some(userRecord))
+          )
+        case Left(error) =>
+          Future.failed(error)
     }
   }
 

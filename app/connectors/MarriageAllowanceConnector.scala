@@ -72,7 +72,8 @@ trait MarriageAllowanceConnector extends Logging {
   def findCitizen(nino: Nino)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]]
 
-  def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue]
+  def listRelationship(cid: Cid, includeHistoric: Boolean = true)(
+    implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]]
 
   def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]]
 
