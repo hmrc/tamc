@@ -103,10 +103,16 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
           case _: ServiceError =>
             logger.warn(error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND))))
+          case error: UpstreamErrorResponse if error.statusCode == NOT_FOUND =>
+            logger.warn(error.getMessage)
+            Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = CITIZEN_NOT_FOUND))))
           case _: NotFoundException =>
             logger.warn(error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = CITIZEN_NOT_FOUND))))
           case _: BadRequestException =>
+            logger.warn(error.getMessage)
+            Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
+          case error: UpstreamErrorResponse if error.statusCode == BAD_REQUEST =>
             logger.warn(error.getMessage)
             Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
           case WithStatusCode(INTERNAL_SERVER_ERROR) =>
