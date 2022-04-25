@@ -28,7 +28,6 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
-import play.api.http.Status.OK
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -44,7 +43,7 @@ import scala.concurrent.Future
 
 class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
-  val year = 2021
+  val year = LocalDate.now.getYear
   val generatedNino = new Generator().nextNino
   val cID = 123456789
   val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
@@ -83,10 +82,12 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
         .thenReturn(Future.successful(Right(userRecord)))
 
       when(mockMarriageAllowanceDESConnector.findCitizen(ArgumentMatchers.eq(generatedNino))(ArgumentMatchers.any(), ArgumentMatchers.any()))
-        .thenReturn(Future.successful(findCitizenJson))
+        .thenReturn(Future.successful(Right(findCitizenJson)))
 
       when(mockMarriageAllowanceDESConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
-        .thenReturn(Future.successful(listRelationshipdJson))
+        .thenReturn(
+          Future.successful(Right(listRelationshipdJson))
+        )
 
       when(mockAppConfig.START_TAX_YEAR).thenReturn(2015)
       when(mockAppConfig.MA_SUPPORTED_YEARS_COUNT).thenReturn(5)
@@ -98,7 +99,6 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
       val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
 
       result shouldBe Right(expectedResponse)
-
     }
 
 
@@ -117,7 +117,9 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
   "when createMultiYearRelationship" should {
     "return unit" when {
       "createRelationshipRequest tax year is none" in {
-        when(mockEmailConnector.sendEmail(any())(any())).thenReturn(Future.successful(HttpResponse(OK, Json.toJson("{}"), Map("" -> Seq("")))))
+        when(mockEmailConnector.sendEmail(any())(any())).thenReturn(
+          Future.successful(Right(()))
+        )
 
         val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestNoTaxYearHolder
         val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)

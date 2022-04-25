@@ -69,10 +69,19 @@ trait MarriageAllowanceConnector extends Logging {
       "Environment"             -> urlHeaderEnvironment,
       "CorrelationId"           -> UUID.randomUUID().toString)
 
-  def findCitizen(nino: Nino)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue]
-  def listRelationship(cid: Cid, includeHistoric: Boolean = true)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[JsValue]
+  def findCitizen(nino: Nino)(
+    implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]]
+
+  def listRelationship(cid: Cid, includeHistoric: Boolean = true)(
+    implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]]
+
   def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]]
-  def sendMultiYearCreateRelationshipRequest(relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse]
-  def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[HttpResponse]
+
+  def sendMultiYearCreateRelationshipRequest(
+    relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(
+    implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]]
+
+  def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(
+    implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]]
 
 }

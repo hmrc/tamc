@@ -19,7 +19,10 @@ package connectors
 import com.google.inject.Inject
 import config.ApplicationConfig
 import models.SendEmailRequest
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
+import play.api.http.Status._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse, HttpException}
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReadsInstances.readEitherOf
 import scala.concurrent.{ExecutionContext, Future}
 
 class EmailConnector @Inject()(http: HttpClient, appConfig: ApplicationConfig)(implicit val ec: ExecutionContext) {
@@ -28,6 +31,17 @@ class EmailConnector @Inject()(http: HttpClient, appConfig: ApplicationConfig)(i
 
   def url(path: String) = s"$emailUrl$path"
 
-  def sendEmail(sendEmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HttpResponse] =
-    http.POST(url("/hmrc/email"), sendEmailRequest)
+  def sendEmail(sendEmailRequest: SendEmailRequest)(
+    implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] =
+    http
+      .POST[SendEmailRequest, Either[UpstreamErrorResponse, HttpResponse]](
+        url("/hmrc/email"), sendEmailRequest
+      )
+      .map {
+        case Right(_) => Right(())
+        case Left(error) => Left(error)
+      }
+      .recover {
+        case error: HttpException => Left(UpstreamErrorResponse(error.message, BAD_GATEWAY))
+      }
 }
