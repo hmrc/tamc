@@ -224,6 +224,9 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
         if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(isCurrent = true))
           (pickTemp(appConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID, appConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID), startDateNextYear, endDateNextYear)
         else (pickTemp(appConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH, appConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR), "", endDateCurrYear)
+      case (reason, role) => throw new NotImplementedError(
+        s"reason and role not handled: $reason, $role"
+      )
     }
   }
 
