@@ -56,6 +56,10 @@ lazy val microservice = Project(appName, file("."))
     addTestReportOption(IntegrationTest, "int-test-reports"),
     IntegrationTest / parallelExecution := false
   )
-scalacOptions ++= Seq("-P:silencer:pathFilters=routes")
+scalacOptions ++= Seq(
+  "-deprecation",
+  "-feature",
+  "-P:silencer:pathFilters=routes",
+  "-Xfatal-warnings"
+)
 scalacOptions ++= suppressedImports
-scalacOptions ++= Seq("-deprecation", "-feature")
