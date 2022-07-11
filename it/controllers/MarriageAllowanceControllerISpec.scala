@@ -21,9 +21,9 @@ import errors.ErrorResponseStatus
 import errors.ErrorResponseStatus.{CITIZEN_NOT_FOUND, RECIPIENT_NOT_FOUND, SERVER_ERROR}
 import models._
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, JsNull}
 import play.api.mvc.AnyContentAsJson
-import play.api.test.FakeRequest
+import play.api.test.{FakeRequest, FakeHeaders}
 import play.api.test.Helpers.{status => getStatus, _}
 import test_utils.FileHelper._
 import test_utils.IntegrationSpec
@@ -55,7 +55,14 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec {
           val findRecipientRequest = FindRecipientRequest("", "", Gender("M"), generatedNino)
           val json = AnyContentAsJson(Json.toJson(findRecipientRequest))
 
-          val request = FakeRequest(POST, s"/paye/$generatedNino/get-recipient-relationship").withBody(json)
+          val request = FakeRequest(
+            method = POST,
+            uri = s"/paye/$generatedNino/get-recipient-relationship",
+            headers = FakeHeaders(Seq(
+              "Authorization" -> "Bearer bearer-token"
+            )),
+            body = json
+          )
 
           val result = route(fakeApplication(), request)
           val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND)))
@@ -70,7 +77,14 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec {
 
     "return service error code" when {
 
-      val request = FakeRequest(GET, s"/paye/$generatedNino/list-relationship")
+      val request = FakeRequest(
+        method = GET,
+        uri = s"/paye/$generatedNino/list-relationship",
+        headers = FakeHeaders(Seq(
+          "Authorization" -> "Bearer bearer-token"
+        )),
+        body = JsNull
+      )
 
       List(
         notFound() -> CITIZEN_NOT_FOUND -> "404",
