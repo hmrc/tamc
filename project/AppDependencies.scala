@@ -15,7 +15,7 @@ object AppDependencies {
   val test: Seq[ModuleID] = Seq(
     "org.jsoup"                % "jsoup"              % "1.15.2",
     "org.scalatestplus.play"  %% "scalatestplus-play" % "5.1.0",
-    "org.mockito"              % "mockito-core"       % "4.5.1",
+    "org.mockito"              % "mockito-core"       % "4.6.1",
     "com.github.tomakehurst"   % "wiremock-jre8"      % "2.27.2",
     "com.vladsch.flexmark"     % "flexmark-all"       % "0.35.10"
   ).map(_ % "test,it")
