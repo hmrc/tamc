@@ -17,7 +17,7 @@ object AppDependencies {
     "org.scalatestplus.play"  %% "scalatestplus-play" % "5.1.0",
     "org.mockito"              % "mockito-core"       % "4.6.1",
     "com.github.tomakehurst"   % "wiremock-jre8"      % "2.27.2",
-    "com.vladsch.flexmark"     % "flexmark-all"       % "0.35.10"
+    "com.vladsch.flexmark"     % "flexmark-all"       % "0.36.8"
   ).map(_ % "test,it")
 
   private val silencerDependencies: Seq[ModuleID] = Seq(
