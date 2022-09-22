@@ -67,7 +67,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec {
           val result = route(fakeApplication(), request)
           val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND)))
 
-          result.map(getStatus) shouldBe Some(OK)
+          result.map(getStatus) shouldBe Some(errorCode)
           result.map(contentAsJson) shouldBe Some(expected)
         }
     }
