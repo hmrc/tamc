@@ -75,11 +75,11 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
             logger.warn(badRequest.getMessage)
             BadRequest(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RECIPIENT_DECEASED))))
-          case conflict: Upstream4xxResponse if conflict.message.contains("Cannot update as Participant") =>
+          case conflict: UpstreamErrorResponse if conflict.message.contains("Cannot update as Participant") =>
             logger.warn(conflict.getMessage)
             Conflict(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED))))
-          case ex: Upstream5xxResponse if ex.message.contains("LTM000503") =>
+          case ex: UpstreamErrorResponse if ex.message.contains("LTM000503") =>
             logger.warn(ex.getMessage)
             Conflict(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED))))
