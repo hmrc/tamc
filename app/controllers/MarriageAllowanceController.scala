@@ -44,7 +44,8 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
             user_record = Some(recipientRecord),
             availableYears = Some(taxYears),
             status = ResponseStatus(status_code = "OK"))))
-        case Left(_: DataRetrievalError) => NotFound(Json.toJson(GetRelationshipResponse(
+        case Left(_: DataRetrievalError) =>
+          NotFound(Json.toJson(GetRelationshipResponse(
           status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
       } recover {
         case error: ServiceError =>
@@ -76,7 +77,6 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
             BadRequest(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RECIPIENT_DECEASED))))
           case conflict: UpstreamErrorResponse if conflict.message.contains("Cannot update as Participant") =>
-            println(Console.YELLOW + conflict + Console.RESET)
             logger.warn(conflict.getMessage)
             Conflict(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED))))
