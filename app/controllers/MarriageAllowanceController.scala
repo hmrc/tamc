@@ -44,20 +44,21 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
             user_record = Some(recipientRecord),
             availableYears = Some(taxYears),
             status = ResponseStatus(status_code = "OK"))))
-        case Left(_: DataRetrievalError) => Ok(Json.toJson(GetRelationshipResponse(
+        case Left(_: DataRetrievalError) =>
+          NotFound(Json.toJson(GetRelationshipResponse(
           status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
       } recover {
         case error: ServiceError =>
           logger.warn(error.getMessage)
-          Ok(Json.toJson(GetRelationshipResponse(
+          NotFound(Json.toJson(GetRelationshipResponse(
             status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
         case error: TransferorDeceasedError =>
           logger.warn(error.getMessage)
-          Ok(Json.toJson(GetRelationshipResponse(
+          BadRequest(Json.toJson(GetRelationshipResponse(
             status = ResponseStatus(status_code = TRANSFERER_DECEASED))))
         case error =>
           logger.error(error.getMessage)
-          Ok(Json.toJson(GetRelationshipResponse(
+          InternalServerError(Json.toJson(GetRelationshipResponse(
             status = ResponseStatus(status_code = OTHER_ERROR))))
       }
     }
@@ -73,15 +74,15 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
         } recover {
           case badRequest: BadRequestException if badRequest.message.contains("Participant is deceased") =>
             logger.warn(badRequest.getMessage)
-            Ok(Json.toJson(CreateRelationshipResponse(
+            BadRequest(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RECIPIENT_DECEASED))))
-          case conflict: Upstream4xxResponse if conflict.message.contains("Cannot update as Participant") =>
+          case conflict: UpstreamErrorResponse if conflict.message.contains("Cannot update as Participant") =>
             logger.warn(conflict.getMessage)
-            Ok(Json.toJson(CreateRelationshipResponse(
+            Conflict(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED))))
-          case ex: Upstream5xxResponse if ex.message.contains("LTM000503") =>
+          case ex: UpstreamErrorResponse if ex.message.contains("LTM000503") =>
             logger.warn(ex.getMessage)
-            Ok(Json.toJson(CreateRelationshipResponse(
+            Conflict(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED))))
           case ex =>
             logger.error(ex.getMessage)
@@ -99,28 +100,28 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
         error match {
           case _: TransferorDeceasedError =>
             logger.warn(error.getMessage)
-            Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND))))
+            NotFound(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND))))
           case _: ServiceError =>
             logger.warn(error.getMessage)
-            Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND))))
+            NotFound(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND))))
           case error: UpstreamErrorResponse if error.statusCode == NOT_FOUND =>
             logger.warn(error.getMessage)
-            Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = CITIZEN_NOT_FOUND))))
+            NotFound(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = CITIZEN_NOT_FOUND))))
           case _: NotFoundException =>
             logger.warn(error.getMessage)
-            Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = CITIZEN_NOT_FOUND))))
+            NotFound(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = CITIZEN_NOT_FOUND))))
           case _: BadRequestException =>
             logger.warn(error.getMessage)
-            Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
+            BadRequest(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
           case error: UpstreamErrorResponse if error.statusCode == BAD_REQUEST =>
             logger.warn(error.getMessage)
-            Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
+            BadRequest(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
           case WithStatusCode(INTERNAL_SERVER_ERROR) =>
             logger.warn(error.getMessage)
-            Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = SERVER_ERROR))))
+            InternalServerError(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = SERVER_ERROR))))
           case WithStatusCode(SERVICE_UNAVAILABLE) =>
             logger.warn(error.getMessage)
-            Ok(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVICE_UNAVILABLE))))
+            ServiceUnavailable(Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = ErrorResponseStatus.SERVICE_UNAVILABLE))))
           case otherError =>
             logger.error(error.getMessage)
             throw otherError
@@ -142,10 +143,10 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
               error match {
                 case _: RecipientDeceasedError =>
                   logger.warn(error.getMessage)
-                  Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
+                  BadRequest(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST))))
                 case _: UpdateRelationshipError =>
                   logger.warn(error.getMessage)
-                  Ok(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = CANNOT_UPDATE_RELATIONSHIP))))
+                  BadRequest(Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = CANNOT_UPDATE_RELATIONSHIP))))
                 case otherError =>
                   logger.error(error.getMessage)
                   throw otherError
