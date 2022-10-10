@@ -53,10 +53,10 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
   lazy val controller = app.injector.instanceOf[MarriageAllowanceController]
 
   trait Setup {
-    val generatedNino = new Generator().nextNino
-    val findRecipientRequest = FindRecipientRequest(name = "testName", lastName = "lastName", gender = Gender("M"), generatedNino)
-    val json = Json.toJson(findRecipientRequest)
-    val fakeRequest = FakeRequest("POST", "/", FakeHeaders(), Json.toJson(json))
+    val generatedNino: Nino = new Generator().nextNino
+    val findRecipientRequest: FindRecipientRequest = FindRecipientRequest(name = "testName", lastName = "lastName", gender = Gender("M"), generatedNino)
+    val json: JsValue = Json.toJson(findRecipientRequest)
+    val fakeRequest: FakeRequest[JsValue] = FakeRequest("POST", "/", FakeHeaders(), Json.toJson(json))
   }
 
   override def beforeEach(): Unit ={
@@ -65,9 +65,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
   }
 
   "Marriage Allowance Controller" should {
-
     "return OK when a valid UserRecord and TaxYearModel are received" in new Setup {
-
         val userRecord = UserRecord(cid = 123456789, timestamp = "20200116155359011123")
         val taxYearList = List(TaxYear(2019))
 

@@ -42,8 +42,8 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
                                          appConfig: ApplicationConfig
                                         ) extends Logging {
 
-  val startTaxYear = appConfig.START_TAX_YEAR
-  val maSupportedYearsCount = appConfig.MA_SUPPORTED_YEARS_COUNT
+  val startTaxYear: Int = appConfig.START_TAX_YEAR
+  val maSupportedYearsCount: Int = appConfig.MA_SUPPORTED_YEARS_COUNT
 
   def currentTaxYear: Int = TaxYear.current.startYear
 
@@ -59,7 +59,9 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
 
     def retrieveTaxYearModels(userRecord: UserRecord): Future[List[TaxYearModel]] = {
       for {
-        transferorRecord <- getTransferorRecord(transferorNino) //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid) directly --> depends on frontend implementation
+        //TODO may be get transfer CID from FE and call listRelationship(transferorRecord.cid)
+        // directly --> depends on frontend implementation
+        transferorRecord <- getTransferorRecord(transferorNino)
         recipientRelationshipList <- listRelationship(userRecord.cid)
         transferorRelationshipList <- listRelationship(transferorRecord.cid)
         transferorYears <- convertToAvailedYears(transferorRelationshipList)
@@ -78,7 +80,8 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     })
   }
 
-  def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder, journey: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
+  def createMultiYearRelationship(createRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder, journey: String)
+                                 (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     for {
       templateId <- getEmailTemplateId(createRelationshipRequestHolder.request.taxYears, createRelationshipRequestHolder.notification.welsh)
       _ <- handleMultiYearRequests(createRelationshipRequestHolder.request)
@@ -92,19 +95,22 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     Future {
       taxYears.contains(currentTaxYear) match {
         case true if taxYears.size == 1 => pickTemp(appConfig.EMAIL_APPLY_CURRENT_TAXYEAR_WELSH_TEMPLATE_ID, appConfig.EMAIL_APPLY_CURRENT_TAXYEAR_TEMPLATE_ID)
-        case true if taxYears.size > 1 => pickTemp(appConfig.EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID, appConfig.EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID)
+        case true if taxYears.size > 1 => pickTemp(appConfig.EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID,
+          appConfig.EMAIL_APPLY_CURRENT_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID)
         case _ => pickTemp(appConfig.EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_WELSH_TEMPLATE_ID, appConfig.EMAIL_APPLY_RETROSPECTIVE_TAXYEAR_TEMPLATE_ID)
       }
     }
   }
 
   private def pickTemplate(isWelsh: Boolean)(cyTemplate: String, enTemplate: String): String =
-    isWelsh match {
-      case true => cyTemplate
-      case _ => enTemplate
+    if (isWelsh) {
+      cyTemplate
+    } else {
+      enTemplate
     }
 
-  private def handleMultiYearRequests(createRelationshipRequest: MultiYearCreateRelationshipRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] = {
+  private def handleMultiYearRequests(createRelationshipRequest: MultiYearCreateRelationshipRequest)
+                                     (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] = {
     createRelationshipRequest.taxYears.headOption.fold {
       Future.successful(true)
     } {
@@ -119,7 +125,8 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     }
   }
 
-  private def sendMultiYearCreateRelationshipRequest(createRelationshipRequest: MultiYearCreateRelationshipRequest, taxYear: Int)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[MultiYearCreateRelationshipResponse] =
+  private def sendMultiYearCreateRelationshipRequest(createRelationshipRequest: MultiYearCreateRelationshipRequest, taxYear: Int)
+                                                    (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[MultiYearCreateRelationshipResponse] =
     createRelationshipRequest.taxYears.find { _ == taxYear }.fold {
       Future.failed[MultiYearCreateRelationshipResponse](new IllegalArgumentException())
     } {
@@ -127,15 +134,16 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
         metrics.incrementTotalCounter(ApiType.CreateRelationship)
         val timer = metrics.startTimer(ApiType.CreateRelationship)
 
-        val request = isCurrentTaxYear(taxYear) match {
-          case true => ("active", convertRequest(
+        val request = if (isCurrentTaxYear(taxYear)) {
+          ("active", convertRequest(
             createRelationshipRequest,
             startDate = None,
             endDate = None))
-          case false => ("retrospective", convertRequest(
+        } else {
+          ("retrospective", convertRequest(
             createRelationshipRequest,
-            startDate = Some(TaxYear(taxYear).starts.toString()),
-            endDate = Some(TaxYear(taxYear).finishes.toString())))
+            startDate = Some(TaxYear(taxYear).starts.toString),
+            endDate = Some(TaxYear(taxYear).finishes.toString)))
         }
       dataConnector
         .sendMultiYearCreateRelationshipRequest(request._1, request._2)
@@ -147,7 +155,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
         .map {
           case Right(json) =>
             (json \ "status").as[String] match {
-              case ("Processing OK") =>
+              case "Processing OK" =>
                 metrics.incrementSuccessCounter(ApiType.CreateRelationship)
                 MultiYearCreateRelationshipResponse(
                   CID1Timestamp = (json \ "CID1Timestamp").as[Timestamp],
@@ -164,16 +172,18 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     currentTaxYear == taxYear
   }
 
-  private def convertRequest(request: MultiYearCreateRelationshipRequest, startDate: Option[String], endDate: Option[String]): MultiYearDesCreateRelationshipRequest =
+  private def convertRequest(request: MultiYearCreateRelationshipRequest, startDate: Option[String],
+                             endDate: Option[String]): MultiYearDesCreateRelationshipRequest =
     MultiYearDesCreateRelationshipRequest(
-      recipientCid = request.recipient_cid.toString(),
+      recipientCid = request.recipient_cid.toString,
       recipientTimestamp = request.recipient_timestamp,
-      transferorCid = request.transferor_cid.toString(),
+      transferorCid = request.transferor_cid.toString,
       transferorTimestamp = request.transferor_timestamp,
       startDate,
       endDate)
 
-  def updateRelationship(updateRelationshipRequestHolder: UpdateRelationshipRequestHolder)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
+  def updateRelationship(updateRelationshipRequestHolder: UpdateRelationshipRequestHolder)
+                        (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     for {
       _ <- sendUpdateRelationshipRequest(updateRelationshipRequestHolder.request)
       sendEmailRequest <- transformEmailForUpdateRequest(updateRelationshipRequestHolder)
@@ -189,17 +199,22 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
 
   private def transformEmailForUpdateRequest(updateRelationshipRequestHolder: UpdateRelationshipRequestHolder): Future[SendEmailRequest] = {
     val emailRecipients: List[EmailAddress] = List(updateRelationshipRequestHolder.notification.email)
-    val (emailTemplateId, startDate, endDate) = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship, updateRelationshipRequestHolder.notification.role,
-        updateRelationshipRequestHolder.notification.welsh, updateRelationshipRequestHolder.notification.isRetrospective)
-    val emailParameters: Map[String, String] = Map("full_name" -> updateRelationshipRequestHolder.notification.full_name, "startDate" -> startDate, "endDate" -> endDate)
+    val (emailTemplateId, startDate, endDate) = getEmailTemplateId(updateRelationshipRequestHolder.request.relationship,
+        updateRelationshipRequestHolder.notification.role,
+        updateRelationshipRequestHolder.notification.welsh,
+        updateRelationshipRequestHolder.notification.isRetrospective)
+    val emailParameters: Map[String, String] = Map("full_name" -> updateRelationshipRequestHolder.notification.full_name,
+        "startDate" -> startDate, "endDate" -> endDate)
     Future.successful(SendEmailRequest(templateId = emailTemplateId, to = emailRecipients, parameters = emailParameters, force = false))
   }
 
-  private def getEmailTemplateId(relationship: DesRelationshipInformation, role: String, isWelsh: Boolean, isRetrospective: Boolean): (String, String, String) = {
+  private def getEmailTemplateId(relationship: DesRelationshipInformation, role: String,
+                                 isWelsh: Boolean, isRetrospective: Boolean): (String, String, String) = {
     val pickTemp = pickTemplate(isWelsh)(_,_)
-    val (startDate, endDate) = isWelsh match {
-      case true => (appConfig.START_DATE_CY, appConfig.END_DATE_CY)
-      case _ => (appConfig.START_DATE, appConfig.END_DATE)
+    val (startDate, endDate) = if (isWelsh) {
+      (appConfig.START_DATE_CY, appConfig.END_DATE_CY)
+    } else {
+      (appConfig.START_DATE, appConfig.END_DATE)
     }
 
     val startDateNextYear = startDate + (currentTaxYear + 1)
@@ -209,21 +224,29 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
 
     (relationship.relationshipEndReason, role) match {
       case (appConfig.REASON_CANCEL, _) =>
-        val template = pickTemp(appConfig.EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID, appConfig.EMAIL_UPDATE_CANCEL_TEMPLATE_ID)
+        val template = pickTemp(appConfig.EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID,
+          appConfig.EMAIL_UPDATE_CANCEL_TEMPLATE_ID)
         (template, startDateNextYear, endDateNextYear)
       case (appConfig.REASON_REJECT, appConfig.ROLE_RECIPIENT) =>
-        if (!isRetrospective) (pickTemp(appConfig.EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID, appConfig.EMAIL_UPDATE_REJECT_TEMPLATE_ID), "", "")
-        else (pickTemp(appConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH, appConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR), "", "")
+        if (!isRetrospective) (pickTemp(appConfig.EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID,
+          appConfig.EMAIL_UPDATE_REJECT_TEMPLATE_ID), "", "")
+        else (pickTemp(appConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH,
+          appConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR), "", "")
       case (appConfig.REASON_DIVORCE, appConfig.ROLE_TRANSFEROR) =>
-        if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(isCurrent = true))
-          (pickTemp(appConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH, appConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR), startDateNextYear, endDateNextYear)
-        else if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(isCurrent = false))
-          (pickTemp(appConfig.EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_WELSH_TEMPLATE_ID, appConfig.EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID),startDateCurrYear, "")
-        else (pickTemp(appConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH, appConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR), startDateCurrYear, endDateCurrYear)
+        if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(true))
+          (pickTemp(appConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH,
+            appConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR), startDateNextYear, endDateNextYear)
+        else if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(false))
+          (pickTemp(appConfig.EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_WELSH_TEMPLATE_ID,
+            appConfig.EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID),startDateCurrYear, "")
+        else (pickTemp(appConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH,
+          appConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR), startDateCurrYear, endDateCurrYear)
       case (appConfig.REASON_DIVORCE, appConfig.ROLE_RECIPIENT) =>
-        if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(isCurrent = true))
-          (pickTemp(appConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID, appConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID), startDateNextYear, endDateNextYear)
-        else (pickTemp(appConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH, appConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR), "", endDateCurrYear)
+        if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(true))
+          (pickTemp(appConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID,
+            appConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID), startDateNextYear, endDateNextYear)
+        else (pickTemp(appConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH,
+          appConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR), "", endDateCurrYear)
       case (reason, role) => throw new NotImplementedError(
         s"reason and role not handled: $reason, $role"
       )
@@ -234,12 +257,11 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     val DATE_FORMAT = "yyyyMMdd"
     val sdf = new SimpleDateFormat(DATE_FORMAT)
     val currentdate = Calendar.getInstance()
-    isCurrent match {
-      case true => sdf.format(currentdate.getTime())
-      case false => {
-        currentdate.add(Calendar.YEAR, -1)
-        sdf.format(currentdate.getTime())
-      }
+    if (isCurrent) {
+      sdf.format(currentdate.getTime)
+    } else {
+      currentdate.add(Calendar.YEAR, -1)
+      sdf.format(currentdate.getTime)
     }
 
   }
@@ -287,12 +309,12 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
               \ "ReasonCode").as[Int]) match {
                 case (1, 1) =>
                   metrics.incrementSuccessCounter(ApiType.FindCitizen)
-                  ((json
+                  (json
                     \ "Jtpr1311PerDetailsFindcallResponse"
                     \ "Jtpr1311PerDetailsFindExport"
                     \ "OutItpr1Person"
-                    \ "DeceasedSignal").as[String]) match {
-                      case ("N") =>
+                    \ "DeceasedSignal").as[String] match {
+                      case "N" =>
                         UserRecord(
                           cid = (json
                             \ "Jtpr1311PerDetailsFindcallResponse"
@@ -307,18 +329,19 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
                           name = Some(CitizenName(
                             (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "FirstForename").asOpt[String],
                             (json \ "Jtpr1311PerDetailsFindcallResponse" \ "Jtpr1311PerDetailsFindExport" \ "OutItpr1Person" \ "Surname").asOpt[String])))
-                      case (_) => throw new TransferorDeceasedError("Service returned response with deceased indicator as Y or null ")
+                      case _ => throw TransferorDeceasedError("Service returned response with deceased indicator as Y or null ")
                     }
                 case (returnCode, reasonCode) =>
                   metrics.incrementSuccessCounter(ApiType.FindCitizen)
-                  throw new FindTransferorError(returnCode, reasonCode)
+                  throw FindTransferorError(returnCode, reasonCode)
               }
         case Left(error) =>
           throw error
       }
   }
 
-  private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
+  private def getRecipientRecord(findRecipientRequest: FindRecipientRequest)
+                                (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[DataRetrievalError, UserRecord]] = {
     dataConnector.findRecipient(findRecipientRequest)
   }
 
@@ -328,7 +351,8 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
       recordWrapper.copy(userRecord = Some(userRecord))
     }
 
-  private def sendUpdateRelationshipRequest(updateRelationshipRequest: DesUpdateRelationshipRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
+  private def sendUpdateRelationshipRequest(updateRelationshipRequest: DesUpdateRelationshipRequest)
+                                           (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     metrics.incrementTotalCounter(ApiType.UpdateRelationship)
     val timer = metrics.startTimer(ApiType.UpdateRelationship)
     dataConnector
@@ -392,14 +416,16 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
   private def getEligibleTaxYearList(marriageDate: LocalDate)(implicit ec: ExecutionContext): Future[List[Int]] = {
     val marriageYear = TaxYear.taxYearFor(marriageDate).startYear
     val currentYear = currentTaxYear
-    val eligibleTaxYearList = (marriageYear < startTaxYear) match {
-      case true => List.range(startTaxYear, currentYear + 1, 1).takeRight(maSupportedYearsCount)
-      case _    => List.range(marriageYear, currentYear + 1, 1).takeRight(maSupportedYearsCount)
+    val eligibleTaxYearList = if (marriageYear < startTaxYear) {
+      List.range(startTaxYear, currentYear + 1, 1).takeRight(maSupportedYearsCount)
+    } else {
+      List.range(marriageYear, currentYear + 1, 1).takeRight(maSupportedYearsCount)
     }
     Future { eligibleTaxYearList }
   }
 
-  private def getListOfEligibleTaxYears(transferorYears: List[Int], recipientYears: List[Int], eligibleYearsBasdOnDoM: List[Int])(implicit ec: ExecutionContext): Future[List[TaxYearModel]] = {
+  private def getListOfEligibleTaxYears(transferorYears: List[Int], recipientYears: List[Int], eligibleYearsBasdOnDoM: List[Int])
+                                       (implicit ec: ExecutionContext): Future[List[TaxYearModel]] = {
     var eligibleYears = List[TaxYearModel]()
     for (yr <- eligibleYearsBasdOnDoM) {
       if (!(transferorYears.contains(yr) || recipientYears.contains(yr))) {

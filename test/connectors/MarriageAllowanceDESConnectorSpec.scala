@@ -65,19 +65,19 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
   lazy val connector: MarriageAllowanceDESConnector = app.injector.instanceOf[MarriageAllowanceDESConnector]
 
-  val generatedNino = new Generator().nextNino
+  val generatedNino: Nino = new Generator().nextNino
   val url = s"/marriage-allowance/citizen/${generatedNino.nino}/check"
 
-  def findRecipientRequest(nino: Nino = generatedNino) = {
+  def findRecipientRequest(nino: Nino = generatedNino): FindRecipientRequest = {
     FindRecipientRequest(name = "testForename1", lastName = "testLastName", gender = Gender("M"), nino)
   }
 
   val instanceIdentifier: Cid = 123456789
   val updateTimestamp: Timestamp = "20200116155359011123"
-  val requestId = RequestId(Random.alphanumeric.take(10).mkString)
-  val sessionId = SessionId(Random.alphanumeric.take(10).mkString)
-  implicit val hc = HeaderCarrier().copy(requestId = Some(requestId), sessionId = Some(sessionId))
-  lazy val processingCodeOK = connector.ProcessingOK
+  val requestId: RequestId = RequestId(Random.alphanumeric.take(10).mkString)
+  val sessionId: SessionId = SessionId(Random.alphanumeric.take(10).mkString)
+  implicit val hc: HeaderCarrier = HeaderCarrier().copy(requestId = Some(requestId), sessionId = Some(sessionId))
+  lazy val processingCodeOK: Int = connector.ProcessingOK
   val uuidRegex = """[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}"""
 
   def expectedJson(reasonCode: Int, returnCode: Int): JsValue = Json.parse(
@@ -104,13 +104,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
       }""")
 
   "findRecipient" should {
-
     "return a UserRecord given valid Json" when {
-
       "the return code and response code are both 1" in {
-
         val json = expectedJson(processingCodeOK, processingCodeOK)
-
         server.stubFor(
           post(urlEqualTo(url))
             .willReturn(ok(json.toString()))
@@ -131,7 +127,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
       }
 
       "a valid nino is provided, which contains spaces" in {
-
         val json = expectedJson(processingCodeOK, processingCodeOK)
 
         server.stubFor(
@@ -149,10 +144,7 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     }
 
     "contain the correct headers to send to DES" in {
-
       val json = expectedJson(processingCodeOK, processingCodeOK)
-
-
       server.stubFor(
         post(urlEqualTo(url))
           .willReturn(ok(json.toString()))
@@ -169,7 +161,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     }
 
     "return a ResponseValidator error given non valid Json" in {
-
       val nonValidJson =
         s"""{
           "Jfwk1012FindCheckPerNoninocallResponse": {
@@ -194,7 +185,7 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
       server.stubFor(
         post(urlEqualTo(url))
-          .willReturn(ok(nonValidJson.toString()))
+          .willReturn(ok(nonValidJson))
       )
 
       val result = await(connector.findRecipient(findRecipientRequest()))
@@ -204,11 +195,8 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     }
 
     "return a specific error type " when {
-
       "an error response is received" in {
-
         val reasonCodes =
-
           Table(
             ("HTTP status code", "Error Type"),
             (TOO_MANY_REQUESTS, TooManyRequestsError),
@@ -237,9 +225,7 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
     //TODO These are mocking HttpClient. We shouldn't be mocking this however functioanlity exists to capture these errors.
     "return a TimeOutError " when {
-
       "a GatewayTimeout is received" in {
-
         val injector: Injector = GuiceApplicationBuilder()
           .overrides(
             bind[TamcMetrics].toInstance(mockMetrics),
@@ -253,7 +239,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
         when(mockHttp.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
           .thenReturn(Future.failed(new GatewayTimeoutException("Gateway Timeout")))
 
-
         val result = await(connector.findRecipient(findRecipientRequest()))
 
         result shouldBe Left(TimeOutError)
@@ -262,9 +247,7 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     }
 
     "return a BadGateway error" when {
-
       "a BadGatewayException is received" in {
-
         val injector: Injector = GuiceApplicationBuilder()
           .overrides(
             bind[TamcMetrics].toInstance(mockMetrics),
@@ -286,9 +269,7 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     }
 
     "return an UnhandledStatusError type" when {
-
       "uncatered return code and reason codes are received" in {
-
         val reasonCode = 2
         val returnCode = 2
 
@@ -298,23 +279,17 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
           post(urlEqualTo(url))
             .willReturn(ok(json.toString()))
         )
-
         val result = await(connector.findRecipient(findRecipientRequest()))
 
         result shouldBe Left(UnhandledStatusError)
-
       }
     }
 
     "return a non fatal error after stopping the timer" in {
-
       val nonFatalErrorMessage = "an error has occurred"
-
       when(mockHttp.POST(ArgumentMatchers.contains(url), any(), any())(any(), any(), any(), any()))
         .thenReturn(Future.failed(new RuntimeException(nonFatalErrorMessage)))
-
       when(mockMetrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
-
       val injector: Injector = GuiceApplicationBuilder()
         .overrides(
           bind[TamcMetrics].toInstance(mockMetrics),
@@ -333,11 +308,8 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     }
 
     "return a CodedErrorResponse" when {
-
       "a specific return code and reason code are received" in {
-
         val reasonCodes =
-
           Table(
             ("DES reason code", "DES error message"),
             (connector.NinoRequired, "Nino must be supplied"),
@@ -366,9 +338,7 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
   "findCitizen" should {
     val url = s"/marriage-allowance/citizen/$generatedNino"
-
     "pass correct headers to des" in {
-
       server.stubFor(
         get(urlEqualTo(url))
           .willReturn(ok("{}"))
@@ -389,10 +359,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
   "listRelationship" should {
     val cid = Random.nextLong()
-    val url = s"/marriage-allowance/citizen/${cid}/relationships?includeHistoric=true"
+    val url = s"/marriage-allowance/citizen/$cid/relationships?includeHistoric=true"
 
     "pass correct headers to des" in {
-
       server.stubFor(
         get(urlEqualTo(url))
           .willReturn(ok("{}"))
@@ -419,7 +388,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     val url = s"/marriage-allowance/02.00.00/citizen/$recipientCid/relationship/$relType"
 
     "pass correct headers to des" in {
-
       server.stubFor(
         post(urlEqualTo(url))
           .willReturn(ok("{}"))
@@ -439,7 +407,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
   }
 
   "updateAllowanceRelationship" should {
-
     val instanceId = Random.alphanumeric.take(5).mkString
     val url = s"/marriage-allowance/citizen/$instanceId/relationship"
     val relationshipRequest = DesUpdateRelationshipRequest(
@@ -449,7 +416,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     )
 
     "pass correct headers to des" in {
-
       server.stubFor(
         put(urlEqualTo(url))
           .willReturn(ok("{}"))
