@@ -27,8 +27,8 @@ import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.time.TaxYear
-
 import scala.language.postfixOps
+
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -145,8 +145,9 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
             startDate = Some(TaxYear(taxYear).starts.toString),
             endDate = Some(TaxYear(taxYear).finishes.toString)))
         }
-        dataConnector
-          .sendMultiYearCreateRelationshipRequest(request._1, request._2).transform {
+      dataConnector
+        .sendMultiYearCreateRelationshipRequest(request._1, request._2)
+        .transform {
           result =>
             timer.stop()
             result
@@ -226,13 +227,11 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
         val template = pickTemp(appConfig.EMAIL_UPDATE_CANCEL_WELSH_TEMPLATE_ID,
           appConfig.EMAIL_UPDATE_CANCEL_TEMPLATE_ID)
         (template, startDateNextYear, endDateNextYear)
-
       case (appConfig.REASON_REJECT, appConfig.ROLE_RECIPIENT) =>
         if (!isRetrospective) (pickTemp(appConfig.EMAIL_UPDATE_REJECT_WELSH_TEMPLATE_ID,
           appConfig.EMAIL_UPDATE_REJECT_TEMPLATE_ID), "", "")
         else (pickTemp(appConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR_WELSH,
           appConfig.EMAIL_RECIPIENT_REJECT_RETROSPECTIVE_YEAR), "", "")
-
       case (appConfig.REASON_DIVORCE, appConfig.ROLE_TRANSFEROR) =>
         if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(true))
           (pickTemp(appConfig.EMAIL_TRANSFEROR_DIVORCE_CURRENT_YEAR_WELSH,
@@ -242,14 +241,12 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
             appConfig.EMAIL_UPDATE_DIVORCE_TRANSFEROR_BOY_TEMPLATE_ID),startDateCurrYear, "")
         else (pickTemp(appConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR_WELSH,
           appConfig.EMAIL_TRANSFEROR_DIVORCE_PREVIOUR_YEAR), startDateCurrYear, endDateCurrYear)
-
       case (appConfig.REASON_DIVORCE, appConfig.ROLE_RECIPIENT) =>
         if (relationship.actualEndDate == getCurrentElseRetroYearDateInFormat(true))
           (pickTemp(appConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_WELSH_TEMPLATE_ID,
             appConfig.EMAIL_UPDATE_DIVORCE_RECIPIENT_EOY_TEMPLATE_ID), startDateNextYear, endDateNextYear)
         else (pickTemp(appConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR_WELSH,
           appConfig.EMAIL_RECIPIENT_DIVORCE_PREVIOUR_YEAR), "", endDateCurrYear)
-
       case (reason, role) => throw new NotImplementedError(
         s"reason and role not handled: $reason, $role"
       )
