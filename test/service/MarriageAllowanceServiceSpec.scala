@@ -23,17 +23,18 @@ import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
 import metrics.TamcMetrics
 import models._
-import org.mockito.ArgumentMatchers.{any, eq => meq}
+import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.Json
 import play.api.test.Injecting
 import services.MarriageAllowanceService
 import test_utils.UnitSpec
-import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.domain.Generator
 import uk.gov.hmrc.http._
 
 import java.time.LocalDate
@@ -42,12 +43,12 @@ import scala.concurrent.Future
 
 class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
-  val year: Int = LocalDate.now.getYear
-  val generatedNino: Nino = new Generator().nextNino
+  val year = LocalDate.now.getYear
+  val generatedNino = new Generator().nextNino
   val cID = 123456789
-  val findRecipientRequest: FindRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
-    gender = Gender("M"), nino = generatedNino, dateOfMarriage = Some(LocalDate.of(year, 12, 12)))
-  val userRecord: UserRecord = UserRecord(cid = cID, timestamp = "20200116155359011123")
+  val findRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
+     gender = Gender("M"), nino = generatedNino, dateOfMarriage = Some(LocalDate.of(year,12,12)))
+  val userRecord = UserRecord(cid = cID, timestamp = "20200116155359011123")
 
 
   val mockMarriageAllowanceDESConnector: MarriageAllowanceDESConnector = mock[MarriageAllowanceDESConnector]
@@ -55,114 +56,6 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
 
-  val findCitizenJson: JsValue = Json.parse(
-    s"""
-
-  {"Jtpr1311PerDetailsFindcallResponse": {"Jtpr1311PerDetailsFindExport": {
-    "@exitStateType": "3",
-    "@exitStateMsg": "",
-    "@command": "",
-    "@exitState": "0",
-    "OutItpr1Person":    {
-    "InstanceIdentifier": 100013333,
-    "UpdateTimestamp": "2015",
-    "Nino": "${generatedNino.nino}",
-    "NinoStatus": null,
-    "TemporaryReference": "00B00004",
-    "Surname": "testSurname",
-    "FirstForename": "testForeName",
-    "SecondForename": "testSecondForename",
-    "Initials": "AF",
-    "Title": "MR",
-    "Honours": "BSC",
-    "Sex": "M",
-    "DateOfBirth": 19400610,
-    "DeceasedSignal": "N",
-    "OrgUnitInstance": 0
-  },
-    "OutGroupOfIrInterestArea": {"row":    [
-  {"OutRgItpr1IrInterestArea":       {
-    "Code": 2,
-    "Description": "PAY AS YOU EARN",
-    "Reference": null,
-    "Reason": "FOR TEST PAYE",
-    "StartDatetime": 2.0000403E19
-  }}]},
-    "OutGroupOfCommunications": {"row":    [
-  {"OutRgItpr1Communication":       {
-    "Code": 7,
-    "Description": "DAYTIME TELEPHONE",
-    "ContactDetails": "00000 290000"
-  }}
-    ]},
-    "OutGroupOfOccupancy": {"row":    [
-  {"OutRgItpr1Occupancy":       {
-    "StatusCode": null,
-    "StatusDescription": null,
-    "TypeOfOccupancyCode": 0,
-    "TypeOfOccupancyDescription": null,
-    "AdditionalDeliveryInformation": null,
-    "RlsSignal": null,
-    "TypeOfAddressCode": null,
-    "TypeOfAddressDescription": null,
-    "AddressLine1": null,
-    "AddressLine2": null,
-    "AddressLine3": null,
-    "AddressLine4": null,
-    "AddressLine5": null,
-    "Postcode": null,
-    "HouseIdentification": null,
-    "HomeCountry": null,
-    "ForeignCountry": null,
-    "NoLongerUsedSignal": null
-  }}
-    ]},
-    "OutItpr1Capacitor": {"InstanceIdentifier": 0},
-    "OutWCbdParameters":    {
-    "SeverityCode": "I",
-    "DataStoreStatus": 1,
-    "OriginServid": 1011,
-    "ContextString": null,
-    "ReturnCode": 1,
-    "ReasonCode": 1,
-    "Checksum": null
-  }
-  }}}""")
-
-  val listRelationshipdJson: JsValue = Json.parse(
-
-    """{
-    "relationships": [
-    {
-      "participant": 1,
-      "creationTimestamp": "20150531235901",
-      "actualStartDate": "20011230",
-      "relationshipEndReason": "Death",
-      "participant1StartDate": "20011230",
-      "participant2StartDate": "20011230",
-      "actualEndDate": "20101230",
-      "participant1EndDate": "20101230",
-      "participant2EndDate": "20101230",
-      "otherParticipantInstanceIdentifier": "123456789012345",
-      "otherParticipantUpdateTimestamp": "20150531235901",
-      "participant2UKResident": true
-    },
-    {
-      "participant": 1,
-      "creationTimestamp": "20150531235901",
-      "actualStartDate": "20011230",
-      "relationshipEndReason": "Death",
-      "participant1StartDate": "20011230",
-      "participant2StartDate": "20011230",
-      "actualEndDate": "20101230",
-      "participant1EndDate": "20101230",
-      "participant2EndDate": "20101230",
-      "otherParticipantInstanceIdentifier": "123456789012345",
-      "otherParticipantUpdateTimestamp": "20150531235901",
-      "participant2UKResident": true
-    }
-    ]
-  }""")
 
   implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
@@ -174,20 +67,24 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
       bind[ApplicationConfig].toInstance(mockAppConfig)
     ).build()
 
-  def service: MarriageAllowanceService = inject[MarriageAllowanceService]
-
+  def service = inject[MarriageAllowanceService]
+  
 
   "getRecipientRelationship" should {
+
     "return a UserRecord, list of TaxYearModel tuple given a valid FindRecipientRequest " in {
+
       val taxYearModel = TaxYear(year, Some(true))
+
       val expectedResponse = (userRecord, List(taxYearModel))
-      when(mockMarriageAllowanceDESConnector.findRecipient(meq(findRecipientRequest))(any(), any()))
+
+      when(mockMarriageAllowanceDESConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future.successful(Right(userRecord)))
 
-      when(mockMarriageAllowanceDESConnector.findCitizen(meq(generatedNino))(any(), any()))
+      when(mockMarriageAllowanceDESConnector.findCitizen(ArgumentMatchers.eq(generatedNino))(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future.successful(Right(findCitizenJson)))
 
-      when(mockMarriageAllowanceDESConnector.listRelationship(any(), any())(any(), any()))
+      when(mockMarriageAllowanceDESConnector.listRelationship(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(
           Future.successful(Right(listRelationshipdJson))
         )
@@ -196,7 +93,7 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
       when(mockAppConfig.MA_SUPPORTED_YEARS_COUNT).thenReturn(5)
 
       val mockTimerContext = mock[Timer.Context]
-      when(mockTamcMetrics.startTimer(any())).thenReturn(mockTimerContext)
+      when(mockTamcMetrics.startTimer(ArgumentMatchers.any())).thenReturn(mockTimerContext)
       when(mockTimerContext.stop()).thenReturn(123456789)
 
       val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
@@ -206,15 +103,17 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
 
 
     "return a DataRetrievalError error type based on error returned" in {
-      when(mockMarriageAllowanceDESConnector.findRecipient(meq(findRecipientRequest))(any(), any()))
-        .thenReturn(Future.successful(Left(TooManyRequestsError)))
 
-      val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
+        when(mockMarriageAllowanceDESConnector.findRecipient(ArgumentMatchers.eq(findRecipientRequest))(ArgumentMatchers.any(), ArgumentMatchers.any()))
+          .thenReturn(Future.successful(Left(TooManyRequestsError)))
 
-      result shouldBe Left(TooManyRequestsError)
+        val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
+
+        result shouldBe Left(TooManyRequestsError)
+
     }
-  }
 
+  }
   "when createMultiYearRelationship" should {
     "return unit" when {
       "createRelationshipRequest tax year is none" in {
@@ -225,31 +124,13 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
         val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestNoTaxYearHolder
         val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
 
-        await(response) shouldBe a[Unit]
+          await(response) shouldBe a[Unit]
       }
-    }
-
-    "createRelationshipRequest tax year is 2015,2016" in {
-      val mockTimerContext = mock[Timer.Context]
-      when(mockTamcMetrics.startTimer(any())).thenReturn(mockTimerContext)
-      when(mockTimerContext.stop()).thenReturn(123456789)
-
-      val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
-      val relationshipRequest =
-        MultiYearDesCreateRelationshipRequest("12345", "", "", "", None, None)
-
-      when(mockMarriageAllowanceDESConnector.sendMultiYearCreateRelationshipRequest(any(), meq(relationshipRequest))(any(), any())).
-        thenReturn(Future.failed(new BadRequestException("{\"reason\": \"Ian's Testing\"}")))
-
-      val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
-      await(response)
-      println(response)
     }
 
     "when request is sent with deceased recipient in MarriageAllowanceService" should {
       "return a BadRequestException" in {
-        when(mockMarriageAllowanceDESConnector.sendMultiYearCreateRelationshipRequest(any(), any())(any(), any())).
-          thenReturn(Future.failed(new BadRequestException("{\"reason\": \"Participant is deceased\"}")))
+        when(mockMarriageAllowanceDESConnector.sendMultiYearCreateRelationshipRequest(any(), any())(any(), any())).thenReturn(Future.failed(new BadRequestException("{\"reason\": \"Participant is deceased\"}")))
 
         val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipRequestHolder
         val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
@@ -260,6 +141,116 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
       }
     }
   }
+
+
+  val findCitizenJson = Json.parse(s"""
+
+    {"Jtpr1311PerDetailsFindcallResponse": {"Jtpr1311PerDetailsFindExport": {
+      "@exitStateType": "3",
+      "@exitStateMsg": "",
+      "@command": "",
+      "@exitState": "0",
+      "OutItpr1Person":    {
+      "InstanceIdentifier": 100013333,
+      "UpdateTimestamp": "2015",
+      "Nino": "${generatedNino.nino}",
+      "NinoStatus": null,
+      "TemporaryReference": "00B00004",
+      "Surname": "testSurname",
+      "FirstForename": "testForeName",
+      "SecondForename": "testSecondForename",
+      "Initials": "AF",
+      "Title": "MR",
+      "Honours": "BSC",
+      "Sex": "M",
+      "DateOfBirth": 19400610,
+      "DeceasedSignal": "N",
+      "OrgUnitInstance": 0
+    },
+      "OutGroupOfIrInterestArea": {"row":    [
+    {"OutRgItpr1IrInterestArea":       {
+      "Code": 2,
+      "Description": "PAY AS YOU EARN",
+      "Reference": null,
+      "Reason": "FOR TEST PAYE",
+      "StartDatetime": 2.0000403E19
+    }}]},
+      "OutGroupOfCommunications": {"row":    [
+    {"OutRgItpr1Communication":       {
+      "Code": 7,
+      "Description": "DAYTIME TELEPHONE",
+      "ContactDetails": "00000 290000"
+    }}
+      ]},
+      "OutGroupOfOccupancy": {"row":    [
+    {"OutRgItpr1Occupancy":       {
+      "StatusCode": null,
+      "StatusDescription": null,
+      "TypeOfOccupancyCode": 0,
+      "TypeOfOccupancyDescription": null,
+      "AdditionalDeliveryInformation": null,
+      "RlsSignal": null,
+      "TypeOfAddressCode": null,
+      "TypeOfAddressDescription": null,
+      "AddressLine1": null,
+      "AddressLine2": null,
+      "AddressLine3": null,
+      "AddressLine4": null,
+      "AddressLine5": null,
+      "Postcode": null,
+      "HouseIdentification": null,
+      "HomeCountry": null,
+      "ForeignCountry": null,
+      "NoLongerUsedSignal": null
+    }}
+      ]},
+      "OutItpr1Capacitor": {"InstanceIdentifier": 0},
+      "OutWCbdParameters":    {
+      "SeverityCode": "I",
+      "DataStoreStatus": 1,
+      "OriginServid": 1011,
+      "ContextString": null,
+      "ReturnCode": 1,
+      "ReasonCode": 1,
+      "Checksum": null
+    }
+    }}}""")
+
+  val listRelationshipdJson = Json.parse(
+
+    """{
+      "relationships": [
+      {
+        "participant": 1,
+        "creationTimestamp": "20150531235901",
+        "actualStartDate": "20011230",
+        "relationshipEndReason": "Death",
+        "participant1StartDate": "20011230",
+        "participant2StartDate": "20011230",
+        "actualEndDate": "20101230",
+        "participant1EndDate": "20101230",
+        "participant2EndDate": "20101230",
+        "otherParticipantInstanceIdentifier": "123456789012345",
+        "otherParticipantUpdateTimestamp": "20150531235901",
+        "participant2UKResident": true
+      },
+      {
+        "participant": 1,
+        "creationTimestamp": "20150531235901",
+        "actualStartDate": "20011230",
+        "relationshipEndReason": "Death",
+        "participant1StartDate": "20011230",
+        "participant2StartDate": "20011230",
+        "actualEndDate": "20101230",
+        "participant1EndDate": "20101230",
+        "participant2EndDate": "20101230",
+        "otherParticipantInstanceIdentifier": "123456789012345",
+        "otherParticipantUpdateTimestamp": "20150531235901",
+        "participant2UKResident": true
+      }
+      ]
+    }""")
+
 }
 
 

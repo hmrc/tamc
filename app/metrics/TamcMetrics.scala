@@ -16,7 +16,7 @@
 
 package metrics
 
-import com.codahale.metrics.{Counter, MetricRegistry, Timer}
+import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.Timer.Context
 import com.google.inject.Inject
 import com.kenshoo.play.metrics.Metrics
@@ -27,7 +27,7 @@ class TamcMetrics @Inject()(metrics: Metrics) {
 
   val registry: MetricRegistry = metrics.defaultRegistry
 
-  val timers: Map[models.ApiType.Value, Timer] = Map(
+  val timers = Map(
     ApiType.FindCitizen -> registry.timer("find-citizen-response-timer"),
     ApiType.FindRecipient -> registry.timer("find-recipient-response-timer"),
     ApiType.CheckRelationship -> registry.timer("check-relationship-response-timer"),
@@ -35,7 +35,7 @@ class TamcMetrics @Inject()(metrics: Metrics) {
     ApiType.ListRelationship -> registry.timer("list-relationship-response-timer"),
     ApiType.UpdateRelationship -> registry.timer("update-relationship-response-timer"))
 
-  val successCounters: Map[models.ApiType.Value, Counter] = Map(
+  val successCounters = Map(
     ApiType.FindCitizen -> registry.counter("find-citizen-success"),
     ApiType.FindRecipient -> registry.counter("find-recipient-success"),
     ApiType.CheckRelationship -> registry.counter("check-relationship-success"),
@@ -43,7 +43,7 @@ class TamcMetrics @Inject()(metrics: Metrics) {
     ApiType.ListRelationship -> registry.counter("list-relationship-success"),
     ApiType.UpdateRelationship -> registry.counter("update-relationship-success"))
 
-  val totalCounters: Map[models.ApiType.Value, Counter] = Map(
+  val totalCounters = Map(
     ApiType.FindCitizen -> registry.counter("find-citizen-total"),
     ApiType.FindRecipient -> registry.counter("find-recipient-total"),
     ApiType.CheckRelationship -> registry.counter("check-relationship-total"),
@@ -51,7 +51,7 @@ class TamcMetrics @Inject()(metrics: Metrics) {
     ApiType.ListRelationship -> registry.counter("list-relationship-total"),
     ApiType.UpdateRelationship -> registry.counter("update-relationship-total"))
 
-  val failureCounters: Map[models.ApiType.Value, Counter] = Map(
+  val failureCounters = Map(
     ApiType.FindRecipient -> registry.counter("find-recipient-failure"))
 
 

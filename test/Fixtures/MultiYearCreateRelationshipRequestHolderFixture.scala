@@ -21,33 +21,33 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 
 object MultiYearCreateRelationshipRequestHolderFixture {
 
-  val multiYearCreateRelationshipRequest: MultiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequest(
+  val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequest(
     transferor_cid = 1111.asInstanceOf[Cid],
-    transferor_timestamp="2222",
+    transferor_timestamp="2222".asInstanceOf[Timestamp],
     recipient_cid=3333.asInstanceOf[Cid],
-    recipient_timestamp="4444",
+    recipient_timestamp="4444".asInstanceOf[Timestamp],
     taxYears=List(2015,2016)
   )
 
-  val multiYearCreateRelationshipRequestNoTaxYear: MultiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequest(
+  val multiYearCreateRelationshipRequestNoTaxYear = MultiYearCreateRelationshipRequest(
     transferor_cid = 1111.asInstanceOf[Cid],
-    transferor_timestamp="2222",
+    transferor_timestamp="2222".asInstanceOf[Timestamp],
     recipient_cid=3333.asInstanceOf[Cid],
-    recipient_timestamp="4444",
+    recipient_timestamp="4444".asInstanceOf[Timestamp],
     taxYears=List()
   )
 
 
 
-  val createRelationshipNotificationRequest: CreateRelationshipNotificationRequest = CreateRelationshipNotificationRequest(
+  val createRelationshipNotificationRequest = CreateRelationshipNotificationRequest(
       full_name="bob",
       email=EmailAddress("bob@yahoo.com"),
       welsh=false
   )
 
 
-  val multiYearCreateRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder = MultiYearCreateRelationshipRequestHolder(multiYearCreateRelationshipRequest, createRelationshipNotificationRequest)
+  val multiYearCreateRelationshipRequestHolder = MultiYearCreateRelationshipRequestHolder(multiYearCreateRelationshipRequest, createRelationshipNotificationRequest)
 
-  val multiYearCreateRelationshipRequestNoTaxYearHolder: MultiYearCreateRelationshipRequestHolder = MultiYearCreateRelationshipRequestHolder(multiYearCreateRelationshipRequestNoTaxYear, createRelationshipNotificationRequest)
+  val multiYearCreateRelationshipRequestNoTaxYearHolder = MultiYearCreateRelationshipRequestHolder(multiYearCreateRelationshipRequestNoTaxYear, createRelationshipNotificationRequest)
 
 }
