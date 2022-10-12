@@ -16,9 +16,8 @@
 
 package models
 
-import play.api.libs.json.{Format, JsString, Json, OFormat, Reads, Writes}
+import play.api.libs.json.{Format, JsString, Json, Reads, Writes}
 import uk.gov.hmrc.domain.Nino
-
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -31,7 +30,7 @@ object FindRecipientRequest {
   }
 
   implicit val dateFormat: Format[LocalDate] = Format[LocalDate](Reads.localDateReads(pattern), writes(pattern))
-  implicit val formats: OFormat[FindRecipientRequest] = Json.format[FindRecipientRequest]
+  implicit val formats = Json.format[FindRecipientRequest]
 }
 
 case class FindRecipientRequest(name: String, lastName: String, gender: Gender, nino: Nino, dateOfMarriage: Option[LocalDate] = None)
