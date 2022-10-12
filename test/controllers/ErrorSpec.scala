@@ -75,7 +75,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
       val request = FakeRequest().withBody(Json.parse(testData))
 
       val result = controller.getRecipientRelationship(transferorNino)(request)
-      status(result) shouldBe NOT_FOUND
+      status(result) shouldBe OK
 
       val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:RECIPIENT-NOT-FOUND"
@@ -98,7 +98,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
         val request = FakeRequest().withBody(Json.parse(testData))
 
         val result = controller.getRecipientRelationship(transferorNino)(request)
-        status(result) shouldBe BAD_REQUEST
+        status(result) shouldBe OK
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
@@ -117,7 +117,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
         val request = FakeRequest().withBody(Json.parse(testData))
 
         val result = controller.getRecipientRelationship(transferorNino)(request)
-        status(result) shouldBe BAD_REQUEST
+        status(result) shouldBe OK
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
@@ -137,7 +137,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
         val request = FakeRequest().withBody(Json.parse(testData))
 
         val result = controller.getRecipientRelationship(transferorNino)(request)
-        status(result) shouldBe BAD_REQUEST
+        status(result) shouldBe OK
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
@@ -152,7 +152,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
           .thenReturn(Future.failed(TransferorDeceasedError("Transferor is deceased")))
 
         val result = controller.getRecipientRelationship(Nino(generatedNino))(request)
-        status(result) shouldBe BAD_REQUEST
+        status(result) shouldBe OK
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
@@ -189,7 +189,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
           .thenReturn(Future.failed(new BadRequestException("Bad Request")))
 
         val result = controller.listRelationship(testNino)(request)
-        status(result) shouldBe BAD_REQUEST
+        status(result) shouldBe OK
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:BAD-REQUEST"
@@ -206,7 +206,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
           .thenReturn(Future.failed(new NotFoundException("Not Found")))
 
         val result = controller.listRelationship(testNino)(request)
-        status(result) shouldBe NOT_FOUND
+        status(result) shouldBe OK
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:CITIZEN-NOT-FOUND"
@@ -223,7 +223,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
           .thenReturn(Future.failed(UpstreamErrorResponse("InternalServerError", INTERNAL_SERVER_ERROR)))
 
         val result = controller.listRelationship(testNino)(request)
-        status(result) shouldBe INTERNAL_SERVER_ERROR
+        status(result) shouldBe OK
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "ERROR:500"
@@ -240,7 +240,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
           .thenReturn(Future.failed(UpstreamErrorResponse("Service Unavailable", SERVICE_UNAVAILABLE)))
 
         val result = controller.listRelationship(testNino)(request)
-        status(result) shouldBe SERVICE_UNAVAILABLE
+        status(result) shouldBe OK
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "ERROR:503"
@@ -264,7 +264,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"$recipientCid","updateTimestamp":"$recipientTs"},"participant2":{"updateTimestamp":"$transferorTs"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
-      status(result) shouldBe BAD_REQUEST
+      status(result) shouldBe OK
 
       val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:BAD-REQUEST"
@@ -284,7 +284,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
       val testData = s"""{"request":{"participant1":{"instanceIdentifier":"$recipientCid","updateTimestamp":"$recipientTs"},"participant2":{"updateTimestamp":"$transferorTs"},"relationship":{"creationTimestamp":"20150531235901","relationshipEndReason":"Cancelled by Transferor","actualEndDate":"20101230"}},"notification":{"full_name":"UNKNOWN","email":"example@example.com","role":"Transferor", "welsh":false, "isRetrospective":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.updateRelationship(transferorNino)(request)
-      status(result) shouldBe BAD_REQUEST
+      status(result) shouldBe OK
 
       val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:CANNOT-UPDATE-RELATIONSHIP"
