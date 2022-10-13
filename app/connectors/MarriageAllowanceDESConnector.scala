@@ -57,7 +57,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
 
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
-    val path = url(s"/marriage-allowance/citizen/${cid}/relationships?includeHistoric=${includeHistoric}")
+    val path = url(s"/marriage-allowance/citizen/$cid/relationships?includeHistoric=$includeHistoric")
     http
       .GET[Either[UpstreamErrorResponse, HttpResponse]](path, Seq(), explicitHeaders)
       .map {
@@ -69,97 +69,70 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
       }
   }
 
-  def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {
+  private def generateResponse( codedErrorResponse: FindRecipientCodedErrorResponse) = {
+    logger.warn(codedErrorResponse.errorMessage)
+    metrics.incrementSuccessCounter(ApiType.FindRecipient)
+    Left(codedErrorResponse)
+  }
+
+  def findRecipient(findRecipientRequest: FindRecipientRequest)
+                   (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {
 
     def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[DataRetrievalError, UserRecord] = {
 
       (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
-        case(ProcessingOK, ProcessingOK) => {
+        case(ProcessingOK, ProcessingOK) =>
           metrics.incrementSuccessCounter(ApiType.FindRecipient)
           Right(UserRecord(findRecipientResponseDES.instanceIdentifier, findRecipientResponseDES.updateTimeStamp))
-        }
-        case codes @ (ErrorReturnCode, NinoNotFound) => {
-          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino not found in merge trail")
-          logger.warn(codedErrorResponse.errorMessage)
-          metrics.incrementSuccessCounter(ApiType.FindRecipient)
-          Left(codedErrorResponse)
-        }
-        case codes @ (ErrorReturnCode, MultipleNinosInMergeTrail) => {
-          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino found in multiple merge trails")
-          logger.warn(codedErrorResponse.errorMessage)
-          metrics.incrementSuccessCounter(ApiType.FindRecipient)
-          Left(codedErrorResponse)
-        }
-        case codes @ (ErrorReturnCode, ConfidenceCheck) => {
-          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence check failed")
-          logger.error(codedErrorResponse.errorMessage)
-          metrics.incrementFailedCounter(ApiType.FindRecipient)
-          Left(codedErrorResponse)
-        }
-        case codes @ (ErrorReturnCode, NinoRequired) => {
-          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino must be supplied")
-          logger.error(codedErrorResponse.errorMessage)
-          metrics.incrementFailedCounter(ApiType.FindRecipient)
-          Left(codedErrorResponse)
-        }
-        case codes @ (ErrorReturnCode, OnlyOneNinoOrTempReference) => {
-          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Only one of Nino or Temporary Reference must be supplied")
-          logger.error(codedErrorResponse.errorMessage)
-          metrics.incrementFailedCounter(ApiType.FindRecipient)
-          Left(codedErrorResponse)
-        }
-        case codes @ (ErrorReturnCode, SurnameNotSupplied) => {
-          val codedErrorResponse = FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence Check Surname not supplied")
-          logger.error(codedErrorResponse.errorMessage)
-          metrics.incrementFailedCounter(ApiType.FindRecipient)
-          Left(codedErrorResponse)
-        }
-        case(returnCode, reasonCode) => {
+        case codes @ (ErrorReturnCode, NinoNotFound) =>
+          generateResponse(FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino not found in merge trail"))
+        case codes @ (ErrorReturnCode, MultipleNinosInMergeTrail) =>
+          generateResponse(FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino not found and Nino found in multiple merge trails"))
+        case codes @ (ErrorReturnCode, ConfidenceCheck) =>
+          generateResponse(FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence check failed"))
+        case codes @ (ErrorReturnCode, NinoRequired) =>
+          generateResponse(FindRecipientCodedErrorResponse(codes._1, codes._2, "Nino must be supplied"))
+        case codes @ (ErrorReturnCode, OnlyOneNinoOrTempReference) =>
+          generateResponse(FindRecipientCodedErrorResponse(codes._1, codes._2, "Only one of Nino or Temporary Reference must be supplied"))
+        case codes @ (ErrorReturnCode, SurnameNotSupplied) =>
+          generateResponse(FindRecipientCodedErrorResponse(codes._1, codes._2, "Confidence Check Surname not supplied"))
+        case(returnCode, reasonCode) =>
           logger.error(s"Unknown response code returned from DES: ReturnCode=$returnCode, ReasonCode=$reasonCode")
           metrics.incrementFailedCounter(ApiType.FindRecipient)
           Left(UnhandledStatusError)
-        }
       }
     }
 
     val httpRead = new HttpReads[Either[DataRetrievalError, UserRecord]]{
-
       override def read(method: String, url: String, response: HttpResponse): Either[DataRetrievalError, UserRecord] =
         response.status match {
-          case OK => response.json.validate[FindRecipientResponseDES].fold(handleValidationError(_), evaluateCodes(_))
-          case BAD_REQUEST => {
+          case OK => response.json.validate[FindRecipientResponseDES].fold(handleValidationError, evaluateCodes)
+          case BAD_REQUEST =>
             metrics.incrementFailedCounter(ApiType.FindRecipient)
             Left(BadRequestError)
-          }
-          case TOO_MANY_REQUESTS => {
+          case TOO_MANY_REQUESTS =>
             metrics.incrementFailedCounter(ApiType.FindRecipient)
             Left(TooManyRequestsError)
-          }
-          case INTERNAL_SERVER_ERROR => {
+          case INTERNAL_SERVER_ERROR =>
             metrics.incrementFailedCounter(ApiType.FindRecipient)
             logger.error(s" Internal Server Error received from DES: ${response.body}")
             Left(ServerError)
-          }
-          case SERVICE_UNAVAILABLE => {
+          case SERVICE_UNAVAILABLE =>
             metrics.incrementFailedCounter(ApiType.FindRecipient)
             logger.error("Service Unavailable returned from DES")
             Left(ServiceUnavailableError)
-          }
-          case 499 | GATEWAY_TIMEOUT => {
+          case 499 | GATEWAY_TIMEOUT =>
             metrics.incrementFailedCounter(ApiType.FindRecipient)
             logger.error("Timeout Error has been received from DES")
             Left(TimeOutError)
-          }
-          case BAD_GATEWAY => {
+          case BAD_GATEWAY =>
             metrics.incrementFailedCounter(ApiType.FindRecipient)
             logger.error("Bad Gateway Error returned from DES")
             Left(BadGatewayError)
-          }
-          case _ => {
+          case _ =>
             metrics.incrementFailedCounter(ApiType.FindRecipient)
             logger.error(s"Des has returned Unhandled Status Code: ${response.status}")
             Left(UnhandledStatusError)
-          }
         }
     }
 
@@ -175,28 +148,25 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
       response
 
     } recover {
-      case _: GatewayTimeoutException => {
+      case _: GatewayTimeoutException =>
         metrics.incrementFailedCounter(ApiType.FindRecipient)
         timer.stop()
         Left(TimeOutError)
-      }
-      case _: BadGatewayException => {
+      case _: BadGatewayException =>
         metrics.incrementFailedCounter(ApiType.FindRecipient)
         timer.stop()
         Left(BadGatewayError)
-      }
-      case NonFatal(e) => {
+      case NonFatal(e) =>
         metrics.incrementFailedCounter(ApiType.FindRecipient)
         timer.stop()
         throw e
-      }
     }
   }
 
   def sendMultiYearCreateRelationshipRequest(
     relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
-    val path = url(s"/marriage-allowance/02.00.00/citizen/${createRelationshipRequest.recipientCid}/relationship/${relType}")
+    val path = url(s"/marriage-allowance/02.00.00/citizen/${createRelationshipRequest.recipientCid}/relationship/$relType")
     http
       .POST[MultiYearDesCreateRelationshipRequest, Either[UpstreamErrorResponse, HttpResponse]](
         path, createRelationshipRequest, explicitHeaders
@@ -218,7 +188,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
         path, updateRelationshipRequest, explicitHeaders
       )
       .map {
-        case Right(response) => Right(())
+        case Right(_) => Right(())
         case Left(error) => Left(error)
       }
       .recover {
