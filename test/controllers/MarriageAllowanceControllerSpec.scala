@@ -31,7 +31,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import play.api.test.Helpers.{OK, contentAsJson, contentAsString, defaultAwaitTimeout, NOT_FOUND}
+import play.api.test.Helpers.{OK, contentAsJson, contentAsString, defaultAwaitTimeout}
 import play.api.test.{FakeHeaders, FakeRequest}
 import services.MarriageAllowanceService
 import test_utils._
@@ -109,7 +109,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
         val expectedResponse = GetRelationshipResponse(
           status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))
 
-        status(result) shouldBe NOT_FOUND
+        status(result) shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(expectedResponse)
       }
 
@@ -362,7 +362,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
         .thenReturn(Future.failed(TransferorDeceasedError("Person you're looking for is deceased.")))
       
       val result = controller.listRelationship(testNino)(request)
-      status(result) shouldBe NOT_FOUND
+      status(result) shouldBe OK
 
       val json = Json.parse(contentAsString(result))
       (json \ "status" \ "status_code").get.toString shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
@@ -378,7 +378,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
         .thenReturn(Future.failed(FindRecipientError(1,1)))
       
       val result = controller.listRelationship(testNino)(request)
-      status(result) shouldBe NOT_FOUND
+      status(result) shouldBe OK
 
       val json = Json.parse(contentAsString(result))
       (json \ "status" \ "status_code").get.toString shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
