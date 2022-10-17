@@ -76,7 +76,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
       val request = FakeRequest().withBody(Json.parse(testData))
 
       val result = controller.getRecipientRelationship(transferorNino)(request)
-      status(result) shouldBe OK
+      status(result) shouldBe NOT_FOUND
 
       val json = Json.parse(contentAsString(result)(defaultTimeout))
       (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:RECIPIENT-NOT-FOUND"
@@ -99,7 +99,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
         val request = FakeRequest().withBody(Json.parse(testData))
 
         val result = controller.getRecipientRelationship(transferorNino)(request)
-        status(result) shouldBe OK
+        status(result) shouldBe BAD_REQUEST
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
@@ -118,7 +118,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
         val request = FakeRequest().withBody(Json.parse(testData))
 
         val result = controller.getRecipientRelationship(transferorNino)(request)
-        status(result) shouldBe OK
+        status(result) shouldBe BAD_REQUEST
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
@@ -138,7 +138,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
         val request = FakeRequest().withBody(Json.parse(testData))
 
         val result = controller.getRecipientRelationship(transferorNino)(request)
-        status(result) shouldBe OK
+        status(result) shouldBe BAD_REQUEST
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"
@@ -153,7 +153,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
           .thenReturn(Future.failed(TransferorDeceasedError("Transferor is deceased")))
 
         val result = controller.getRecipientRelationship(Nino(generatedNino))(request)
-        status(result) shouldBe OK
+        status(result) shouldBe BAD_REQUEST
 
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:TRANSFERER-DECEASED"

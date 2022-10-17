@@ -31,7 +31,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import play.api.test.Helpers.{OK, contentAsJson, contentAsString, defaultAwaitTimeout}
+import play.api.test.Helpers.{OK, NOT_FOUND, INTERNAL_SERVER_ERROR, contentAsJson, contentAsString, defaultAwaitTimeout}
 import play.api.test.{FakeHeaders, FakeRequest}
 import services.MarriageAllowanceService
 import test_utils._
@@ -110,7 +110,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
         val expectedResponse = GetRelationshipResponse(
           status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))
 
-        status(result) shouldBe OK
+        status(result) shouldBe NOT_FOUND
         contentAsJson(result) shouldBe Json.toJson(expectedResponse)
       }
 
@@ -142,19 +142,19 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       val expectedResponse = GetRelationshipResponse(
         status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))
 
-      status(result) shouldBe OK
+      status(result) shouldBe NOT_FOUND
       contentAsJson(result) shouldBe Json.toJson(expectedResponse)
     }
   }
 
-  "return a RecipientNotFound error after throwing BadRequestException" in new Setup {
+  "return an InternalError error after throwing BadRequestException" in new Setup {
       when(mockMarriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
       (ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future.failed(new BadRequestException("Exception for test")))
 
       val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
 
-      status(result) shouldBe OK
+      status(result) shouldBe INTERNAL_SERVER_ERROR
   }
 
 

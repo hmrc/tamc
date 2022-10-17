@@ -44,20 +44,21 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
             user_record = Some(recipientRecord),
             availableYears = Some(taxYears),
             status = ResponseStatus(status_code = "OK"))))
-        case Left(_: DataRetrievalError) => Ok(Json.toJson(GetRelationshipResponse(
-          status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
+        case Left(_: DataRetrievalError) =>
+          NotFound(Json.toJson(GetRelationshipResponse(
+            status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
       } recover {
         case error: ServiceError =>
           logger.warn(error.getMessage)
-          Ok(Json.toJson(GetRelationshipResponse(
+          NotFound(Json.toJson(GetRelationshipResponse(
             status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
         case error: TransferorDeceasedError =>
           logger.warn(error.getMessage)
-          Ok(Json.toJson(GetRelationshipResponse(
+          BadRequest(Json.toJson(GetRelationshipResponse(
             status = ResponseStatus(status_code = TRANSFERER_DECEASED))))
         case error =>
           logger.error(error.getMessage)
-          Ok(Json.toJson(GetRelationshipResponse(
+          InternalServerError(Json.toJson(GetRelationshipResponse(
             status = ResponseStatus(status_code = OTHER_ERROR))))
       }
     }
@@ -75,11 +76,11 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
             logger.warn(badRequest.getMessage)
             Ok(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RECIPIENT_DECEASED))))
-          case conflict: Upstream4xxResponse if conflict.message.contains("Cannot update as Participant") =>
+          case conflict: UpstreamErrorResponse if conflict.message.contains("Cannot update as Participant") =>
             logger.warn(conflict.getMessage)
             Ok(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED))))
-          case ex: Upstream5xxResponse if ex.message.contains("LTM000503") =>
+          case ex: UpstreamErrorResponse if ex.message.contains("LTM000503") =>
             logger.warn(ex.getMessage)
             Ok(Json.toJson(CreateRelationshipResponse(
               status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED))))
