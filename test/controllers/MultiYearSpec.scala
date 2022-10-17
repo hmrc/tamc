@@ -33,7 +33,7 @@ import services.MarriageAllowanceService
 import test_utils.TestData.Cids
 import test_utils.{FakeAuthAction, TestData, UnitSpec}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.{BadRequestException, UpstreamErrorResponse}
 
 import scala.concurrent.Future
 
@@ -61,6 +61,24 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
 
   "Calling Multi Year create relationship" should {
 
+    "return Participant is deceased" in {
+
+      when(mockMarrageAllowanceService.createMultiYearRelationship(any(), any())(any(), any()))
+        .thenReturn(Future.failed(new BadRequestException("Participant is deceased")))
+
+      val testInput = TestData.MultiYearCreate.happyScenarioStep1
+      val transferorNino = Nino(testInput.transferor.nino)
+      val transferorCid = testInput.transferor.cid.cid
+      val transferorTs = testInput.transferor.timestamp
+      val recipientCid = testInput.recipient.cid.cid
+      val recipientTs = testInput.recipient.timestamp
+
+      val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
+      val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
+      val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
+      status(result) shouldBe OK
+    }
+
     "return OK if data is correct for current tax year" in {
 
       when(mockMarrageAllowanceService.createMultiYearRelationship(any(),any())(any(),any()))
@@ -69,11 +87,11 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
       val transferorCid = testInput.transferor.cid.cid
-      val transferorTs = testInput.transferor.timestamp.toString()
+      val transferorTs = testInput.transferor.timestamp
       val recipientCid = testInput.recipient.cid.cid
-      val recipientTs = testInput.recipient.timestamp.toString()
+      val recipientTs = testInput.recipient.timestamp
 
-      val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"${recipientTs}", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
+      val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
       val result = controller.createMultiYearRelationship(transferorNino, "GDS")(request)
       status(result) shouldBe OK
@@ -87,9 +105,9 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
       val transferorCid = testInput.transferor.cid.cid
-      val transferorTs = testInput.transferor.timestamp.toString()
+      val transferorTs = testInput.transferor.timestamp
       val recipientCid = testInput.recipient.cid.cid
-      val recipientTs = testInput.recipient.timestamp.toString()
+      val recipientTs = testInput.recipient.timestamp
 
       val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
@@ -105,9 +123,9 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
       val transferorCid = testInput.transferor.cid.cid
-      val transferorTs = testInput.transferor.timestamp.toString()
+      val transferorTs = testInput.transferor.timestamp
       val recipientCid = testInput.recipient.cid.cid
-      val recipientTs = testInput.recipient.timestamp.toString()
+      val recipientTs = testInput.recipient.timestamp
 
       val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
@@ -123,9 +141,9 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
       val transferorCid = testInput.transferor.cid.cid
-      val transferorTs = testInput.transferor.timestamp.toString()
+      val transferorTs = testInput.transferor.timestamp
       val recipientCid = testInput.recipient.cid.cid
-      val recipientTs = testInput.recipient.timestamp.toString()
+      val recipientTs = testInput.recipient.timestamp
 
       val testData = s"""{"request":{"transferor_cid":$transferorCid, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
@@ -141,9 +159,9 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
-      val transferorTs = testInput.transferor.timestamp.toString()
+      val transferorTs = testInput.transferor.timestamp
       val recipientCid = testInput.recipient.cid.cid
-      val recipientTs = testInput.recipient.timestamp.toString()
+      val recipientTs = testInput.recipient.timestamp
 
       val testData = s"""{"request":{"transferor_cid":${Cids.cidConflict}, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))
@@ -160,9 +178,9 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
 
       val testInput = TestData.MultiYearCreate.happyScenarioStep1
       val transferorNino = Nino(testInput.transferor.nino)
-      val transferorTs = testInput.transferor.timestamp.toString()
+      val transferorTs = testInput.transferor.timestamp
       val recipientCid = testInput.recipient.cid.cid
-      val recipientTs = testInput.recipient.timestamp.toString()
+      val recipientTs = testInput.recipient.timestamp
 
       val testData = s"""{"request":{"transferor_cid":${Cids.cidServiceUnavailable}, "transferor_timestamp": "$transferorTs", "recipient_cid":$recipientCid, "recipient_timestamp":"$recipientTs", "taxYears":[2015, 2014]}, "notification":{"full_name":"foo bar", "email":"example@example.com", "welsh":false}}"""
       val request: Request[JsValue] = FakeRequest().withBody(Json.parse(testData))

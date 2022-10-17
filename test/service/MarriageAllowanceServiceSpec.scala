@@ -41,7 +41,7 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.Calendar
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionException, Future}
 
 class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
@@ -260,6 +260,34 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
         }
       }
     }
+
+    "when request is sent for current year" should {
+      "return unit" in {
+        val mockTimerContext = mock[Timer.Context]
+        when(mockTamcMetrics.startTimer(any())).thenReturn(mockTimerContext)
+        when(mockTimerContext.stop()).thenReturn(123456789)
+
+        val jsVal: JsValue = Json.parse(
+          """ {
+            |"status":"Processing OK",
+            |"CID1Timestamp": "123456789",
+            |"CID2Timestamp": "123456789" }
+          """.stripMargin)
+
+        val resultVal: Future[Either[UpstreamErrorResponse,JsValue]] = Future.successful(Right(jsVal))
+
+        when(mockMarriageAllowanceDESConnector.sendMultiYearCreateRelationshipRequest(any(), any())(any(), any())).
+          thenReturn(resultVal)
+
+        when(mockEmailConnector.sendEmail(any())(any())).thenReturn(Right(()))
+
+        val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipCurrentYearHolder
+        val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
+
+        await(response) shouldBe a[Unit]
+      }
+    }
+
   }
 
   "when updateRelationship" should {
@@ -304,6 +332,42 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
         }
     }
   }
+
+  "when updateRelationship with invalid role" should {
+    "return a NotImplementedError" in {
+        setAppConFigValuesInMock()
+        val mockTimerContext = mock[Timer.Context]
+        when(mockTamcMetrics.startTimer(any())).thenReturn(mockTimerContext)
+        when(mockTimerContext.stop()).thenReturn(123456789)
+
+        val sdf = new SimpleDateFormat("yyyyMMdd")
+        val theDate = Calendar.getInstance()
+        val endDate = sdf.format(theDate.getTime)
+
+        val desUpdateRelationshipRequest: DesUpdateRelationshipRequest = DesUpdateRelationshipRequest(
+          new DesRecipientInformation("participant1", theDate.toString),
+          new DesTransferorInformation("participant2"),
+          new DesRelationshipInformation(theDate.toString,  "Divorce/Separation", endDate))
+
+        val notification: UpdateRelationshipNotificationRequest = new UpdateRelationshipNotificationRequest("Fred Bloggs",
+          new EmailAddress("fred@bloggs.com"), "INVALID", false, false)
+
+        val updateRelationshipRequestHolder: UpdateRelationshipRequestHolder = new UpdateRelationshipRequestHolder(desUpdateRelationshipRequest, notification)
+
+        when(mockMarriageAllowanceDESConnector.updateAllowanceRelationship(any())(any(), any())).
+          thenReturn(Future.successful(Right(())))
+
+        when(mockEmailConnector.sendEmail(any())(any())).thenReturn(Right(()))
+
+        val response = service.updateRelationship(updateRelationshipRequestHolder)(new HeaderCarrier(), implicitly)
+
+        val exceptionThrown: ExecutionException = intercept[ExecutionException] {
+          await(response)
+        }
+        exceptionThrown.getCause.getMessage == "reason and role not handled: Divorce/Separation, INVALID"
+      }
+  }
+
 
   "when getting relationship list" should {
     "return RelationshipRecordWrapper" when {

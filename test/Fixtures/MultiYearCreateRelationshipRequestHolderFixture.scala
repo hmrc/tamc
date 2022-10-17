@@ -19,6 +19,8 @@ package Fixtures
 import models._
 import uk.gov.hmrc.emailaddress.EmailAddress
 
+import java.util.Calendar
+
 object MultiYearCreateRelationshipRequestHolderFixture {
 
   val multiYearCreateRelationshipRequest: MultiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequest(
@@ -37,6 +39,17 @@ object MultiYearCreateRelationshipRequestHolderFixture {
     taxYears=List()
   )
 
+  def getCurrentYear: Int ={
+    Calendar.getInstance().get(Calendar.YEAR);
+  }
+
+  val multiYearCreateRelationshipCurrentYearRequest: MultiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequest(
+    transferor_cid = 1111.asInstanceOf[Cid],
+    transferor_timestamp = "2222",
+    recipient_cid = 3333.asInstanceOf[Cid],
+    recipient_timestamp = "4444",
+    taxYears = List(getCurrentYear)
+  )
 
 
   val createRelationshipNotificationRequest: CreateRelationshipNotificationRequest = CreateRelationshipNotificationRequest(
@@ -50,4 +63,5 @@ object MultiYearCreateRelationshipRequestHolderFixture {
 
   val multiYearCreateRelationshipRequestNoTaxYearHolder: MultiYearCreateRelationshipRequestHolder = MultiYearCreateRelationshipRequestHolder(multiYearCreateRelationshipRequestNoTaxYear, createRelationshipNotificationRequest)
 
+  val multiYearCreateRelationshipCurrentYearHolder: MultiYearCreateRelationshipRequestHolder = MultiYearCreateRelationshipRequestHolder(multiYearCreateRelationshipCurrentYearRequest, createRelationshipNotificationRequest)
 }

@@ -36,6 +36,7 @@ import play.api.test.{FakeHeaders, FakeRequest}
 import services.MarriageAllowanceService
 import test_utils._
 import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.http.BadRequestException
 
 import scala.concurrent.Future
 
@@ -114,6 +115,47 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       }
 
     }
+
+  "return a RecipientNotFound error after receiving a FindRecipientError" in new Setup {
+
+    val records =
+      Table(
+        "DataRetrivalError",
+        BadRequestError,
+        TooManyRequestsError,
+        ServerError,
+        ServiceUnavailableError,
+        TimeOutError,
+        BadGatewayError,
+        UnhandledStatusError,
+        ResponseValidationError
+      )
+
+    forAll(records) { retrievalError =>
+
+      when(mockMarriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
+      (ArgumentMatchers.any(), ArgumentMatchers.any()))
+        .thenReturn(Future.failed(FindRecipientError(1,1)))
+
+      val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
+
+      val expectedResponse = GetRelationshipResponse(
+        status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(expectedResponse)
+    }
+  }
+
+  "return a RecipientNotFound error after throwing BadRequestException" in new Setup {
+      when(mockMarriageAllowanceService.getRecipientRelationship(ArgumentMatchers.eq(generatedNino), ArgumentMatchers.eq(findRecipientRequest))
+      (ArgumentMatchers.any(), ArgumentMatchers.any()))
+        .thenReturn(Future.failed(new BadRequestException("Exception for test")))
+
+      val result = controller.getRecipientRelationship(generatedNino)(fakeRequest)
+
+      status(result) shouldBe OK
+  }
 
 
   "Calling hasMarriageAllowance for Recipient" should {
