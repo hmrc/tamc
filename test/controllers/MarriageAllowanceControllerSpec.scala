@@ -404,7 +404,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
         .thenReturn(Future.failed(TransferorDeceasedError("Person you're looking for is deceased.")))
       
       val result = controller.listRelationship(testNino)(request)
-      status(result) shouldBe OK
+      status(result) shouldBe NOT_FOUND
 
       val json = Json.parse(contentAsString(result))
       (json \ "status" \ "status_code").get.toString shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
@@ -420,7 +420,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
         .thenReturn(Future.failed(FindRecipientError(1,1)))
       
       val result = controller.listRelationship(testNino)(request)
-      status(result) shouldBe OK
+      status(result) shouldBe NOT_FOUND
 
       val json = Json.parse(contentAsString(result))
       (json \ "status" \ "status_code").get.toString shouldBe "\"TAMC:ERROR:TRANSFEROR-NOT-FOUND\""
