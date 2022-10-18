@@ -103,7 +103,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec {
           val result = route(fakeApplication(), request)
           val expected = Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = errorCode)))
 
-          result.map(getStatus) shouldBe Some(OK)
+          result.map(getStatus) shouldBe Some(httpErrorCode.toInt)
           result.map(contentAsJson) shouldBe Some(expected)
         }
 
@@ -122,7 +122,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec {
           val result = route(fakeApplication(), request)
           val expected = Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = errorCode)))
 
-          result.map(getStatus) shouldBe Some(OK)
+          result.map(getStatus) shouldBe Some(httpErrorCode.toInt)
           result.map(contentAsJson) shouldBe Some(expected)
         }
       }
