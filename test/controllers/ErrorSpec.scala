@@ -17,6 +17,7 @@
 package controllers
 
 import controllers.auth.AuthAction
+import errors.ErrorResponseStatus.CITIZEN_NOT_FOUND
 import errors.{FindRecipientCodedErrorResponse, RecipientDeceasedError, TransferorDeceasedError, UpdateRelationshipError}
 import org.mockito.ArgumentMatchers.{any, eq => meq}
 import org.mockito.Mockito._
@@ -245,6 +246,42 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
         val json = Json.parse(contentAsString(result)(defaultTimeout))
         (json \ "status" \ "status_code").as[String] shouldBe "ERROR:503"
       }
+
+
+      "return BAD_REQUEST should be handled" in {
+
+        val request = FakeRequest()
+
+        val testData = TestData.Lists.serviceUnavailable
+        val testNino = Nino(testData.user.nino)
+
+        when(mockMarriageAllowanceService.listRelationship(meq(testNino))(any(), any()))
+          .thenReturn(Future.failed(UpstreamErrorResponse("Bad Request", BAD_REQUEST)))
+
+        val result = controller.listRelationship(testNino)(request)
+        status(result) shouldBe BAD_REQUEST
+
+        val json = Json.parse(contentAsString(result)(defaultTimeout))
+        (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:BAD-REQUEST"
+      }
+
+      "return Notfound should be handled" in {
+
+        val request = FakeRequest()
+
+        val testData = TestData.Lists.serviceUnavailable
+        val testNino = Nino(testData.user.nino)
+
+        when(mockMarriageAllowanceService.listRelationship(meq(testNino))(any(), any()))
+          .thenReturn(Future.failed(UpstreamErrorResponse(CITIZEN_NOT_FOUND, NOT_FOUND)))
+
+        val result = controller.listRelationship(testNino)(request)
+        status(result) shouldBe NOT_FOUND
+
+        val json = Json.parse(contentAsString(result)(defaultTimeout))
+        (json \ "status" \ "status_code").as[String] shouldBe "TAMC:ERROR:CITIZEN-NOT-FOUND"
+      }
+
     }
   }
 
@@ -255,8 +292,8 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
       val testInput = TestData.Updates.badRequest
       val recipientCid = testInput.transferor.cid.cid
       val transferorNino = Nino(testInput.recipient.nino)
-      val recipientTs = testInput.transferor.timestamp.toString()
-      val transferorTs = testInput.recipient.timestamp.toString()
+      val recipientTs = testInput.transferor.timestamp
+      val transferorTs = testInput.recipient.timestamp
 
       when(mockMarriageAllowanceService.updateRelationship(any())(any(), any()))
         .thenReturn(Future.failed(RecipientDeceasedError("Recipient Deceased")))
@@ -275,8 +312,8 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
       val testInput = TestData.Updates.citizenNotFound
       val recipientCid = testInput.transferor.cid.cid
       val transferorNino = Nino(testInput.recipient.nino)
-      val recipientTs = testInput.transferor.timestamp.toString()
-      val transferorTs = testInput.recipient.timestamp.toString()
+      val recipientTs = testInput.transferor.timestamp
+      val transferorTs = testInput.recipient.timestamp
 
       when(mockMarriageAllowanceService.updateRelationship(any())(any(), any()))
         .thenReturn(Future.failed(UpdateRelationshipError("Update Relationship Error")))

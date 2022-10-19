@@ -46,7 +46,7 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
             status = ResponseStatus(status_code = "OK"))))
         case Left(_: DataRetrievalError) =>
           NotFound(Json.toJson(GetRelationshipResponse(
-          status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
+            status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
       } recover {
         case error: ServiceError =>
           logger.warn(error.getMessage)
