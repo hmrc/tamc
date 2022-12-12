@@ -289,7 +289,8 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     for {
       citizenRecord <- getTransferorRecord(nino)
       relationshipList <- listRelationshipRecord(citizenRecord)
-    } yield { relationshipList }
+    } yield {
+      relationshipList }
   }
 
   private def getTransferorRecord(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserRecord] = {
@@ -349,10 +350,11 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
   }
 
   private def listRelationshipRecord(userRecord: UserRecord)(
-    implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] =
+    implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RelationshipRecordWrapper] = {
     listRelationship(userRecord.cid).map { recordWrapper =>
       recordWrapper.copy(userRecord = Some(userRecord))
     }
+  }
 
   private def sendUpdateRelationshipRequest(updateRelationshipRequest: DesUpdateRelationshipRequest)
                                            (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
@@ -375,7 +377,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
           )
         case Left(error) =>
           Future.failed(
-            UpdateRelationshipError("An unexpected error has occured while updating the relationship")
+            UpdateRelationshipError("An unexpected error has occurred while updating the relationship")
           )
       }
   }

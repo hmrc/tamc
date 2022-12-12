@@ -23,7 +23,7 @@ sealed trait RelationshipEndReason {
   def value: String
 }
 
-object RelationshipEndReason{
+object RelationshipEndReason {
 
   case object Death extends RelationshipEndReason {
     val value = "DEATH"
