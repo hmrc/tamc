@@ -77,9 +77,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
 
   def findRecipient(findRecipientRequest: FindRecipientRequest)
                    (implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]] = {
-
     def evaluateCodes(findRecipientResponseDES: FindRecipientResponseDES): Either[DataRetrievalError, UserRecord] = {
-
       (findRecipientResponseDES.returnCode, findRecipientResponseDES.reasonCode) match {
         case(ProcessingOK, ProcessingOK) =>
           metrics.incrementSuccessCounter(ApiType.FindRecipient)

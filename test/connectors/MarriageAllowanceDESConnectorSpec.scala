@@ -95,8 +95,8 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
                 "DataStoreStatus": "S",
                 "OriginServid": 9999,
                 "ContextString": "ITPR1311_PER_DETAILS_FIND_S",
-                "ReturnCode": $reasonCode,
-                "ReasonCode": $returnCode,
+                "ReturnCode": $returnCode,
+                "ReasonCode": $reasonCode,
                 "Checksum": "a234jnjbhr9ui83"
               }
             }

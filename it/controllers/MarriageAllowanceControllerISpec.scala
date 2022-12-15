@@ -16,53 +16,140 @@
 
 package controllers
 
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.util.Calendar
+import java.util.concurrent.ExecutionException
+
 import com.github.tomakehurst.wiremock.client.WireMock._
 import errors.ErrorResponseStatus
-import errors.ErrorResponseStatus.{CITIZEN_NOT_FOUND, RECIPIENT_NOT_FOUND, SERVER_ERROR}
+import errors.ErrorResponseStatus._
 import models._
+import play.api.Application
+import play.api.http.Status.BAD_REQUEST
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{Json, JsNull}
+import play.api.libs.json.{JsNull, Json}
 import play.api.mvc.AnyContentAsJson
-import play.api.test.{FakeRequest, FakeHeaders}
+import play.api.test.{FakeHeaders, FakeRequest}
 import play.api.test.Helpers.{status => getStatus, _}
 import test_utils.FileHelper._
-import test_utils.IntegrationSpec
-import uk.gov.hmrc.domain.Generator
+import test_utils.{IntegrationSpec, MarriageAllowanceFixtures}
+import uk.gov.hmrc.domain.{Generator, Nino}
+import uk.gov.hmrc.emailaddress.EmailAddress
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
-class MarriageAllowanceControllerISpec extends IntegrationSpec {
+class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllowanceFixtures {
 
-  override def fakeApplication() = GuiceApplicationBuilder().configure(
+  override def fakeApplication(): Application = GuiceApplicationBuilder().configure(
     "microservice.services.auth.port" -> server.port(),
     "microservice.services.marriage-allowance-des.host" -> "127.0.0.1",
     "microservice.services.marriage-allowance-des.port" -> server.port()
   ).build()
 
-  override def beforeEach() = {
+  override def beforeEach(): Unit = {
     super.beforeEach()
-    server.stubFor(post(urlEqualTo("/auth/authorise")).willReturn(ok("{}")))
+    server.stubFor(post(urlEqualTo("/auth/authorise")).willReturn(ok(findCitizenResponse(123456789).toString())))
   }
 
-  val generatedNino = new Generator().nextNino
+  val nino: Nino = new Generator().nextNino
+  val userRecordCid = 123456789
+  val transferorRecordCid = 987654321
 
   "getRecipientRelationship" should {
+    val findRecipientRequest: FindRecipientRequest = FindRecipientRequest("", "", Gender("M"), nino, Some(LocalDate.parse("2010-01-01")))
+    val json = AnyContentAsJson(Json.toJson(findRecipientRequest))
 
-    List(notFound() -> "404", serverError() -> "500", serviceUnavailable() -> "503", badRequest() -> "400").foreach {
+    val request = FakeRequest(POST, s"/paye/$nino/get-recipient-relationship", FakeHeaders(Seq("Authorization" -> "Bearer bearer-token")), json)
+
+    "return a success when getting a successful response from the downstream" in {
+
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid).toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(ok(listRelationshipResponse.toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$transferorRecordCid/relationships?includeHistoric=true")).willReturn(ok(listRelationshipResponse.toString())))
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(GetRelationshipResponse(Some(UserRecord(userRecordCid, "20200116155359011123")), Some(List(TaxYear(2020), TaxYear(2019), TaxYear(2018))), ResponseStatus("OK")))
+
+      result.map(getStatus) shouldBe Some(OK)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    List(2016, 2017, 2018, 2039, 2040, 2061, 2).foreach {
+      reasonCode =>
+
+        s"return an error when a reason code of $reasonCode is returned" in {
+
+          server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid, reasonCode = reasonCode, returnCode = -1011).toString())))
+
+          val result = route(fakeApplication(), request)
+          val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND)))
+
+          result.map(getStatus) shouldBe Some(NOT_FOUND)
+          result.map(contentAsJson) shouldBe Some(expected)
+        }
+    }
+
+    "return a TransferorDeceasedError when the transferor is shown as deceased" in {
+
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid, "Y").toString())))
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = TRANSFERER_DECEASED)))
+
+      result.map(getStatus) shouldBe Some(BAD_REQUEST)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    "return a RECIPIENT_NOT_FOUND error when a serviceError occurs" in {
+
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid, reasonCode = 2, returnCode = 2).toString())))
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND)))
+
+      result.map(getStatus) shouldBe Some(NOT_FOUND)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    "return a validation error when downstream returns an invalid json" in {
+
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(Json.parse("""{}""").toString())))
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = OTHER_ERROR)))
+
+      result.map(getStatus) shouldBe Some(INTERNAL_SERVER_ERROR)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    "return a server error when thrown from downstream" in {
+
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid).toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(serverError()))
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = OTHER_ERROR)))
+
+      result.map(getStatus) shouldBe Some(INTERNAL_SERVER_ERROR)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    List(
+      notFound() -> "404", serverError() -> "500",
+      serviceUnavailable() -> "503", badRequest() -> "400",
+      aResponse().withStatus(GATEWAY_TIMEOUT) -> "499",
+      aResponse().withStatus(BAD_GATEWAY) -> "502",
+      aResponse().withStatus(TOO_MANY_REQUESTS) -> "429"
+    ).foreach {
       case (errorResponse, errorCode) =>
         s"return other error for $errorCode" in {
 
-          server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$generatedNino/check")).willReturn(errorResponse))
-
-          val findRecipientRequest = FindRecipientRequest("", "", Gender("M"), generatedNino)
-          val json = AnyContentAsJson(Json.toJson(findRecipientRequest))
-
-          val request = FakeRequest(
-            method = POST,
-            uri = s"/paye/$generatedNino/get-recipient-relationship",
-            headers = FakeHeaders(Seq(
-              "Authorization" -> "Bearer bearer-token"
-            )),
-            body = json
-          )
+          server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(errorResponse))
 
           val result = route(fakeApplication(), request)
           val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND)))
@@ -73,19 +160,118 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec {
     }
   }
 
+  "createMultiYearRelationship" should {
+    val journey = "newJourney"
+
+    val multiYearCreateRelationshipRequest: MultiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequest(
+      transferor_cid = 1111.asInstanceOf[Cid],
+      transferor_timestamp = "2222",
+      recipient_cid = 3333.asInstanceOf[Cid],
+      recipient_timestamp = "4444",
+      taxYears = List(2015, 2016, LocalDate.now().getYear)
+    )
+
+    val createRelationshipNotificationRequest: CreateRelationshipNotificationRequest = CreateRelationshipNotificationRequest(
+      full_name = "bob",
+      email = EmailAddress("bob@yahoo.com"),
+      welsh = false
+    )
+
+    val multiYearCreateRelationshipRequestHolder: MultiYearCreateRelationshipRequestHolder = MultiYearCreateRelationshipRequestHolder(multiYearCreateRelationshipRequest, createRelationshipNotificationRequest)
+
+    val json = Json.toJson(multiYearCreateRelationshipRequestHolder)
+
+    val request = FakeRequest(
+      method = PUT,
+      uri = s"/paye/$nino/create-multi-year-relationship/$journey",
+      headers = FakeHeaders(Seq(
+        "Authorization" -> "Bearer bearer-token"
+      )),
+      body = json
+    )
+
+    "return a success when successfully creating a multi year relationship" in {
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(ok(createMultiYearRelationshipResponse.toString())))
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/active")).willReturn(ok(createMultiYearRelationshipResponse.toString())))
+
+      val result = route(fakeApplication(), request)
+
+      result.map(getStatus) shouldBe Some(OK)
+    }
+
+    "return an error when downstream returns LTM000503" in {
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(aResponse().withStatus(CONFLICT).withBody(LTM000503Error.toString())))
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(CreateRelationshipResponse(status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED)))
+      result.map(getStatus) shouldBe Some(CONFLICT)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    "return an error when unable to update as participant" in {
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(aResponse().withStatus(CONFLICT).withBody(unableToUpdateError.toString())))
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(CreateRelationshipResponse(status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED)))
+      result.map(getStatus) shouldBe Some(CONFLICT)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    "throw an error when any other error is thrown" in {
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(badRequest().withBody(createMultiYearError.toString())))
+
+      val result = route(fakeApplication(), request)
+
+      assertThrows[UpstreamErrorResponse] {
+        result.map(await(_))
+      }
+    }
+  }
+
   "listRelationship" should {
+    val request = FakeRequest(GET, s"/paye/$nino/list-relationship", FakeHeaders(Seq("Authorization" -> "Bearer bearer-token")), JsNull)
+
+    "return a success when getting a successful response from the downstream" in {
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(userRecordCid).toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(ok(listRelationshipResponse.toString())))
+
+      val result = route(fakeApplication(), request)
+
+      result.map(getStatus) shouldBe Some(OK)
+    }
+
+    "returns TransferorDeceasedError when the citizen is listed as deceased" in {
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(userRecordCid, "Y").toString())))
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND)))
+
+      result.map(getStatus) shouldBe Some(NOT_FOUND)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    "returns a Service Error when an error in the service is thrown" in {
+
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(userRecordCid, reasonCode = 2, returnCode = 2).toString())))
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND)))
+
+      result.map(getStatus) shouldBe Some(NOT_FOUND)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    "returns any other error when a non captured error is thrown" in {
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(aResponse().withStatus(UNAUTHORIZED)))
+
+      val result = route(fakeApplication(), request)
+
+      assertThrows[UpstreamErrorResponse] {
+        result.map(await(_))
+      }
+    }
 
     "return service error code" when {
-
-      val request = FakeRequest(
-        method = GET,
-        uri = s"/paye/$generatedNino/list-relationship",
-        headers = FakeHeaders(Seq(
-          "Authorization" -> "Bearer bearer-token"
-        )),
-        body = JsNull
-      )
-
       List(
         notFound() -> CITIZEN_NOT_FOUND -> "404",
         badRequest() -> ErrorResponseStatus.BAD_REQUEST -> "400",
@@ -96,7 +282,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec {
         s"citizen endpoint returns $httpErrorCode" in {
 
           server.stubFor(
-            get(urlEqualTo(s"/marriage-allowance/citizen/$generatedNino"))
+            get(urlEqualTo(s"/marriage-allowance/citizen/$nino"))
               .willReturn(errorResponse)
           )
 
@@ -110,7 +296,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec {
         s"listRelationship endpoint returns $httpErrorCode" in {
 
           server.stubFor(
-            get(urlEqualTo(s"/marriage-allowance/citizen/$generatedNino"))
+            get(urlEqualTo(s"/marriage-allowance/citizen/$nino"))
               .willReturn(ok(loadFile("./it/resources/citizenRecord.json")))
           )
 
@@ -125,6 +311,156 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec {
           result.map(getStatus) shouldBe Some(httpErrorCode.toInt)
           result.map(contentAsJson) shouldBe Some(expected)
         }
+      }
+    }
+  }
+
+  "updateRelationship" should {
+    val REASON_CANCEL = "Cancelled by Transferor"
+    val REASON_REJECT = "Rejected by Recipient"
+    val REASON_DIVORCE = "Divorce/Separation"
+
+    val ROLE_TRANSFEROR = "Transferor"
+    val ROLE_RECIPIENT = "Recipient"
+
+    val DATE_FORMAT = "yyyyMMdd"
+    val sdf = new SimpleDateFormat(DATE_FORMAT)
+    val date = Calendar.getInstance()
+    val currentDate = sdf.format(date.getTime)
+    date.add(Calendar.YEAR, -1)
+    val previousYearDate = sdf.format(date.getTime)
+
+    List(
+      (REASON_CANCEL, ROLE_RECIPIENT, false, currentDate),
+      (REASON_REJECT, ROLE_RECIPIENT, true, currentDate),
+      (REASON_REJECT, ROLE_RECIPIENT, false, currentDate),
+      (REASON_DIVORCE, ROLE_TRANSFEROR, false, currentDate),
+      (REASON_DIVORCE, ROLE_TRANSFEROR, false, previousYearDate),
+      (REASON_DIVORCE, ROLE_TRANSFEROR, false, "20100101"),
+      (REASON_DIVORCE, ROLE_RECIPIENT, false, currentDate),
+      (REASON_DIVORCE, ROLE_RECIPIENT, false, "20100101")
+    ).foreach {
+      case (reason, role, retrospective, actualEndDate) =>
+        s"return a success when the reason is $reason, the role is $role, retrospective is $retrospective and the actualEndDate is $actualEndDate" in {
+
+          server.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(ok(updateAllowanceRelationshipResponse.toString())))
+
+          val updateRelationshipRequest = DesUpdateRelationshipRequest(
+            DesRecipientInformation("123456789", "2222"),
+            DesTransferorInformation("4444"),
+            DesRelationshipInformation("20101230", reason, actualEndDate)
+          )
+
+          val updateRelationshipNotificationRequest = UpdateRelationshipNotificationRequest(
+            "John",
+            EmailAddress("bob@yahoo.com"),
+            role,
+            welsh = false,
+            isRetrospective = retrospective
+          )
+
+          val updateRelationshipRequestHolder = UpdateRelationshipRequestHolder(updateRelationshipRequest, updateRelationshipNotificationRequest)
+
+          val json = Json.toJson(updateRelationshipRequestHolder)
+
+          val request = FakeRequest(PUT, s"/paye/$nino/update-relationship", FakeHeaders(Seq("Authorization" -> "Bearer bearer-token")), json)
+
+          val result = route(fakeApplication(), request)
+          val expected = Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = "OK")))
+
+          result.map(getStatus) shouldBe Some(OK)
+          result.map(contentAsJson) shouldBe Some(expected)
+        }
+    }
+
+    "return a RecipientDeceasedError when the recipient is shown to be deceased" in {
+      server.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(badRequest()))
+
+      val updateRelationshipRequest = DesUpdateRelationshipRequest(
+        DesRecipientInformation("123456789", "2222"),
+        DesTransferorInformation("4444"),
+        DesRelationshipInformation("20101230", "Divorce/Separation", "20101230")
+      )
+
+      val updateRelationshipNotificationRequest = UpdateRelationshipNotificationRequest(
+        "John",
+        EmailAddress("bob@yahoo.com"),
+        "Recipient",
+        welsh = false,
+        isRetrospective = false
+      )
+
+      val updateRelationshipRequestHolder = UpdateRelationshipRequestHolder(updateRelationshipRequest, updateRelationshipNotificationRequest)
+
+      val json = Json.toJson(updateRelationshipRequestHolder)
+
+      val request = FakeRequest(PUT, s"/paye/$nino/update-relationship", FakeHeaders(Seq("Authorization" -> "Bearer bearer-token")), json)
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST)))
+
+      result.map(getStatus) shouldBe Some(BAD_REQUEST)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    "return a UpdateRelationshipError when an unexpected error occurs while updating the relationship" in {
+      server.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(serverError()))
+
+      val updateRelationshipRequest = DesUpdateRelationshipRequest(
+        DesRecipientInformation("123456789", "2222"),
+        DesTransferorInformation("4444"),
+        DesRelationshipInformation("20101230", "Divorce/Separation", "20101230")
+      )
+
+      val updateRelationshipNotificationRequest = UpdateRelationshipNotificationRequest(
+        "John",
+        EmailAddress("bob@yahoo.com"),
+        "Recipient",
+        welsh = true,
+        isRetrospective = false
+      )
+
+      val updateRelationshipRequestHolder = UpdateRelationshipRequestHolder(updateRelationshipRequest, updateRelationshipNotificationRequest)
+
+      val json = Json.toJson(updateRelationshipRequestHolder)
+
+      val request = FakeRequest(PUT, s"/paye/$nino/update-relationship", FakeHeaders(Seq("Authorization" -> "Bearer bearer-token")), json)
+
+      val result = route(fakeApplication(), request)
+      val expected = Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = CANNOT_UPDATE_RELATIONSHIP)))
+
+      result.map(getStatus) shouldBe Some(BAD_REQUEST)
+      result.map(contentAsJson) shouldBe Some(expected)
+    }
+
+    "throw an error whenever any other error occurs" in {
+
+      server.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(ok(updateAllowanceRelationshipResponse.toString())))
+
+      val updateRelationshipRequest = DesUpdateRelationshipRequest(
+        DesRecipientInformation("123456789", "2222"),
+        DesTransferorInformation("4444"),
+        DesRelationshipInformation("20101230", "Invalid", "20101230")
+      )
+
+      val updateRelationshipNotificationRequest = UpdateRelationshipNotificationRequest(
+        "John",
+        EmailAddress("bob@yahoo.com"),
+        "Invalid",
+        welsh = false,
+        isRetrospective = false
+      )
+
+      val updateRelationshipRequestHolder = UpdateRelationshipRequestHolder(updateRelationshipRequest, updateRelationshipNotificationRequest)
+
+      val json = Json.toJson(updateRelationshipRequestHolder)
+
+      val request = FakeRequest(PUT, s"/paye/$nino/update-relationship", FakeHeaders(Seq("Authorization" -> "Bearer bearer-token")), json)
+
+      val result = route(fakeApplication(), request)
+
+      assertThrows[ExecutionException] {
+        result.map(await(_))
       }
     }
   }

@@ -23,8 +23,8 @@ case class FindRecipientResponseDES(reasonCode: Int, returnCode: Int, instanceId
 
 object FindRecipientResponseDES {
   implicit val reads: Reads[FindRecipientResponseDES] = (
-    (JsPath \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutWCbdParameters" \ "ReturnCode").read[Int] and
     (JsPath \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutWCbdParameters" \ "ReasonCode").read[Int] and
+    (JsPath \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutWCbdParameters" \ "ReturnCode").read[Int] and
     (JsPath \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutItpr1Person" \ "InstanceIdentifier").read[Cid] and
     (JsPath \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutItpr1Person" \ "UpdateTimestamp").read[Timestamp]
   )(FindRecipientResponseDES.apply _)
