@@ -197,7 +197,8 @@ class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite wit
 
   "getRecipientRelationship" should {
     "return a UserRecord, list of TaxYearModel tuple given a valid FindRecipientRequest " in {
-      val expectedResponse = (userRecord, List())
+      val taxYearModel = TaxYear(year, Some(true))
+      val expectedResponse = (userRecord, List(taxYearModel))
       when(mockMarriageAllowanceDESConnector.findRecipient(meq(findRecipientRequest))(any(), any()))
         .thenReturn(Future.successful(Right(userRecord)))
 
