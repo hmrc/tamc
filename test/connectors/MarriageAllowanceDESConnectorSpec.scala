@@ -49,7 +49,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    resetMock(mockMetrics, mockHttp, mockTimerContext)
+    resetMock(mockMetrics)
+    resetMock(mockHttp)
+    resetMock(mockTimerContext)
   }
 
   override def fakeApplication(): Application = {

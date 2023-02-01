@@ -16,22 +16,15 @@
 
 package models
 
-import play.api.libs.functional.syntax._
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
-import play.api.libs.json.Format
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.libs.json.__
 import play.api.libs.json._
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.emailaddress.PlayJsonFormats.emailAddressReads
-import uk.gov.hmrc.emailaddress.PlayJsonFormats.emailAddressWrites
 
 case class SendEmailRequest(to: List[EmailAddress], templateId: String, parameters: Map[String, String], force: Boolean)
 
 object SendEmailRequest {
-  implicit val format = new Format[SendEmailRequest] {
+  implicit val format: Format[SendEmailRequest] = new Format[SendEmailRequest] {
     def reads(json: JsValue): JsResult[SendEmailRequest] = (
       (__ \ "to").read[List[EmailAddress]] and
         (__ \ "templateId").read[String] and

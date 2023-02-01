@@ -31,6 +31,7 @@ import uk.gov.hmrc.auth.core._
 
 import scala.concurrent.Future
 
+
 class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
   val mockAuthConnector: AuthConnector = mock[AuthConnector]

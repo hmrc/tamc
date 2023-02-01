@@ -42,7 +42,7 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
 
   val mockMarriageAllowanceService: MarriageAllowanceService = mock[MarriageAllowanceService]
 
-  override def fakeApplication: Application = GuiceApplicationBuilder()
+  override def fakeApplication(): Application = GuiceApplicationBuilder()
     .overrides(
       bind[MarriageAllowanceService].toInstance(mockMarriageAllowanceService),
       bind[AuthAction].to[FakeAuthAction]
