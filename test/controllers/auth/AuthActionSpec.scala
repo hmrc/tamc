@@ -36,7 +36,6 @@ class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
   val mockAuthConnector: AuthConnector = mock[AuthConnector]
   val authAction: AuthAction = inject[AuthAction]
-
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
       .overrides(
@@ -47,7 +46,6 @@ class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
   class Harness() {
     def onPageLoad(): Action[AnyContent] = authAction { _ => Ok("") }
   }
-
 
   "A user with no active session" should {
     "return UNAUTHORIZED" in {
