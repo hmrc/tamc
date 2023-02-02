@@ -24,9 +24,9 @@ import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.Authorization
-
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+
 
 trait MarriageAllowanceConnector extends Logging {
 
@@ -44,13 +44,14 @@ trait MarriageAllowanceConnector extends Logging {
   val urlHeaderAuthorization: String
   val metrics: TamcMetrics
   def url(path: String) = s"$serviceUrl$path"
-  def ninoWithoutSpaces(nino: Nino) = nino.value.replaceAll(" ", "")
+  def ninoWithoutSpaces(nino: Nino): Timestamp = nino.value.replaceAll(" ", "")
 
-  def handleValidationError[A]: Seq[(JsPath, scala.Seq[JsonValidationError])] => Left[DataRetrievalError, A] =  err => {
+  def handleValidationError[A]: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])] => Either[DataRetrievalError, A] =  err => {
 
-    val extractValidationErrors: Seq[(JsPath, scala.Seq[JsonValidationError])] => String = errors => {
+    val extractValidationErrors: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])] => String = errors => {
       errors.map {
         case (path, List(validationError: JsonValidationError, _*)) => s"$path: ${validationError.message}"
+        case (path, err) => s"$path: ${err}"
       }.mkString(", ").trim
     }
 
@@ -61,7 +62,7 @@ trait MarriageAllowanceConnector extends Logging {
   def buildHeaderCarrier(hc: HeaderCarrier): HeaderCarrier =
     hc.copy(authorization = Some(Authorization(urlHeaderAuthorization))).withExtraHeaders("Environment" -> urlHeaderEnvironment)
 
-  def explicitHeaders(implicit hc: HeaderCarrier): List[(String, String)] =
+  def explicitHeaders(implicit hc: HeaderCarrier): scala.collection.immutable.Seq[(String, String)] =
     List(
       HeaderNames.authorisation -> urlHeaderAuthorization,
       HeaderNames.xRequestId    -> hc.requestId.fold("-")(_.value),

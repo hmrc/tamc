@@ -72,7 +72,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
     }
 
     flatten(getRecipientRecord(findRecipientRequest) map { eitherRecipientRecord =>
-      eitherRecipientRecord.right.map { userRecord =>
+      eitherRecipientRecord.map { userRecord =>
         retrieveTaxYearModels(userRecord) map { years =>
           (userRecord, years)
         }
@@ -87,7 +87,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
       _ <- handleMultiYearRequests(createRelationshipRequestHolder.request)
       sendEmailRequest <- transformEmailRequest(createRelationshipRequestHolder.notification, templateId)
       _ <- sendEmail(sendEmailRequest)
-    } yield { Unit }
+    } yield { () }
   }
 
   private def getEmailTemplateId(taxYears: List[Int], isWelsh: Boolean)(implicit ec: ExecutionContext): Future[String] = {
@@ -187,7 +187,7 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
       _ <- sendUpdateRelationshipRequest(updateRelationshipRequestHolder.request)
       sendEmailRequest <- transformEmailForUpdateRequest(updateRelationshipRequestHolder)
       _ <- sendEmail(sendEmailRequest)
-    } yield { Unit }
+    } yield { () }
   }
 
   private def transformEmailRequest(notification: CreateRelationshipNotificationRequest, tempalteId: String): Future[SendEmailRequest] = {

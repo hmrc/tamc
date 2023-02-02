@@ -113,7 +113,7 @@ object TestData {
   case class ListDummy(user: FindCitizenDummy, counterparties: Array[ListItem]) {
     def key = s"usercid-${user.cid.cid}"
 
-    def json = counterparties map (_.json) mkString ("{\"relationships\": [", ",", "]}")
+    def json: String = counterparties.map (_.json).mkString("""{"relationships": [""", ",", "]}")
   }
 
   object Lists {

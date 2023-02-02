@@ -28,13 +28,14 @@ import play.api.Configuration
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 
+
 class PatternLayoutJsonEncoder @Inject()(configuration: Configuration) extends PatternLayoutEncoderBase[ILoggingEvent] {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val mapper = new ObjectMapper().configure(JsonWriteFeature.ESCAPE_NON_ASCII.mappedFeature(), true)
 
-  lazy val appName = configuration.getOptional[String]("appName").getOrElse("APP NAME NOT SET")
+  lazy val appName: String = configuration.getOptional[String]("appName").getOrElse("APP NAME NOT SET")
 
   private lazy val dateFormat = FastDateFormat.getInstance(
     configuration.getOptional[String]("logger.json.dateformat").getOrElse("yyyy-MM-dd HH:mm:ss.SSSZZ")
@@ -70,10 +71,10 @@ class PatternLayoutJsonEncoder @Inject()(configuration: Configuration) extends P
   override def headerBytes(): Array[Byte] =
     System.lineSeparator.getBytes(StandardCharsets.UTF_8)
 
-  override def start() {
+  override def start(): Unit = {
     val patternLayout = new PatternLayout()
     patternLayout.setContext(context)
-    patternLayout.setPattern(getPattern())
+    patternLayout.setPattern(getPattern)
     patternLayout.start()
     this.layout = patternLayout
     super.start()

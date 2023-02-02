@@ -23,12 +23,12 @@ import metrics.TamcMetrics
 import models._
 import play.api.Logging
 import play.api.http.Status._
+//import play.api.libs.json.{JsPath, JsResult, JsValue, JsonValidationError}
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.HttpReadsInstances.readEitherOf
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -44,8 +44,9 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
   def findCitizen(nino: Nino)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
     val path = url(s"/marriage-allowance/citizen/$nino")
+    val queryParams: Seq[(String, String)] = Seq()
     http
-      .GET[Either[UpstreamErrorResponse, HttpResponse]](path, Seq(), explicitHeaders)
+      .GET[Either[UpstreamErrorResponse, HttpResponse]](path, queryParams, explicitHeaders)
       .map {
         case Right(response) => Right(response.json)
         case Left(error) => Left(error)

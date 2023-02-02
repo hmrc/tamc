@@ -12,25 +12,11 @@ val appName = "tamc"
 
 lazy val plugins: Seq[Plugins] = Seq.empty
 
-val suppressedImports = Seq("-P:silencer:lineContentFilters=import _root_.play.twirl.api.TwirlFeatureImports._",
-  "-P:silencer:lineContentFilters=import _root_.play.twirl.api.TwirlHelperImports._",
-  "-P:silencer:lineContentFilters=import _root_.play.twirl.api.Html",
-  "-P:silencer:lineContentFilters=import _root_.play.twirl.api.JavaScript",
-  "-P:silencer:lineContentFilters=import _root_.play.twirl.api.Txt",
-  "-P:silencer:lineContentFilters=import _root_.play.twirl.api.Xml",
-  "-P:silencer:lineContentFilters=import models._",
-  "-P:silencer:lineContentFilters=import controllers._",
-  "-P:silencer:lineContentFilters=import play.api.i18n._",
-  "-P:silencer:lineContentFilters=import views.html._",
-  "-P:silencer:lineContentFilters=import play.api.templates.PlayMagic._",
-  "-P:silencer:lineContentFilters=import play.api.mvc._",
-  "-P:silencer:lineContentFilters=import play.api.data._")
-
 lazy val scoverageSettings = {
   import scoverage.ScoverageKeys
   Seq(
     ScoverageKeys.coverageExcludedPackages := "<empty>;Reverse.*;config.ApplicationConfig;.*AuthService.*;models/.data/..*;view.*;app.*;prod.*;uk.gov.hmrc.BuildInfo;uk.gov.hmrc.play.*;connectors.ApplicationAuthConnector;connectors.ApplicationAuditConnector;config.ControllerConfiguration;errors.ErrorResponseStatus;metrics.*;config.*Filter;utils.*;models.RelationshipRecord;models.SendEmailRequest;models.RelationshipRecord;binders.*",
-    ScoverageKeys.coverageMinimum := 90,
+    ScoverageKeys.coverageMinimumStmtTotal := 90,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true
   )
@@ -42,9 +28,8 @@ lazy val microservice = Project(appName, file("."))
     majorVersion := 4,
     PlayKeys.playDefaultPort := 9909,
     scalaSettings,
-    publishingSettings,
     defaultSettings(),
-    scalaVersion := "2.12.12",
+    scalaVersion := "2.13.8",
     libraryDependencies ++= AppDependencies.all,
     retrieveManaged := true,
     routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._")
@@ -59,7 +44,7 @@ lazy val microservice = Project(appName, file("."))
 scalacOptions ++= Seq(
   "-deprecation",
   "-feature",
-  "-P:silencer:pathFilters=routes",
-  "-Xfatal-warnings"
+  "-Xfatal-warnings",
+  "-Wconf:src=routes/.*:is,src=twirl/.*:is"
 )
-scalacOptions ++= suppressedImports
+

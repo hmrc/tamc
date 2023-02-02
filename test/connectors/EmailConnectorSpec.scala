@@ -59,7 +59,9 @@ class EmailConnectorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAn
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    resetMock(mockMetrics, injected[HttpClient], mockTimerContext)
+    resetMock(mockMetrics)
+    resetMock(injected[HttpClient])
+    resetMock(mockTimerContext)
   }
 
   override def fakeApplication(): Application = GuiceApplicationBuilder()
@@ -82,7 +84,7 @@ class EmailConnectorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAn
         val params = Map( "a"-> "b")
         val request = SendEmailRequest(addressList, "tamc_recipient_rejects_retro_yr", params, force = false)
         val response = await(connector.sendEmail(request))
-        response.right.get shouldBe a[Unit]
+        response.toOption.get shouldBe a[Unit]
       }
     }
   }
