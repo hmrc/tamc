@@ -16,6 +16,7 @@
 
 package controllers.auth
 
+import controllers.auth.AuthConnector
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -23,19 +24,20 @@ import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.Results.Ok
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, BodyParsers}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Injecting}
 import test_utils.UnitSpec
 import uk.gov.hmrc.auth.core._
 
+import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
 
 
 class AuthActionSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
   val mockAuthConnector: AuthConnector = mock[AuthConnector]
-  val authAction: AuthAction = inject[AuthAction]
+  val authAction: AuthAction = new AuthActionImpl(mockAuthConnector, inject[BodyParsers.Default])(global)
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
       .overrides(
