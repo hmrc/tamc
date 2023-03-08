@@ -45,7 +45,8 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
   val startTaxYear: Int = appConfig.START_TAX_YEAR
   val maSupportedYearsCount: Int = appConfig.MA_SUPPORTED_YEARS_COUNT
 
-  def currentTaxYear: Int = TaxYear.current.startYear
+  //def currentTaxYear: Int = TaxYear.current.startYear
+  val currentTaxYear: Int = appConfig.currentTaxYear()
 
   def getRecipientRelationship(transferorNino: Nino, findRecipientRequest: FindRecipientRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext):
     Future[Either[DataRetrievalError, (UserRecord, List[TaxYearModel])]] = {

@@ -69,7 +69,18 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
       server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$transferorRecordCid/relationships?includeHistoric=true")).willReturn(ok(listRelationshipResponse.toString())))
 
       val result = route(fakeApplication(), request)
-      val expected = Json.toJson(GetRelationshipResponse(Some(UserRecord(userRecordCid, "20200116155359011123")), Some(List(TaxYear(2020), TaxYear(2019), TaxYear(2018))), ResponseStatus("OK")))
+
+//      println(s"\n\n\n\n\n THIS IS FAKEREQUEST GET RELATIONSHIP ${FakeRequest(POST, s"/paye/$nino/get-recipient-relationship")} <<<<<< \n\n\n\n\n")
+//      println(s"\n\n\n\n\n THIS IS JSON ${json} <<<<<< \n\n\n\n\n")
+//      println(s"\n\n\n\n\n THIS IS RESULT ${result} <<<<<< \n\n\n\n\n")
+//      println(s"\n\n\n\n\n THIS IS REQUEST ${request} <<<<<< \n\n\n\n\n")
+//      println(s"\n\n\n\n\n THIS IS THE RESULT AS JSON ${result.map(contentAsJson)} <<<<<< \n\n\n\n\n")
+//      println(s"\n\n\n\n\n THIS IS THE getRecipientRelationshipResponse ${getRecipientRelationshipResponse(userRecordCid).toString()} <<<<<< \n\n\n\n\n")
+//      println(s"\n\n\n\n\n THIS IS THE findRecipientRequest ${findRecipientRequest} <<<<<< \n\n\n\n\n")
+//      println(s"\n\n\n\n\n THIS IS THE NIIIIINNNOOOOOO ${nino} <<<<<< \n\n\n\n\n")
+//      println(s"\n\n\n\n\n THIS IS THE findCitizenResponse ${findCitizenResponse(transferorRecordCid).toString()} <<<<<< \n\n\n\n\n")
+//      println(s"\n\n\n\n\n THIS IS THE listRelationshipResponse ${listRelationshipResponse.toString()} <<<<<< \n\n\n\n\n")
+      val expected = Json.toJson(GetRelationshipResponse(Some(UserRecord(userRecordCid, "20200116155359011123")), Some(List(TaxYear(2023, Some(true)), TaxYear(2022), TaxYear(2021),TaxYear(2020), TaxYear(2019))), ResponseStatus("OK")))
 
       result.map(getStatus) shouldBe Some(OK)
       result.map(contentAsJson) shouldBe Some(expected)
