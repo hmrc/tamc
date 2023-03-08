@@ -20,8 +20,9 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.Calendar
 import java.util.concurrent.ExecutionException
-
 import com.github.tomakehurst.wiremock.client.WireMock._
+import play.api.test.Helpers.baseApplicationBuilder.injector
+import config.ApplicationConfig
 import errors.ErrorResponseStatus
 import errors.ErrorResponseStatus._
 import models._
@@ -50,10 +51,11 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     super.beforeEach()
     server.stubFor(post(urlEqualTo("/auth/authorise")).willReturn(ok(findCitizenResponse(123456789).toString())))
   }
-
   val nino: Nino = new Generator().nextNino
   val userRecordCid = 123456789
   val transferorRecordCid = 987654321
+  val appConfig: ApplicationConfig = injector().instanceOf[ApplicationConfig]
+  val currentYear = appConfig.currentTaxYear()
 
   "getRecipientRelationship" should {
     val findRecipientRequest: FindRecipientRequest = FindRecipientRequest("", "", Gender("M"), nino, Some(LocalDate.parse("2010-01-01")))
@@ -63,24 +65,19 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
     "return a success when getting a successful response from the downstream" in {
 
+      //TODO - failing test, look in the fixtures is another value needing changed
+
+      val upratedParticipantStartDate = listRelationshipResponse.toString()
+        .replace("""participant1StartDate":"20210406""", s"""participant1StartDate":"${currentYear}0406""")
+        .replace("""participant2StartDate":"20210406""", s"""participant2StartDate":"${currentYear}0406""")
+
       server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
       server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid).toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(ok(listRelationshipResponse.toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$transferorRecordCid/relationships?includeHistoric=true")).willReturn(ok(listRelationshipResponse.toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(ok(upratedParticipantStartDate.toString())))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$transferorRecordCid/relationships?includeHistoric=true")).willReturn(ok(upratedParticipantStartDate.toString())))
 
       val result = route(fakeApplication(), request)
-
-//      println(s"\n\n\n\n\n THIS IS FAKEREQUEST GET RELATIONSHIP ${FakeRequest(POST, s"/paye/$nino/get-recipient-relationship")} <<<<<< \n\n\n\n\n")
-//      println(s"\n\n\n\n\n THIS IS JSON ${json} <<<<<< \n\n\n\n\n")
-//      println(s"\n\n\n\n\n THIS IS RESULT ${result} <<<<<< \n\n\n\n\n")
-//      println(s"\n\n\n\n\n THIS IS REQUEST ${request} <<<<<< \n\n\n\n\n")
-//      println(s"\n\n\n\n\n THIS IS THE RESULT AS JSON ${result.map(contentAsJson)} <<<<<< \n\n\n\n\n")
-//      println(s"\n\n\n\n\n THIS IS THE getRecipientRelationshipResponse ${getRecipientRelationshipResponse(userRecordCid).toString()} <<<<<< \n\n\n\n\n")
-//      println(s"\n\n\n\n\n THIS IS THE findRecipientRequest ${findRecipientRequest} <<<<<< \n\n\n\n\n")
-//      println(s"\n\n\n\n\n THIS IS THE NIIIIINNNOOOOOO ${nino} <<<<<< \n\n\n\n\n")
-//      println(s"\n\n\n\n\n THIS IS THE findCitizenResponse ${findCitizenResponse(transferorRecordCid).toString()} <<<<<< \n\n\n\n\n")
-//      println(s"\n\n\n\n\n THIS IS THE listRelationshipResponse ${listRelationshipResponse.toString()} <<<<<< \n\n\n\n\n")
-      val expected = Json.toJson(GetRelationshipResponse(Some(UserRecord(userRecordCid, "20200116155359011123")), Some(List(TaxYear(2023, Some(true)), TaxYear(2022), TaxYear(2021),TaxYear(2020), TaxYear(2019))), ResponseStatus("OK")))
+      val expected = Json.toJson(GetRelationshipResponse(Some(UserRecord(userRecordCid, "20200116155359011123")), Some(List(TaxYear(currentYear, Some(true)), TaxYear(currentYear - 1), TaxYear(currentYear - 2),TaxYear(currentYear - 3), TaxYear(currentYear - 4))), ResponseStatus("OK")))
 
       result.map(getStatus) shouldBe Some(OK)
       result.map(contentAsJson) shouldBe Some(expected)
