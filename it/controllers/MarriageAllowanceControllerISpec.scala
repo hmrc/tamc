@@ -68,8 +68,8 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
       //TODO - failing test, look in the fixtures is another value needing changed
 
       val upratedParticipantStartDate = listRelationshipResponse.toString()
-        .replace("""participant1StartDate":"20210406""", s"""participant1StartDate":"${currentYear + 1}0406""")
-        .replace("""participant2StartDate":"20210406""", s"""participant2StartDate":"${currentYear + 1}0406""")
+        .replace("""participant1StartDate":"20210406""", s"""participant1StartDate":"${currentYear}0406""")
+        .replace("""participant2StartDate":"20210406""", s"""participant2StartDate":"${currentYear}0406""")
 
       server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
       server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid).toString())))

@@ -74,7 +74,6 @@ class ApplicationConfig @Inject()(configuration: Configuration, servicesConfig: 
 
 
  def currentTaxYear(): Int = configuration.getOptional[Int]("tamc-effective-tax-year").getOrElse(TaxYear.current.startYear)
- //def currentTaxYear(): Int = configuration.getOptional[Int]("tamc-effective-tax-year").getOrElse(2023)
 
    lazy val START_TAX_YEAR: Int = configuration.getOptional[Int]("ma-start-tax-year").getOrElse(2015)
    lazy val MA_SUPPORTED_YEARS_COUNT: Int = configuration.getOptional[Int]("ma-supported-years-count").getOrElse(5)
