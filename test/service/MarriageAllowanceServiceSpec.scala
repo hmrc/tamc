@@ -18,6 +18,7 @@ package service
 
 import Fixtures.MultiYearCreateRelationshipRequestHolderFixture
 import com.codahale.metrics.Timer
+import com.google.inject.Inject
 import config.ApplicationConfig
 import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
@@ -43,9 +44,10 @@ import java.util.Calendar
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionException, Future}
 
-class MarriageAllowanceServiceSpec extends UnitSpec with GuiceOneAppPerSuite with Injecting {
+class MarriageAllowanceServiceSpec @Inject()(appConfig: ApplicationConfig
+                                           ) extends UnitSpec with GuiceOneAppPerSuite with Injecting {
 
-  val year: Int = uk.gov.hmrc.time.TaxYear.current.startYear
+  val year: Int = appConfig.currentTaxYear()
   val generatedNino: Nino = new Generator().nextNino
   val cID = 123456789
   val findRecipientRequest: FindRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
