@@ -67,14 +67,14 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
       //TODO - failing test, look in the fixtures is another value needing changed
 
-      val upratedParticipantStartDate = listRelationshipResponse.toString()
-        .replace("""participant1StartDate":"20210406""", s"""participant1StartDate":"${currentYear + 1}0406""")
-        .replace("""participant2StartDate":"20210406""", s"""participant2StartDate":"${currentYear + 1}0406""")
+      val upratedParticipantStartDate: Timestamp = listRelationshipResponse.toString
+        .replaceFirst("""participant1StartDate":"20210406""", s"""participant1StartDate":"${currentYear + 1}0406""")
+        .replaceFirst("""participant2StartDate":"20210406""", s"""participant2StartDate":"${currentYear + 1}0406""")
 
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid).toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(ok(upratedParticipantStartDate.toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$transferorRecordCid/relationships?includeHistoric=true")).willReturn(ok(upratedParticipantStartDate.toString())))
+      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString)))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid).toString)))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(ok(upratedParticipantStartDate)))
+      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$transferorRecordCid/relationships?includeHistoric=true")).willReturn(ok(upratedParticipantStartDate)))
 
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(GetRelationshipResponse(Some(UserRecord(userRecordCid, "20200116155359011123")), Some(List(TaxYear(currentYear, Some(true)), TaxYear(currentYear - 1), TaxYear(currentYear - 2),TaxYear(currentYear - 3), TaxYear(currentYear - 4))), ResponseStatus("OK")))
