@@ -65,8 +65,6 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
     "return a success when getting a successful response from the downstream" in {
 
-      //TODO - failing test, look in the fixtures is another value needing changed
-
       val upratedParticipantStartDate: Timestamp = listRelationshipResponse.toString
         .replaceFirst("""participant1StartDate":"20210406""", s"""participant1StartDate":"${currentYear + 1}0406""")
         .replaceFirst("""participant2StartDate":"20210406""", s"""participant2StartDate":"${currentYear + 1}0406""")
