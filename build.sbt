@@ -1,50 +1,52 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import sbt._
-import sbt.Keys._
-import uk.gov.hmrc.DefaultBuildSettings._
+import sbt.*
+import sbt.Keys.*
+import uk.gov.hmrc.DefaultBuildSettings.*
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
-import uk.gov.hmrc.versioning.SbtGitVersioning
 import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
-import uk.gov.hmrc.SbtAutoBuildPlugin
 
 val appName = "tamc"
-
-lazy val plugins: Seq[Plugins] = Seq.empty
-
-lazy val scoverageSettings = {
-  import scoverage.ScoverageKeys
-  Seq(
-    ScoverageKeys.coverageExcludedPackages := "<empty>;Reverse.*;config.ApplicationConfig;.*AuthService.*;models/.data/..*;view.*;app.*;prod.*;uk.gov.hmrc.BuildInfo;uk.gov.hmrc.play.*;connectors.ApplicationAuthConnector;connectors.ApplicationAuditConnector;config.ControllerConfiguration;errors.ErrorResponseStatus;metrics.*;config.*Filter;utils.*;models.RelationshipRecord;models.SendEmailRequest;models.RelationshipRecord;binders.*",
-    ScoverageKeys.coverageMinimumStmtTotal := 90,
-    ScoverageKeys.coverageFailOnMinimum := true,
-    ScoverageKeys.coverageHighlighting := true
-  )
-}
+val appPort = 9909
+val appMajorVersion = 4
+val appScalaVersion = "2.13.8"
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
-  .settings(scoverageSettings,
-    majorVersion := 4,
-    PlayKeys.playDefaultPort := 9909,
+  .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)
+  .settings(
     scalaSettings,
     defaultSettings(),
-    scalaVersion := "2.13.8",
-    libraryDependencies ++= AppDependencies.all,
+    majorVersion := appMajorVersion,
+    scalaVersion := appScalaVersion,
+    PlayKeys.playDefaultPort := appPort,
+    libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
-    routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._")
+    routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._"),
   )
-  .configs(IntegrationTest)
-  .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)
+  .configs(Compile)
   .settings(
-    IntegrationTest / unmanagedSourceDirectories := (IntegrationTest / baseDirectory)(base => Seq(base / "it")).value,
-    addTestReportOption(IntegrationTest, "int-test-reports"),
-    IntegrationTest / parallelExecution := false
+    scalacOptions += "-deprecation",
+    scalacOptions += "-feature",
+    scalacOptions += "-Xfatal-warnings",
+    // https://github.com/sbt/sbt/issues/6997
+    // To resolve a bug with version 2.x.x of the scoverage plugin
+    libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
   )
-scalacOptions ++= Seq(
-  "-deprecation",
-  "-feature",
-  "-Xfatal-warnings",
-  "-Wconf:src=routes/.*:is,src=twirl/.*:is"
-)
-
+  .settings(SilencerSettings())
+  .configs(IntegrationTest)
+  .settings(integrationTestSettings() *)
+  .settings(CodeCoverageSettings() *)
