@@ -42,6 +42,7 @@ import uk.gov.hmrc.http.UpstreamErrorResponse
 class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllowanceFixtures {
 
   override def fakeApplication(): Application = GuiceApplicationBuilder().configure(
+    "metrics.jvm" -> false,
     "microservice.services.auth.port" -> server.port(),
     "microservice.services.marriage-allowance-des.host" -> "127.0.0.1",
     "microservice.services.marriage-allowance-des.port" -> server.port()

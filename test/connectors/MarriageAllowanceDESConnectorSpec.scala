@@ -57,6 +57,7 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
   override def fakeApplication(): Application = {
     new GuiceApplicationBuilder()
       .configure(
+        "metrics.jvm" -> false,
         "microservice.services.marriage-allowance-des.host" -> "127.0.0.1",
         "microservice.services.marriage-allowance-des.port" -> server.port(),
         "microservice.services.marriage-allowance-des.environment" -> "test",
@@ -229,7 +230,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     "return a TimeOutError " when {
       "a GatewayTimeout is received" in {
         val injector: Injector = GuiceApplicationBuilder()
-          .overrides(
+          .configure(
+            "metrics.jvm" -> false
+          ).overrides(
             bind[TamcMetrics].toInstance(mockMetrics),
             bind[HttpClient].toInstance(mockHttp)
           ).injector()
@@ -251,7 +254,9 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     "return a BadGateway error" when {
       "a BadGatewayException is received" in {
         val injector: Injector = GuiceApplicationBuilder()
-          .overrides(
+          .configure(
+            "metrics.jvm" -> false
+          ).overrides(
             bind[TamcMetrics].toInstance(mockMetrics),
             bind[HttpClient].toInstance(mockHttp)
           ).injector()
