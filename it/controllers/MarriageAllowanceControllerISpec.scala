@@ -26,7 +26,8 @@ import config.ApplicationConfig
 import errors.ErrorResponseStatus
 import errors.ErrorResponseStatus._
 import models._
-import play.api.Application
+import play.api.{Application, inject}
+import play.api.cache.AsyncCacheApi
 import play.api.http.Status.BAD_REQUEST
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsNull, Json}
@@ -34,7 +35,7 @@ import play.api.mvc.AnyContentAsJson
 import play.api.test.{FakeHeaders, FakeRequest}
 import play.api.test.Helpers.{status => getStatus, _}
 import test_utils.FileHelper._
-import test_utils.{IntegrationSpec, MarriageAllowanceFixtures}
+import test_utils.{FakeAsyncCacheApi, IntegrationSpec, MarriageAllowanceFixtures}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.UpstreamErrorResponse
@@ -45,12 +46,17 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     "metrics.jvm" -> false,
     "microservice.services.auth.port" -> server.port(),
     "microservice.services.marriage-allowance-des.host" -> "127.0.0.1",
-    "microservice.services.marriage-allowance-des.port" -> server.port()
+    "microservice.services.marriage-allowance-des.port" -> server.port(),
+    "microservice.services.pertax.host" -> "127.0.0.1",
+    "microservice.services.pertax.port" -> server.port()
+  ).overrides(
+    inject.bind[AsyncCacheApi].to[FakeAsyncCacheApi]
   ).build()
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     server.stubFor(post(urlEqualTo("/auth/authorise")).willReturn(ok(findCitizenResponse(123456789).toString())))
+    server.stubFor(post(urlEqualTo("/pertax/authorise")).willReturn(ok(successPertaxAuthResponse.toString())))
   }
   val nino: Nino = new Generator().nextNino
   val userRecordCid = 123456789
