@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package models.admin
+package config
 
-import uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagName
+import models.admin.AllFeatureFlags
+import uk.gov.hmrc.mongoFeatureToggles.model.FeatureFlagNamesLibrary
 
-object AllFeatureFlags {
-  val list = List(PertaxBackendToggle)
-}
-
-case object PertaxBackendToggle extends FeatureFlagName {
-  override val name: String = "pertax-backend-toggle"
-  override val description: Option[String] = Some("Enable/disable pertax backend during auth")
+class ApplciationStartUp {
+    FeatureFlagNamesLibrary.addFlags(AllFeatureFlags.list)
 }
