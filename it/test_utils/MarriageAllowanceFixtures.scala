@@ -1,7 +1,7 @@
 package test_utils
 
 import models.Cid
-import play.api.libs.json.Json
+import play.api.libs.json.{JsString, Json}
 
 trait MarriageAllowanceFixtures {
 
@@ -27,6 +27,11 @@ trait MarriageAllowanceFixtures {
             }
           }
       }""")
+
+  val successPertaxAuthResponse = Json.obj(
+    "code" -> JsString("ACCESS_GRANTED"),
+            "message" -> JsString("Some message")
+  )
 
   def findCitizenResponse(cid: Cid, deceasedSignal: String = "N", returnCode: Int = 1, reasonCode: Int = 1) = Json.parse(
   s"""{

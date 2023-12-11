@@ -26,6 +26,7 @@ class ApplicationConfig @Inject()(configuration: Configuration, servicesConfig: 
  import servicesConfig.{baseUrl, getConfString}
 
   val serviceUrl: String = baseUrl("marriage-allowance-des")
+  val pertaxUrl: String = baseUrl("pertax")
   val urlHeaderEnvironment: String = getConfString("marriage-allowance-des.environment", "")
   val urlHeaderAuthorization = s"Bearer ${getConfString("marriage-allowance-des.authorization-token", "")}"
 

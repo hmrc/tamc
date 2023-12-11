@@ -31,7 +31,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Request
-import play.api.test.Helpers.{OK, NOT_FOUND, INTERNAL_SERVER_ERROR, contentAsJson, contentAsString, defaultAwaitTimeout}
+import play.api.test.Helpers.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK, contentAsJson, contentAsString, defaultAwaitTimeout}
 import play.api.test.{FakeHeaders, FakeRequest}
 import services.MarriageAllowanceService
 import test_utils._

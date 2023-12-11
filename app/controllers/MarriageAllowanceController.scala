@@ -18,53 +18,60 @@ package controllers
 
 import com.google.inject.Inject
 import controllers.auth.AuthAction
+import controllers.auth.PertaxAuthAction
 import errors.ErrorResponseStatus._
 import errors._
 import models._
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.{Action, ActionBuilder, AnyContent, ControllerComponents, DefaultActionBuilder, Request}
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.UpstreamErrorResponse.WithStatusCode
-import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.{BadRequestException, NotFoundException, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
 class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAllowanceService,
                                             authAction: AuthAction,
+                                            pertaxAuthAction: PertaxAuthAction,
+                                            defaultActionBuilder: DefaultActionBuilder,
                                             cc: ControllerComponents)(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
-  def getRecipientRelationship(transferorNino: Nino): Action[JsValue] = authAction.async(parse.json) { implicit request =>
-    withJsonBody[FindRecipientRequest] { findRecipientRequest =>
-      marriageAllowanceService.getRecipientRelationship(transferorNino, findRecipientRequest) map {
-        case Right((recipientRecord, taxYears)) =>
-          Ok(Json.toJson(GetRelationshipResponse(
-            user_record = Some(recipientRecord),
-            availableYears = Some(taxYears),
-            status = ResponseStatus(status_code = "OK"))))
-        case Left(_: DataRetrievalError) =>
-          NotFound(Json.toJson(GetRelationshipResponse(
-            status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
-      } recover {
-        case error: ServiceError =>
-          logger.warn(error.getMessage)
-          NotFound(Json.toJson(GetRelationshipResponse(
-            status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
-        case error: TransferorDeceasedError =>
-          logger.warn(error.getMessage)
-          BadRequest(Json.toJson(GetRelationshipResponse(
-            status = ResponseStatus(status_code = TRANSFERER_DECEASED))))
-        case error =>
-          logger.error(error.getMessage)
-          InternalServerError(Json.toJson(GetRelationshipResponse(
-            status = ResponseStatus(status_code = OTHER_ERROR))))
+  private val authenticate: ActionBuilder[Request, AnyContent] =
+    defaultActionBuilder andThen pertaxAuthAction andThen authAction
+
+  def getRecipientRelationship(transferorNino: Nino): Action[JsValue] =
+    authenticate.async(parse.json) { implicit request =>
+      withJsonBody[FindRecipientRequest] { findRecipientRequest =>
+        marriageAllowanceService.getRecipientRelationship(transferorNino, findRecipientRequest) map {
+          case Right((recipientRecord, taxYears)) =>
+            Ok(Json.toJson(GetRelationshipResponse(
+              user_record = Some(recipientRecord),
+              availableYears = Some(taxYears),
+              status = ResponseStatus(status_code = "OK"))))
+          case Left(_: DataRetrievalError) =>
+            NotFound(Json.toJson(GetRelationshipResponse(
+              status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
+        } recover {
+          case error: ServiceError =>
+            logger.warn(error.getMessage)
+            NotFound(Json.toJson(GetRelationshipResponse(
+              status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
+          case error: TransferorDeceasedError =>
+            logger.warn(error.getMessage)
+            BadRequest(Json.toJson(GetRelationshipResponse(
+              status = ResponseStatus(status_code = TRANSFERER_DECEASED))))
+          case error =>
+            logger.error(error.getMessage)
+            InternalServerError(Json.toJson(GetRelationshipResponse(
+              status = ResponseStatus(status_code = OTHER_ERROR))))
+        }
       }
     }
-  }
 
-  def createMultiYearRelationship(transferorNino: Nino, journey: String): Action[JsValue] = authAction.async(parse.json) {
+  def createMultiYearRelationship(transferorNino: Nino, journey: String): Action[JsValue] = authenticate.async(parse.json) {
     implicit request =>
       withJsonBody[MultiYearCreateRelationshipRequestHolder] { createRelationshipRequestHolder =>
         marriageAllowanceService.createMultiYearRelationship(createRelationshipRequestHolder, journey) map {
