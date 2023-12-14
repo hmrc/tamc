@@ -98,7 +98,7 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
       }
   }
 
-  def listRelationship(transferorNino: Nino): Action[AnyContent] = authAction.async { implicit request =>
+  def listRelationship(transferorNino: Nino): Action[AnyContent] = authenticate.async { implicit request =>
     marriageAllowanceService.listRelationship(transferorNino) map {
       relationshipList: RelationshipRecordWrapper =>
         Ok(Json.toJson(RelationshipRecordStatusWrapper(relationship_record = relationshipList, status = ResponseStatus(status_code = "OK"))))
@@ -136,7 +136,7 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
     }
   }
 
-  def updateRelationship(transferorNino: Nino): Action[JsValue] = authAction.async(parse.json) {
+  def updateRelationship(transferorNino: Nino): Action[JsValue] = authenticate.async(parse.json) {
     implicit request =>
       withJsonBody[UpdateRelationshipRequestHolder] {
         updateRelationshipRequestHolder =>
