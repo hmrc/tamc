@@ -281,7 +281,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       testStubDataFromAPI(list(1), expectedOutputMap)
 
       val userRecord = relationshipRecordStatusWrapper.relationship_record.userRecord
-      val expectedOutput = Map("cid" -> testCid, "timestamp" -> testTs)
+      val expectedOutput: Map[String, Any] = Map("cid" -> testCid, "timestamp" -> testTs)
 
       testUserRecord(userRecord, expectedOutput)
     }
@@ -310,7 +310,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       list.size shouldBe 0
 
       val userRecord = relationshipRecordStatusWrapper.relationship_record.userRecord
-      val expectedOutput = Map("cid" -> testCid, "timestamp" -> testTs)
+      val expectedOutput: Map[String, Any] = Map("cid" -> testCid, "timestamp" -> testTs)
 
       testUserRecord(userRecord, expectedOutput)
     }
@@ -349,7 +349,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       list.head.relationshipEndReason.get shouldNot be(null)
 
       val userRecord = relationshipRecordStatusWrapper.relationship_record.userRecord
-      val expectedOutput = Map("cid" -> testCid, "timestamp" -> testTs)
+      val expectedOutput: Map[String, Any] = Map("cid" -> testCid, "timestamp" -> testTs)
 
       testUserRecord(userRecord, expectedOutput)
     }
@@ -389,7 +389,7 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
       list.head.relationshipEndReason should be(None)
 
       val userRecord = relationshipRecordStatusWrapper.relationship_record.userRecord
-      val expectedOutput = Map("cid" -> testCid, "timestamp" -> testTs)
+      val expectedOutput: Map[String, Any] = Map("cid" -> testCid, "timestamp" -> testTs)
 
       testUserRecord(userRecord, expectedOutput)
 

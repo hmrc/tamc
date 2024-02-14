@@ -1,18 +1,22 @@
-
-import sbt._
-import sbt.Keys._
-import uk.gov.hmrc.DefaultBuildSettings._
+import sbt.*
+import sbt.Keys.*
+import uk.gov.hmrc.DefaultBuildSettings.*
+import uk.gov.hmrc.SbtAutoBuildPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 import uk.gov.hmrc.versioning.SbtGitVersioning
 import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
-import uk.gov.hmrc.SbtAutoBuildPlugin
 
 val appName = "tamc"
 
-lazy val plugins: Seq[Plugins] = Seq.empty
+ThisBuild / scalaVersion := "2.13.12"
+ThisBuild / majorVersion := 4
+ThisBuild / scalacOptions ++= Seq(
+  "-feature",
+  "-Xfatal-warnings",
+  "-Wconf:src=routes/.*:is,src=twirl/.*:is"
+)
 
-lazy val scoverageSettings = {
+val scoverageSettings: Seq[Def.Setting[?]] = {
   import scoverage.ScoverageKeys
   Seq(
     ScoverageKeys.coverageExcludedPackages := "<empty>;Reverse.*;config.ApplicationConfig;.*AuthService.*;models/.data/..*;view.*;app.*;prod.*;uk.gov.hmrc.BuildInfo;uk.gov.hmrc.play.*;connectors.ApplicationAuthConnector;connectors.ApplicationAuditConnector;config.ControllerConfiguration;errors.ErrorResponseStatus;metrics.*;config.*Filter;utils.*;models.RelationshipRecord;models.SendEmailRequest;models.RelationshipRecord;binders.*",
@@ -22,29 +26,19 @@ lazy val scoverageSettings = {
   )
 }
 
-lazy val microservice = Project(appName, file("."))
-  .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
-  .settings(scoverageSettings,
-    majorVersion := 4,
-    PlayKeys.playDefaultPort := 9909,
-    scalaSettings,
+val microservice = Project(appName, file("."))
+  .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
+  .settings(
     defaultSettings(),
-    scalaVersion := "2.13.8",
-    libraryDependencies ++= AppDependencies.all,
+    scalaSettings,
+    scoverageSettings,
+    PlayKeys.playDefaultPort := 9909,
     retrieveManaged := true,
+    libraryDependencies ++= AppDependencies.all,
     routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._")
   )
-  .configs(IntegrationTest)
-  .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)
-  .settings(
-    IntegrationTest / unmanagedSourceDirectories := (IntegrationTest / baseDirectory)(base => Seq(base / "it")).value,
-    addTestReportOption(IntegrationTest, "int-test-reports"),
-    IntegrationTest / parallelExecution := false
-  )
-scalacOptions ++= Seq(
-  "-deprecation",
-  "-feature",
-  "-Xfatal-warnings",
-  "-Wconf:src=routes/.*:is,src=twirl/.*:is"
-)
 
+val it: Project = project.in(file("it"))
+  .enablePlugins(PlayScala)
+  .dependsOn(microservice % "test->test")
+  .settings(itSettings())

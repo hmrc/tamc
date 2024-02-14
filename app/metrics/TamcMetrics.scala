@@ -19,13 +19,10 @@ package metrics
 import com.codahale.metrics.{Counter, MetricRegistry, Timer}
 import com.codahale.metrics.Timer.Context
 import com.google.inject.Inject
-import com.kenshoo.play.metrics.Metrics
 import models.ApiType
 import models.ApiType.ApiType
 
-class TamcMetrics @Inject()(metrics: Metrics) {
-
-  val registry: MetricRegistry = metrics.defaultRegistry
+class TamcMetrics @Inject()(registry: MetricRegistry) {
 
   val timers: Map[models.ApiType.Value, Timer] = Map(
     ApiType.FindCitizen -> registry.timer("find-citizen-response-timer"),

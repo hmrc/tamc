@@ -20,7 +20,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 object MultiYearDesCreateRelationshipRequest {
-  implicit val multiYearWrites = (
+  implicit val multiYearWrites: OWrites[MultiYearDesCreateRelationshipRequest] = (
     (__ \ "CID1").write[String] and
       (__ \ "CID1Timestamp").write[String] and
       (__ \ "CID2").write[String] and

@@ -4,25 +4,24 @@ import sbt._
 
 object AppDependencies {
 
-  val bootstrapVersion = "7.19.0"
+  private val hmrcMongoFeatureTogglesClientVersion  = "1.1.0"
+  private val hmrcBootstrapVersion                  = "8.2.0"
+
+  private val playVersion = "play-30"
 
   val compile = Seq(
     ws,
-    "uk.gov.hmrc"       %% "domain"                        % "8.1.0-play-28",
-    "uk.gov.hmrc"       %% "emailaddress"                  % "3.7.0",
-    "uk.gov.hmrc"       %% "bootstrap-backend-play-28"     % bootstrapVersion,
-    "uk.gov.hmrc"       %% "tax-year"                      % "3.0.0",
-    "org.typelevel"     %% "cats-core"                     % "2.9.0",
-    "uk.gov.hmrc"       %% "mongo-feature-toggles-client"  % "0.3.0",
+    "uk.gov.hmrc"       %% s"bootstrap-backend-$playVersion"            % hmrcBootstrapVersion,
+    "uk.gov.hmrc"       %% s"domain-$playVersion"                       % "9.0.0",
+    "uk.gov.hmrc"       %% s"emailaddress-$playVersion"                 % "4.0.0",
+    "uk.gov.hmrc"       %% s"mongo-feature-toggles-client-$playVersion" % hmrcMongoFeatureTogglesClientVersion,
+    "uk.gov.hmrc"       %% s"tax-year"                                  % "4.0.0",
+    "org.typelevel"     %% "cats-core"                                  % "2.10.0",
   )
 
   val test: Seq[ModuleID] = Seq(
-    "org.jsoup"                % "jsoup"                  % "1.15.3",
-    "uk.gov.hmrc"             %% "bootstrap-test-play-28" % bootstrapVersion,
-    "org.mockito"              % "mockito-core"           % "4.11.0",
-    "com.github.tomakehurst"   % "wiremock-jre8"          % "2.30.1",
-    "com.vladsch.flexmark"     % "flexmark-all"           % "0.36.8"
-  ).map(_ % "test,it")
+    "uk.gov.hmrc"       %% s"bootstrap-test-$playVersion"               % hmrcBootstrapVersion,
+  ).map(_ % Test)
 
   val all: Seq[ModuleID] = compile ++ test
 }

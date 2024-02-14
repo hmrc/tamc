@@ -16,10 +16,10 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 object MultiYearCreateRelationshipRequestHolder {
-  implicit val formats = Json.format[MultiYearCreateRelationshipRequestHolder]
+  implicit val formats: OFormat[MultiYearCreateRelationshipRequestHolder] = Json.format[MultiYearCreateRelationshipRequestHolder]
 }
 
 case class MultiYearCreateRelationshipRequestHolder(request: MultiYearCreateRelationshipRequest, notification: CreateRelationshipNotificationRequest)

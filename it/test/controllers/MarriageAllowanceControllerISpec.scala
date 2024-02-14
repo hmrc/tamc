@@ -310,7 +310,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
           server.stubFor(
             get(urlEqualTo(s"/marriage-allowance/citizen/$nino"))
-              .willReturn(ok(loadFile("./it/resources/citizenRecord.json")))
+              .willReturn(ok(loadFile("./it/test/resources/citizenRecord.json")))
           )
 
           server.stubFor(

@@ -16,10 +16,10 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 object EligibleTaxYearListResponse {
-  implicit val formats = Json.format[EligibleTaxYearListResponse]
+  implicit val formats: OFormat[EligibleTaxYearListResponse] = Json.format[EligibleTaxYearListResponse]
 }
 
 case class EligibleTaxYearListResponse(years: List[TaxYear], relationship_details: CreateRelationshipRequest)

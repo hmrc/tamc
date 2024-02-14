@@ -16,10 +16,10 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 object DesRelationshipInformation {
-  implicit val formats = Json.format[DesRelationshipInformation]
+  implicit val formats: OFormat[DesRelationshipInformation] = Json.format[DesRelationshipInformation]
 }
 
 case class DesRelationshipInformation(creationTimestamp: String, relationshipEndReason: String, actualEndDate: String)

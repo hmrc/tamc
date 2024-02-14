@@ -16,10 +16,10 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 object DesUpdateRelationshipRequest {
-  implicit val formats = Json.format[DesUpdateRelationshipRequest]
+  implicit val formats: OFormat[DesUpdateRelationshipRequest] = Json.format[DesUpdateRelationshipRequest]
 }
 
 case class DesUpdateRelationshipRequest(participant1: DesRecipientInformation, participant2: DesTransferorInformation, relationship: DesRelationshipInformation)

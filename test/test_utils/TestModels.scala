@@ -17,7 +17,7 @@
 package test_utils
 
 import models.{ResponseStatus, UserRecord}
-import play.api.libs.json.{Format, JsSuccess, JsValue, Json}
+import play.api.libs.json.{Format, JsSuccess, JsValue, Json, OFormat}
 
 case class TestRelationshipRecordWrapper(relationshipRecordList: Seq[TestRelationshipRecord], userRecord: UserRecord)
 case class TestRelationshipRecord(participant: String, creationTimestamp: String, participant1StartDate: String, relationshipEndReason: Option[String] = None, participant1EndDate: Option[String] = None, otherParticipantInstanceIdentifier: String, otherParticipantUpdateTimestamp: String)
@@ -60,5 +60,5 @@ object TestRelationshipRecordWrapper {
 }
 
 object TestRelationshipRecordStatusWrapper {
-  implicit val formats = Json.format[TestRelationshipRecordStatusWrapper]
+  implicit val formats: OFormat[TestRelationshipRecordStatusWrapper] = Json.format[TestRelationshipRecordStatusWrapper]
 }

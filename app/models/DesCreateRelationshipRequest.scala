@@ -16,10 +16,10 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 object DesCreateRelationshipRequest {
-  implicit val formats = Json.format[DesCreateRelationshipRequest]
+  implicit val formats: OFormat[DesCreateRelationshipRequest] = Json.format[DesCreateRelationshipRequest]
 }
 
 case class DesCreateRelationshipRequest(CID1: String, CID1Timestamp: String, CID2: String, CID2Timestamp: String)
