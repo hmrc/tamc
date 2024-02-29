@@ -16,10 +16,10 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 object EligibleTaxYearListStatusResponse {
-  implicit val formats = Json.format[EligibleTaxYearListStatusResponse]
+  implicit val formats: OFormat[EligibleTaxYearListStatusResponse] = Json.format[EligibleTaxYearListStatusResponse]
 }
 
 case class EligibleTaxYearListStatusResponse(response: Option[EligibleTaxYearListResponse] = None, status: ResponseStatus)

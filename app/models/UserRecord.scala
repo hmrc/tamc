@@ -16,10 +16,10 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 object UserRecord {
-  implicit val formats = Json.format[UserRecord]
+  implicit val formats: OFormat[UserRecord] = Json.format[UserRecord]
 }
 
 case class UserRecord(cid: Cid, timestamp: Timestamp, has_allowance: Option[Boolean] = None, name: Option[CitizenName] = None)

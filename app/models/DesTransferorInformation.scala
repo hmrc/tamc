@@ -16,10 +16,10 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
 object DesTransferorInformation {
-  implicit val formats = Json.format[DesTransferorInformation]
+  implicit val formats: OFormat[DesTransferorInformation] = Json.format[DesTransferorInformation]
 }
 
 case class DesTransferorInformation(updateTimestamp: String)

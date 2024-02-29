@@ -20,5 +20,5 @@ import uk.gov.hmrc.domain.Nino
 object NinoBinder extends SimpleObjectBinder[Nino](Nino.apply, _.value)
 
 package object binders {
-  implicit val ninoBinder = NinoBinder
+  implicit val ninoBinder: NinoBinder.type = NinoBinder
 }
