@@ -13,14 +13,16 @@ ThisBuild / majorVersion := 4
 ThisBuild / scalacOptions ++= Seq(
   "-feature",
   "-Xfatal-warnings",
-  "-Wconf:src=routes/.*:is,src=twirl/.*:is"
+  "-Wconf:src=target/.*:s", // silence warnings from compiled files
+  "-Wconf:src=*routes:s",   // silence warnings from routes files
 )
 
 val scoverageSettings: Seq[Def.Setting[?]] = {
   import scoverage.ScoverageKeys
   Seq(
-    ScoverageKeys.coverageExcludedPackages := "<empty>;Reverse.*;config.ApplicationConfig;.*AuthService.*;models/.data/..*;view.*;app.*;prod.*;uk.gov.hmrc.BuildInfo;uk.gov.hmrc.play.*;connectors.ApplicationAuthConnector;connectors.ApplicationAuditConnector;config.ControllerConfiguration;errors.ErrorResponseStatus;metrics.*;config.*Filter;utils.*;models.RelationshipRecord;models.SendEmailRequest;models.RelationshipRecord;binders.*",
-    ScoverageKeys.coverageMinimumStmtTotal := 90,
+    ScoverageKeys.coverageExcludedFiles := ";.*Routes.*;RoutesPrefix.*;",
+    ScoverageKeys.coverageMinimumStmtTotal := 89,
+    ScoverageKeys.coverageMinimumBranchTotal := 90,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true
   )
