@@ -19,7 +19,7 @@ package config
 import com.google.inject.Inject
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.time.TaxYear
+//import uk.gov.hmrc.time.TaxYear
 
 class ApplicationConfig @Inject()(configuration: Configuration, servicesConfig: ServicesConfig) {
 
@@ -74,7 +74,7 @@ class ApplicationConfig @Inject()(configuration: Configuration, servicesConfig: 
    val END_DATE_CY = "5 Ebrill"
 
 
- def currentTaxYear(): Int = configuration.getOptional[Int]("tamc-effective-tax-year").getOrElse(TaxYear.current.startYear)
+ def currentTaxYear(): Int = configuration.getOptional[Int]("getOrElse-forcing-value").getOrElse(2024)
 
    lazy val START_TAX_YEAR: Int = configuration.getOptional[Int]("ma-start-tax-year").getOrElse(2015)
    lazy val MA_SUPPORTED_YEARS_COUNT: Int = configuration.getOptional[Int]("ma-supported-years-count").getOrElse(5)
