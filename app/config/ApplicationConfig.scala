@@ -73,7 +73,6 @@ class ApplicationConfig @Inject()(configuration: Configuration, servicesConfig: 
    val START_DATE_CY = "6 Ebrill"
    val END_DATE_CY = "5 Ebrill"
 
-
  def currentTaxYear(): Int = configuration.getOptional[Int]("tamc-effective-tax-year").getOrElse(TaxYear.current.startYear)
 
    lazy val START_TAX_YEAR: Int = configuration.getOptional[Int]("ma-start-tax-year").getOrElse(2015)
