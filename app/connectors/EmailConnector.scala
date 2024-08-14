@@ -20,23 +20,22 @@ import com.google.inject.Inject
 import config.ApplicationConfig
 import models.SendEmailRequest
 import play.api.http.Status._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UpstreamErrorResponse, HttpException}
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.HttpReadsInstances.readEitherOf
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpResponse, StringContextOps, UpstreamErrorResponse}
+
 import scala.concurrent.{ExecutionContext, Future}
 
-class EmailConnector @Inject()(http: HttpClient, appConfig: ApplicationConfig)(implicit val ec: ExecutionContext) {
-
-  val emailUrl = appConfig.EMAIL_URL
-
-  def url(path: String) = s"$emailUrl$path"
+class EmailConnector @Inject()(http: HttpClientV2, appConfig: ApplicationConfig)(implicit val ec: ExecutionContext) {
 
   def sendEmail(sendEmailRequest: SendEmailRequest)(
     implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] =
     http
-      .POST[SendEmailRequest, Either[UpstreamErrorResponse, HttpResponse]](
-        url("/hmrc/email"), sendEmailRequest
-      )
+      .post(url"${appConfig.EMAIL_URL}/hmrc/email")
+      .withBody(Json.toJson(sendEmailRequest))
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(_) => Right(())
         case Left(error) => Left(error)

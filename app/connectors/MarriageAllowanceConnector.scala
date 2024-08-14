@@ -24,6 +24,7 @@ import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.Authorization
+
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -43,7 +44,7 @@ trait MarriageAllowanceConnector extends Logging {
   val urlHeaderEnvironment: String
   val urlHeaderAuthorization: String
   val metrics: TamcMetrics
-  def url(path: String) = s"$serviceUrl$path"
+  def url(path: String) = url"$serviceUrl$path"
   def ninoWithoutSpaces(nino: Nino): Timestamp = nino.value.replaceAll(" ", "")
 
   def handleValidationError[A]: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])] => Either[DataRetrievalError, A] =  err => {
@@ -62,7 +63,7 @@ trait MarriageAllowanceConnector extends Logging {
   def buildHeaderCarrier(hc: HeaderCarrier): HeaderCarrier =
     hc.copy(authorization = Some(Authorization(urlHeaderAuthorization))).withExtraHeaders("Environment" -> urlHeaderEnvironment)
 
-  def explicitHeaders(implicit hc: HeaderCarrier): scala.collection.immutable.Seq[(String, String)] =
+  def explicitHeaders(implicit hc: HeaderCarrier): List[(String, String)] =
     List(
       HeaderNames.authorisation -> urlHeaderAuthorization,
       HeaderNames.xRequestId    -> hc.requestId.fold("-")(_.value),

@@ -18,13 +18,13 @@ package controllers.auth
 
 import com.google.inject.{ImplementedBy, Inject}
 import config.ApplicationConfig
+import play.api.Logging
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc._
-import play.api.Logging
 import uk.gov.hmrc.auth.core.{AuthorisedFunctions, ConfidenceLevel, PlayAuthConnector}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -48,9 +48,10 @@ class AuthActionImpl @Inject()(val authConnector: AuthConnector, val parser: Bod
 @ImplementedBy(classOf[AuthActionImpl])
 trait AuthAction extends ActionBuilder[Request, AnyContent] with ActionFilter[Request]
 
-class AuthConnector @Inject()(appConfig: ApplicationConfig, val http: HttpClient) extends PlayAuthConnector {
+class AuthConnector @Inject()(appConfig: ApplicationConfig, val http: HttpClientV2) extends PlayAuthConnector {
 
   lazy val serviceUrl: String = appConfig.AUTH_URL
 
+  override def httpClientV2: HttpClientV2 = ???
 }
 
