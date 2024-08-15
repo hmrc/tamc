@@ -169,9 +169,9 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
   def sendMultiYearCreateRelationshipRequest(
     relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
-    val path = url(s"/marriage-allowance/02.00.00/citizen/${createRelationshipRequest.recipientCid}/relationship/$relType")
+    val path = url"$serviceUrl/marriage-allowance/02.00.00/citizen/${createRelationshipRequest.recipientCid}/relationship/$relType"
     http
-      .post(url"$path")
+      .post(path)
       .withBody(Json.toJson(createRelationshipRequest))
       .setHeader(explicitHeaders: _*)
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
