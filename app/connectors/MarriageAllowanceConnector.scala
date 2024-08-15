@@ -44,7 +44,7 @@ trait MarriageAllowanceConnector extends Logging {
   val urlHeaderEnvironment: String
   val urlHeaderAuthorization: String
   val metrics: TamcMetrics
-  def url(path: String) = url"$serviceUrl$path"
+  def url(path: String) = s"$serviceUrl$path"
   def ninoWithoutSpaces(nino: Nino): Timestamp = nino.value.replaceAll(" ", "")
 
   def handleValidationError[A]: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])] => Either[DataRetrievalError, A] =  err => {

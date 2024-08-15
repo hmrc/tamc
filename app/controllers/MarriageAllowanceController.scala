@@ -51,7 +51,8 @@ class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAl
               user_record = Some(recipientRecord),
               availableYears = Some(taxYears),
               status = ResponseStatus(status_code = "OK"))))
-          case Left(_: DataRetrievalError) =>
+          case Left(e: DataRetrievalError) =>
+            println(s"\n\n\n line 55 left data retriveal $e\n\n\n\n\n\n\n")
             NotFound(Json.toJson(GetRelationshipResponse(
               status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND))))
         } recover {
