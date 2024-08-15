@@ -43,8 +43,8 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
 
   def findCitizen(nino: Nino)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
-    val path = url(s"/marriage-allowance/citizen/$nino")
-    http.get(url"$path").setHeader(explicitHeaders: _*).execute[Either[UpstreamErrorResponse, HttpResponse]]
+    val path = url"$serviceUrl/marriage-allowance/citizen/$nino"
+    http.get(path).setHeader(explicitHeaders: _*).execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(response) => Right(response.json)
         case Left(error) => Left(error)
@@ -56,9 +56,9 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
 
   def listRelationship(cid: Cid, includeHistoric: Boolean = true)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
-    val path = url(s"/marriage-allowance/citizen/$cid/relationships?includeHistoric=$includeHistoric")
+    val path = url"$serviceUrl/marriage-allowance/citizen/$cid/relationships?includeHistoric=$includeHistoric"
     http
-      .get(url"$path").setHeader(explicitHeaders: _*).execute[Either[UpstreamErrorResponse, HttpResponse]]
+      .get(path).setHeader(explicitHeaders: _*).execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(response) => Right(response.json)
         case Left(error) => Left(error)
@@ -136,14 +136,14 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
 
     val nino = ninoWithoutSpaces(findRecipientRequest.nino)
 
-    val path: String = url(s"/marriage-allowance/citizen/$nino/check")
+    val path = url"$serviceUrl/marriage-allowance/citizen/$nino/check"
     val findRecipientRequestDes = FindRecipientRequestDes(findRecipientRequest)
 
     metrics.incrementTotalCounter(ApiType.FindRecipient)
     val timer = metrics.startTimer(ApiType.FindRecipient)
 
     http
-      .post(url"$path")
+      .post(path)
       .withBody(Json.toJson(findRecipientRequestDes))
       .setHeader(explicitHeaders: _*)
       .execute[Either[DataRetrievalError, UserRecord]]
@@ -155,8 +155,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
           metrics.incrementFailedCounter(ApiType.FindRecipient)
           timer.stop()
           Left(TimeOutError)
-        case e: BadGatewayException =>
-          println(s"\n\n\n MarriageAllowanceDesConnector ${e.message}")
+        case _: BadGatewayException =>
           metrics.incrementFailedCounter(ApiType.FindRecipient)
           timer.stop()
           Left(BadGatewayError)
@@ -187,9 +186,9 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
 
   def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] = {
-    val path = url(s"/marriage-allowance/citizen/${updateRelationshipRequest.participant1.instanceIdentifier}/relationship")
+    val path = url"$serviceUrl/marriage-allowance/citizen/${updateRelationshipRequest.participant1.instanceIdentifier}/relationship"
     http
-      .put(url"$path")
+      .put(path)
       .withBody(Json.toJson(updateRelationshipRequest))
       .setHeader(explicitHeaders: _*)
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
