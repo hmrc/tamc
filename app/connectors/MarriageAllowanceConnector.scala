@@ -24,6 +24,7 @@ import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.Authorization
+
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -62,7 +63,7 @@ trait MarriageAllowanceConnector extends Logging {
   def buildHeaderCarrier(hc: HeaderCarrier): HeaderCarrier =
     hc.copy(authorization = Some(Authorization(urlHeaderAuthorization))).withExtraHeaders("Environment" -> urlHeaderEnvironment)
 
-  def explicitHeaders(implicit hc: HeaderCarrier): scala.collection.immutable.Seq[(String, String)] =
+  def explicitHeaders(implicit hc: HeaderCarrier): List[(String, String)] =
     List(
       HeaderNames.authorisation -> urlHeaderAuthorization,
       HeaderNames.xRequestId    -> hc.requestId.fold("-")(_.value),

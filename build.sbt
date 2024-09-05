@@ -29,7 +29,7 @@ val scoverageSettings: Seq[Def.Setting[?]] = {
 }
 
 val microservice = Project(appName, file("."))
-  .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
+  .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .settings(
     defaultSettings(),
     scalaSettings,
