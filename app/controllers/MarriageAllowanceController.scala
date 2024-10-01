@@ -18,13 +18,12 @@ package controllers
 
 import com.google.inject.Inject
 import controllers.auth.AuthAction
-import controllers.auth.PertaxAuthAction
 import errors.ErrorResponseStatus._
 import errors._
 import models._
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Action, ActionBuilder, AnyContent, ControllerComponents, DefaultActionBuilder, Request}
+import play.api.mvc._
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.UpstreamErrorResponse.WithStatusCode
@@ -35,12 +34,11 @@ import scala.concurrent.ExecutionContext
 
 class MarriageAllowanceController @Inject()(marriageAllowanceService: MarriageAllowanceService,
                                             authAction: AuthAction,
-                                            pertaxAuthAction: PertaxAuthAction,
                                             defaultActionBuilder: DefaultActionBuilder,
                                             cc: ControllerComponents)(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
   private val authenticate: ActionBuilder[Request, AnyContent] =
-    defaultActionBuilder andThen pertaxAuthAction andThen authAction
+    defaultActionBuilder andThen authAction
 
   def getRecipientRelationship(transferorNino: Nino): Action[JsValue] =
     authenticate.async(parse.json) { implicit request =>

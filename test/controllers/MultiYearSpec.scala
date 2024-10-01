@@ -16,7 +16,7 @@
 
 package controllers
 
-import controllers.auth.{AuthAction, PertaxAuthAction}
+import controllers.auth.AuthAction
 import models.MultiYearDesCreateRelationshipRequest
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
@@ -32,7 +32,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.{OK, contentAsString}
 import services.MarriageAllowanceService
 import test_utils.TestData.Cids
-import test_utils.{FakeAuthAction, FakePertaxAuthAction, TestData, UnitSpec}
+import test_utils.{FakeAuthAction, TestData, UnitSpec}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{BadRequestException, UpstreamErrorResponse}
 
@@ -52,8 +52,7 @@ class MultiYearSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfte
     new GuiceApplicationBuilder()
       .overrides(
         bind[MarriageAllowanceService].toInstance(mockMarrageAllowanceService),
-        bind[AuthAction].to[FakeAuthAction],
-        bind[PertaxAuthAction].to[FakePertaxAuthAction]
+        bind[AuthAction].to[FakeAuthAction]
       )
       .build()
   }
