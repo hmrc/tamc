@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package service
+package services
 
 import Fixtures.MultiYearCreateRelationshipRequestHolderFixture
 import com.codahale.metrics.Timer
-import com.google.inject.Inject
 import config.ApplicationConfig
 import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
 import metrics.TamcMetrics
-import models.{DesRecipientInformation, _}
+import models._
 import org.mockito.ArgumentMatchers.{any, eq => meq}
 import org.mockito.Mockito._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -32,11 +31,11 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.Injecting
-import services.MarriageAllowanceService
 import test_utils.UnitSpec
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.time.TaxYear
 
 import java.text.SimpleDateFormat
 import java.time.LocalDate
@@ -44,10 +43,12 @@ import java.util.Calendar
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionException, Future}
 
-class MarriageAllowanceServiceSpec @Inject()(appConfig: ApplicationConfig
-                                           ) extends UnitSpec with GuiceOneAppPerSuite with Injecting {
+class MarriageAllowanceServiceSpec
+  extends UnitSpec
+    with GuiceOneAppPerSuite
+    with Injecting {
 
-  val year: Int = appConfig.currentTaxYear()
+  val year: Int = TaxYear.current.startYear
   val generatedNino: Nino = new Generator().nextNino
   val cID = 123456789
   val findRecipientRequest: FindRecipientRequest = FindRecipientRequest(name = "testForename1", lastName = "testLastName",
@@ -199,8 +200,7 @@ class MarriageAllowanceServiceSpec @Inject()(appConfig: ApplicationConfig
 
   "getRecipientRelationship" should {
     "return a UserRecord, list of TaxYearModel tuple given a valid FindRecipientRequest " in {
-      val taxYearModel = TaxYear(year, Some(true))
-      val expectedResponse = (userRecord, List(taxYearModel))
+      val expectedResponse = (userRecord, List())
       when(mockMarriageAllowanceDESConnector.findRecipient(meq(findRecipientRequest))(any(), any()))
         .thenReturn(Future.successful(Right(userRecord)))
 
@@ -238,7 +238,7 @@ class MarriageAllowanceServiceSpec @Inject()(appConfig: ApplicationConfig
   "when createMultiYearRelationship" should {
     "return unit" when {
       "createRelationshipRequest tax year is none" in {
-        when(mockEmailConnector.sendEmail(any())(any())).thenReturn(
+        when(mockEmailConnector.sendEmail(any())(any(), any())).thenReturn(
           Future.successful(Right(()))
         )
 
@@ -281,7 +281,7 @@ class MarriageAllowanceServiceSpec @Inject()(appConfig: ApplicationConfig
         when(mockMarriageAllowanceDESConnector.sendMultiYearCreateRelationshipRequest(any(), any())(any(), any())).
           thenReturn(resultVal)
 
-        when(mockEmailConnector.sendEmail(any())(any())).thenReturn(Right(()))
+        when(mockEmailConnector.sendEmail(any())(any(), any())).thenReturn(Right(()))
 
         val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipCurrentYearHolder
         val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
@@ -327,7 +327,7 @@ class MarriageAllowanceServiceSpec @Inject()(appConfig: ApplicationConfig
           when(mockMarriageAllowanceDESConnector.updateAllowanceRelationship(any())(any(), any())).
             thenReturn(Future.successful(Right(())))
 
-          when(mockEmailConnector.sendEmail(any())(any())).thenReturn(Right(()))
+          when(mockEmailConnector.sendEmail(any())(any(), any())).thenReturn(Right(()))
 
           val response = service.updateRelationship(updateRelationshipRequestHolder)(new HeaderCarrier(), implicitly)
           await(response) shouldBe a[Unit]
@@ -359,7 +359,7 @@ class MarriageAllowanceServiceSpec @Inject()(appConfig: ApplicationConfig
         when(mockMarriageAllowanceDESConnector.updateAllowanceRelationship(any())(any(), any())).
           thenReturn(Future.successful(Right(())))
 
-        when(mockEmailConnector.sendEmail(any())(any())).thenReturn(Right(()))
+        when(mockEmailConnector.sendEmail(any())(any(), any())).thenReturn(Right(()))
 
         val response = service.updateRelationship(updateRelationshipRequestHolder)(new HeaderCarrier(), implicitly)
 
