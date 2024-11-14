@@ -22,6 +22,7 @@ val scoverageSettings: Seq[Def.Setting[?]] = {
   Seq(
     ScoverageKeys.coverageExcludedFiles := ";.*Routes.*;RoutesPrefix.*;",
     ScoverageKeys.coverageMinimumStmtTotal := 90,
+    ScoverageKeys.coverageMinimumBranchTotal := 90,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true
   )
