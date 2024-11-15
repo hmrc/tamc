@@ -21,10 +21,10 @@ import config.ApplicationConfig
 import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors._
 import metrics.TamcMetrics
+import models.emailAddress.EmailAddress
 import models.{TaxYear => TaxYearModel, _}
 import play.api.Logging
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.time.TaxYear
 

@@ -19,6 +19,7 @@ package connectors
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalToJson, post, urlEqualTo}
 import config.ApplicationConfig
 import models._
+import models.emailAddress.EmailAddress
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.RecoverMethods
@@ -29,7 +30,6 @@ import play.api.inject.{Injector, bind}
 import play.api.libs.json.Json
 import play.api.{Application, inject}
 import test_utils.UnitSpec
-import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}

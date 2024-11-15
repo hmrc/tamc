@@ -21,6 +21,7 @@ import config.ApplicationConfig
 import errors.ErrorResponseStatus
 import errors.ErrorResponseStatus._
 import models._
+import models.emailAddress.EmailAddress
 import play.api.Application
 import play.api.http.Status.BAD_REQUEST
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -32,7 +33,6 @@ import play.api.test.{FakeHeaders, FakeRequest}
 import test_utils.FileHelper._
 import test_utils.{IntegrationSpec, MarriageAllowanceFixtures}
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import java.text.SimpleDateFormat

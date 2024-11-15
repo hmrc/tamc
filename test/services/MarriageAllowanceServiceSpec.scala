@@ -23,6 +23,7 @@ import connectors.{EmailConnector, MarriageAllowanceDESConnector}
 import errors.TooManyRequestsError
 import metrics.TamcMetrics
 import models._
+import models.emailAddress.EmailAddress
 import org.mockito.ArgumentMatchers.{any, eq => meq}
 import org.mockito.Mockito._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -33,7 +34,6 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.test.Injecting
 import test_utils.UnitSpec
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.time.TaxYear
 

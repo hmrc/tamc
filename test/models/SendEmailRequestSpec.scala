@@ -16,9 +16,9 @@
 
 package models
 
+import models.emailAddress.EmailAddress
 import play.api.libs.json.{JsObject, Json}
 import test_utils.UnitSpec
-import uk.gov.hmrc.emailaddress.EmailAddress
 
 class SendEmailRequestSpec
   extends UnitSpec {

@@ -17,7 +17,7 @@
 package Fixtures
 
 import models._
-import uk.gov.hmrc.emailaddress.EmailAddress
+import models.emailAddress.EmailAddress
 
 import java.util.Calendar
 

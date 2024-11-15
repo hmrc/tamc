@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package models
+package models.emailAddress
 
-import play.api.libs.json.{Json, OFormat}
+import scala.language.implicitConversions
 
-object CreateRelationshipRequestHolder {
-  implicit val formats: OFormat[CreateRelationshipRequestHolder] = Json.format[CreateRelationshipRequestHolder]
+object StringValue {
+  implicit def stringValueToString(e: StringValue): String = e.value
 }
 
-case class CreateRelationshipRequestHolder(request: CreateRelationshipRequest, notification: CreateRelationshipNotificationRequest)
+trait StringValue {
+  def value: String
+  override def toString: String = value
+}
