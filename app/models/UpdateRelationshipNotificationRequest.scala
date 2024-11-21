@@ -16,10 +16,8 @@
 
 package models
 
+import models.emailAddress.EmailAddress
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.emailaddress.EmailAddress
-import uk.gov.hmrc.emailaddress.PlayJsonFormats.emailAddressReads
-import uk.gov.hmrc.emailaddress.PlayJsonFormats.emailAddressWrites
 
 object UpdateRelationshipNotificationRequest {
   implicit val formats: OFormat[UpdateRelationshipNotificationRequest] = Json.format[UpdateRelationshipNotificationRequest]

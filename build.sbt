@@ -21,7 +21,7 @@ val scoverageSettings: Seq[Def.Setting[?]] = {
   import scoverage.ScoverageKeys
   Seq(
     ScoverageKeys.coverageExcludedFiles := ";.*Routes.*;RoutesPrefix.*;",
-    ScoverageKeys.coverageMinimumStmtTotal := 89,
+    ScoverageKeys.coverageMinimumStmtTotal := 90,
     ScoverageKeys.coverageMinimumBranchTotal := 90,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true
@@ -37,7 +37,7 @@ val microservice = Project(appName, file("."))
     PlayKeys.playDefaultPort := 9909,
     retrieveManaged := true,
     libraryDependencies ++= AppDependencies.all,
-    routesImport ++= Seq("binders._", "uk.gov.hmrc.domain._")
+    routesImport ++= Seq("binders.NinoPathBinder._", "uk.gov.hmrc.domain._")
   )
 
 val it: Project = project.in(file("it"))

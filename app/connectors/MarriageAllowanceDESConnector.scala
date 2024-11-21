@@ -44,7 +44,10 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
   def findCitizen(nino: Nino)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
     val path = url"$serviceUrl/marriage-allowance/citizen/$nino"
-    http.get(path).setHeader(explicitHeaders: _*).execute[Either[UpstreamErrorResponse, HttpResponse]]
+    http
+      .get(path)
+      .setHeader(explicitHeaders: _*)
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(response) => Right(response.json)
         case Left(error) => Left(error)
@@ -58,7 +61,9 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]] = {
     val path = url"$serviceUrl/marriage-allowance/citizen/$cid/relationships?includeHistoric=$includeHistoric"
     http
-      .get(path).setHeader(explicitHeaders: _*).execute[Either[UpstreamErrorResponse, HttpResponse]]
+      .get(path)
+      .setHeader(explicitHeaders: _*)
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(response) => Right(response.json)
         case Left(error) => Left(error)

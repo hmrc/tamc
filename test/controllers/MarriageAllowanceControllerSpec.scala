@@ -16,7 +16,7 @@
 
 package controllers
 
-import controllers.auth.AuthAction
+import controllers.auth.{AuthAction, PertaxAuthAction}
 import errors.ErrorResponseStatus._
 import errors._
 import models._
@@ -48,7 +48,8 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
   override def fakeApplication(): Application = GuiceApplicationBuilder()
     .overrides(
       bind[MarriageAllowanceService].toInstance(mockMarriageAllowanceService),
-      bind[AuthAction].to[FakeAuthAction]
+      bind[AuthAction].to[FakeAuthAction],
+      bind[PertaxAuthAction].to[FakePertaxAuthAction]
     ).build()
 
   lazy val controller = app.injector.instanceOf[MarriageAllowanceController]

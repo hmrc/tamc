@@ -24,14 +24,14 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.HttpReadsInstances.readEitherOf
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpException, HttpReads, HttpResponse, StringContextOps, UpstreamErrorResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EmailConnector @Inject()(http: HttpClientV2, appConfig: ApplicationConfig)(implicit val ec: ExecutionContext) {
+class EmailConnector @Inject()(http: HttpClientV2, appConfig: ApplicationConfig) {
 
-  def sendEmail(sendEmailRequest: SendEmailRequest)(
-    implicit hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]] =
+  def sendEmail(sendEmailRequest: SendEmailRequest)
+               (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[UpstreamErrorResponse, Unit]] =
     http
       .post(url"${appConfig.EMAIL_URL}/hmrc/email")
       .withBody(Json.toJson(sendEmailRequest))
@@ -43,4 +43,7 @@ class EmailConnector @Inject()(http: HttpClientV2, appConfig: ApplicationConfig)
       .recover {
         case error: HttpException => Left(UpstreamErrorResponse(error.message, BAD_GATEWAY))
       }
+
+  implicit val reads: HttpReads[Either[UpstreamErrorResponse, HttpResponse]] =
+    readEitherOf[HttpResponse]
 }

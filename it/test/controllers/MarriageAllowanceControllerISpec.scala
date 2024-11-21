@@ -16,53 +16,50 @@
 
 package controllers
 
-import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.util.Calendar
-import java.util.concurrent.ExecutionException
 import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.test.Helpers.baseApplicationBuilder.injector
 import config.ApplicationConfig
 import errors.ErrorResponseStatus
 import errors.ErrorResponseStatus._
 import models._
-import play.api.{Application, inject}
-import play.api.cache.AsyncCacheApi
+import models.emailAddress.EmailAddress
+import play.api.Application
 import play.api.http.Status.BAD_REQUEST
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsNull, Json}
 import play.api.mvc.AnyContentAsJson
-import play.api.test.{FakeHeaders, FakeRequest}
+import play.api.test.Helpers.baseApplicationBuilder.injector
 import play.api.test.Helpers.{status => getStatus, _}
+import play.api.test.{FakeHeaders, FakeRequest}
 import test_utils.FileHelper._
-import test_utils.{FakeAsyncCacheApi, IntegrationSpec, MarriageAllowanceFixtures}
+import test_utils.{IntegrationSpec, MarriageAllowanceFixtures}
 import uk.gov.hmrc.domain.{Generator, Nino}
-import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.UpstreamErrorResponse
+
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.util.Calendar
+import java.util.concurrent.ExecutionException
 
 class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllowanceFixtures {
 
   override def fakeApplication(): Application = GuiceApplicationBuilder().configure(
-    "metrics.jvm" -> false,
-    "microservice.services.auth.port" -> server.port(),
+    "microservice.services.auth.port" -> wireMockServer.port(),
     "microservice.services.marriage-allowance-des.host" -> "127.0.0.1",
-    "microservice.services.marriage-allowance-des.port" -> server.port(),
+    "microservice.services.marriage-allowance-des.port" -> wireMockServer.port(),
     "microservice.services.pertax.host" -> "127.0.0.1",
-    "microservice.services.pertax.port" -> server.port()
-  ).overrides(
-    inject.bind[AsyncCacheApi].to[FakeAsyncCacheApi]
+    "microservice.services.pertax.port" -> wireMockServer.port()
   ).build()
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    server.stubFor(post(urlEqualTo("/auth/authorise")).willReturn(ok(findCitizenResponse(123456789).toString())))
-    server.stubFor(post(urlEqualTo("/pertax/authorise")).willReturn(ok(successPertaxAuthResponse.toString())))
+    wireMockServer.stubFor(post(urlEqualTo("/auth/authorise")).willReturn(ok(findCitizenResponse(123456789).toString())))
+    wireMockServer.stubFor(post(urlEqualTo("/pertax/authorise")).willReturn(ok(successPertaxAuthResponse.toString())))
   }
   val nino: Nino = new Generator().nextNino
   val userRecordCid = 123456789
   val transferorRecordCid = 987654321
   val appConfig: ApplicationConfig = injector().instanceOf[ApplicationConfig]
-  val currentYear = appConfig.currentTaxYear()
+  val currentYear: Int = appConfig.currentTaxYear()
 
   "getRecipientRelationship" should {
     val findRecipientRequest: FindRecipientRequest = FindRecipientRequest("", "", Gender("M"), nino, Some(LocalDate.parse("2010-01-01")))
@@ -76,10 +73,10 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
         .replaceFirst("""participant1StartDate":"20210406""", s"""participant1StartDate":"${currentYear + 1}0406""")
         .replaceFirst("""participant2StartDate":"20210406""", s"""participant2StartDate":"${currentYear + 1}0406""")
 
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString)))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid).toString)))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(ok(upratedParticipantStartDate)))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$transferorRecordCid/relationships?includeHistoric=true")).willReturn(ok(upratedParticipantStartDate)))
+      wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString)))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid).toString)))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(ok(upratedParticipantStartDate)))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$transferorRecordCid/relationships?includeHistoric=true")).willReturn(ok(upratedParticipantStartDate)))
 
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(GetRelationshipResponse(Some(UserRecord(userRecordCid, "20200116155359011123")), Some(List(TaxYear(currentYear, Some(true)), TaxYear(currentYear - 1), TaxYear(currentYear - 2),TaxYear(currentYear - 3), TaxYear(currentYear - 4))), ResponseStatus("OK")))
@@ -93,7 +90,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
         s"return an error when a reason code of $reasonCode is returned" in {
 
-          server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid, reasonCode = reasonCode, returnCode = -1011).toString())))
+          wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid, reasonCode = reasonCode, returnCode = -1011).toString())))
 
           val result = route(fakeApplication(), request)
           val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND)))
@@ -105,8 +102,8 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
     "return a TransferorDeceasedError when the transferor is shown as deceased" in {
 
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid, "Y").toString())))
+      wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid, "Y").toString())))
 
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = TRANSFERER_DECEASED)))
@@ -117,8 +114,8 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
     "return a RECIPIENT_NOT_FOUND error when a serviceError occurs" in {
 
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid, reasonCode = 2, returnCode = 2).toString())))
+      wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid, reasonCode = 2, returnCode = 2).toString())))
 
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND)))
@@ -129,8 +126,8 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
     "return a validation error when downstream returns an invalid json" in {
 
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(Json.parse("""{}""").toString())))
+      wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(Json.parse("""{}""").toString())))
 
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = OTHER_ERROR)))
@@ -141,9 +138,9 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
     "return a server error when thrown from downstream" in {
 
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid).toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(serverError()))
+      wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(ok(getRecipientRelationshipResponse(userRecordCid).toString())))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(transferorRecordCid).toString())))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(serverError()))
 
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = OTHER_ERROR)))
@@ -162,7 +159,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
       case (errorResponse, errorCode) =>
         s"return other error for $errorCode" in {
 
-          server.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(errorResponse))
+          wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/citizen/$nino/check")).willReturn(errorResponse))
 
           val result = route(fakeApplication(), request)
           val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = RECIPIENT_NOT_FOUND)))
@@ -204,8 +201,8 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     )
 
     "return a success when successfully creating a multi year relationship" in {
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(ok(createMultiYearRelationshipResponse.toString())))
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/active")).willReturn(ok(createMultiYearRelationshipResponse.toString())))
+      wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(ok(createMultiYearRelationshipResponse.toString())))
+      wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/active")).willReturn(ok(createMultiYearRelationshipResponse.toString())))
 
       val result = route(fakeApplication(), request)
 
@@ -213,7 +210,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     }
 
     "return an error when downstream returns LTM000503" in {
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(aResponse().withStatus(CONFLICT).withBody(LTM000503Error.toString())))
+      wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(aResponse().withStatus(CONFLICT).withBody(LTM000503Error.toString())))
 
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(CreateRelationshipResponse(status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED)))
@@ -222,7 +219,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     }
 
     "return an error when unable to update as participant" in {
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(aResponse().withStatus(CONFLICT).withBody(unableToUpdateError.toString())))
+      wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(aResponse().withStatus(CONFLICT).withBody(unableToUpdateError.toString())))
 
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(CreateRelationshipResponse(status = ResponseStatus(status_code = RELATION_MIGHT_BE_CREATED)))
@@ -231,7 +228,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     }
 
     "throw an error when any other error is thrown" in {
-      server.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(badRequest().withBody(createMultiYearError.toString())))
+      wireMockServer.stubFor(post(urlEqualTo(s"/marriage-allowance/02.00.00/citizen/${multiYearCreateRelationshipRequestHolder.request.recipient_cid}/relationship/retrospective")).willReturn(badRequest().withBody(createMultiYearError.toString())))
 
       val result = route(fakeApplication(), request)
 
@@ -245,8 +242,8 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     val request = FakeRequest(GET, s"/paye/$nino/list-relationship", FakeHeaders(Seq("Authorization" -> "Bearer bearer-token")), JsNull)
 
     "return a success when getting a successful response from the downstream" in {
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(userRecordCid).toString())))
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(ok(listRelationshipResponse.toString())))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(userRecordCid).toString())))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$userRecordCid/relationships?includeHistoric=true")).willReturn(ok(listRelationshipResponse.toString())))
 
       val result = route(fakeApplication(), request)
 
@@ -254,7 +251,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     }
 
     "returns TransferorDeceasedError when the citizen is listed as deceased" in {
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(userRecordCid, "Y").toString())))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(userRecordCid, "Y").toString())))
 
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND)))
@@ -265,7 +262,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
     "returns a Service Error when an error in the service is thrown" in {
 
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(userRecordCid, reasonCode = 2, returnCode = 2).toString())))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(ok(findCitizenResponse(userRecordCid, reasonCode = 2, returnCode = 2).toString())))
 
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(RelationshipRecordStatusWrapper(status = ResponseStatus(status_code = TRANSFEROR_NOT_FOUND)))
@@ -275,7 +272,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     }
 
     "returns any other error when a non captured error is thrown" in {
-      server.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(aResponse().withStatus(UNAUTHORIZED)))
+      wireMockServer.stubFor(get(urlEqualTo(s"/marriage-allowance/citizen/$nino")).willReturn(aResponse().withStatus(UNAUTHORIZED)))
 
       val result = route(fakeApplication(), request)
 
@@ -294,7 +291,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
         s"citizen endpoint returns $httpErrorCode" in {
 
-          server.stubFor(
+          wireMockServer.stubFor(
             get(urlEqualTo(s"/marriage-allowance/citizen/$nino"))
               .willReturn(errorResponse)
           )
@@ -308,12 +305,12 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
         s"listRelationship endpoint returns $httpErrorCode" in {
 
-          server.stubFor(
+          wireMockServer.stubFor(
             get(urlEqualTo(s"/marriage-allowance/citizen/$nino"))
               .willReturn(ok(loadFile("./it/test/resources/citizenRecord.json")))
           )
 
-          server.stubFor(
+          wireMockServer.stubFor(
             get(urlEqualTo(s"/marriage-allowance/citizen/123456/relationships?includeHistoric=true"))
               .willReturn(errorResponse)
           )
@@ -356,7 +353,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
       case (reason, role, retrospective, actualEndDate) =>
         s"return a success when the reason is $reason, the role is $role, retrospective is $retrospective and the actualEndDate is $actualEndDate" in {
 
-          server.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(ok(updateAllowanceRelationshipResponse.toString())))
+          wireMockServer.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(ok(updateAllowanceRelationshipResponse.toString())))
 
           val updateRelationshipRequest = DesUpdateRelationshipRequest(
             DesRecipientInformation("123456789", "2222"),
@@ -387,7 +384,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     }
 
     "return a RecipientDeceasedError when the recipient is shown to be deceased" in {
-      server.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(badRequest()))
+      wireMockServer.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(badRequest()))
 
       val updateRelationshipRequest = DesUpdateRelationshipRequest(
         DesRecipientInformation("123456789", "2222"),
@@ -417,7 +414,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
     }
 
     "return a UpdateRelationshipError when an unexpected error occurs while updating the relationship" in {
-      server.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(serverError()))
+      wireMockServer.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(serverError()))
 
       val updateRelationshipRequest = DesUpdateRelationshipRequest(
         DesRecipientInformation("123456789", "2222"),
@@ -448,7 +445,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
 
     "throw an error whenever any other error occurs" in {
 
-      server.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(ok(updateAllowanceRelationshipResponse.toString())))
+      wireMockServer.stubFor(put(urlEqualTo(s"/marriage-allowance/citizen/123456789/relationship")).willReturn(ok(updateAllowanceRelationshipResponse.toString())))
 
       val updateRelationshipRequest = DesUpdateRelationshipRequest(
         DesRecipientInformation("123456789", "2222"),

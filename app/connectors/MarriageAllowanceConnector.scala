@@ -23,7 +23,6 @@ import play.api.Logging
 import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.http.Authorization
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -59,9 +58,6 @@ trait MarriageAllowanceConnector extends Logging {
     logger.error(s"Not able to parse the response received from DES with error ${extractValidationErrors(err)}")
     Left(ResponseValidationError)
   }
-
-  def buildHeaderCarrier(hc: HeaderCarrier): HeaderCarrier =
-    hc.copy(authorization = Some(Authorization(urlHeaderAuthorization))).withExtraHeaders("Environment" -> urlHeaderEnvironment)
 
   def explicitHeaders(implicit hc: HeaderCarrier): List[(String, String)] =
     List(

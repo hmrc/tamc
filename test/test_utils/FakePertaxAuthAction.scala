@@ -16,14 +16,19 @@
 
 package test_utils
 
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import uk.gov.hmrc.http.test.WireMockSupport
+import com.google.inject.Inject
+import connectors.PertaxConnector
+import controllers.auth.PertaxAuthAction
+import play.api.mvc.{ControllerComponents, Request, Result}
 
-trait IntegrationSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with WireMockSupport with ScalaFutures {
+import scala.concurrent.{ExecutionContext, Future}
 
-  implicit override val patienceConfig: PatienceConfig = PatienceConfig(scaled(Span(5, Seconds)), scaled(Span(100, Millis)))
+class FakePertaxAuthAction @Inject()(
+  implicit override val executionContext: ExecutionContext,
+  pertaxConnector: PertaxConnector,
+  controllerComponents: ControllerComponents
+) extends PertaxAuthAction(pertaxConnector, controllerComponents) {
+
+  override def filter[A](request: Request[A]): Future[Option[Result]] =
+    Future.successful(None)
 }

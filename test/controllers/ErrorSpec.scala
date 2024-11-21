@@ -16,7 +16,7 @@
 
 package controllers
 
-import controllers.auth.AuthAction
+import controllers.auth.{AuthAction, PertaxAuthAction}
 import errors.ErrorResponseStatus.CITIZEN_NOT_FOUND
 import errors.{FindRecipientCodedErrorResponse, RecipientDeceasedError, TransferorDeceasedError, UpdateRelationshipError}
 import org.mockito.ArgumentMatchers.{any, eq => meq}
@@ -31,7 +31,7 @@ import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.MarriageAllowanceService
-import test_utils.{FakeAuthAction, TestData, UnitSpec}
+import test_utils.{FakeAuthAction, FakePertaxAuthAction, TestData, UnitSpec}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.{BadRequestException, NotFoundException, UpstreamErrorResponse}
 
@@ -45,7 +45,8 @@ class ErrorSpec extends UnitSpec with GuiceOneAppPerSuite with BeforeAndAfterEac
   override def fakeApplication(): Application = GuiceApplicationBuilder()
     .overrides(
       bind[MarriageAllowanceService].toInstance(mockMarriageAllowanceService),
-      bind[AuthAction].to[FakeAuthAction]
+      bind[AuthAction].to[FakeAuthAction],
+      bind[PertaxAuthAction].to[FakePertaxAuthAction]
     ).build()
 
   val controller: MarriageAllowanceController = app.injector.instanceOf[MarriageAllowanceController]

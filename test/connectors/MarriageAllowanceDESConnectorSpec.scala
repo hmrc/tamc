@@ -23,7 +23,6 @@ import metrics.TamcMetrics
 import models._
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when, reset => resetMock}
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status._
@@ -43,7 +42,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Random
 
-class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuite with WireMockSupport with BeforeAndAfterEach {
+class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuite with WireMockSupport {
 
   val mockMetrics: TamcMetrics = mock[TamcMetrics]
   val mockTimerContext: Context = mock[Context]
@@ -53,7 +52,6 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
     resetMock(mockMetrics)
     resetMock(mockTimerContext)
     when(mockMetrics.startTimer(ApiType.FindRecipient)).thenReturn(mockTimerContext)
-
   }
 
   override def fakeApplication(): Application = {
