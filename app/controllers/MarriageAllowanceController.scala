@@ -18,12 +18,12 @@ package controllers
 
 import com.google.inject.Inject
 import controllers.auth.{AuthAction, PertaxAuthAction}
-import errors.ErrorResponseStatus._
-import errors._
-import models._
+import errors.*
+import errors.ErrorResponseStatus.*
+import models.*
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc._
+import play.api.mvc.*
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.UpstreamErrorResponse.WithStatusCode
@@ -33,14 +33,12 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import scala.concurrent.ExecutionContext
 
 class MarriageAllowanceController @Inject()(
-  marriageAllowanceService: MarriageAllowanceService,
-  authAction: AuthAction,
-  pertaxAuthAction: PertaxAuthAction,
-  defaultActionBuilder: DefaultActionBuilder,
-  cc: ControllerComponents
-)(
-  implicit ec: ExecutionContext
-) extends BackendController(cc)
+                                             marriageAllowanceService: MarriageAllowanceService,
+                                             authAction: AuthAction,
+                                             pertaxAuthAction: PertaxAuthAction,
+                                             defaultActionBuilder: DefaultActionBuilder,
+                                             cc: ControllerComponents
+                                           )(implicit ec: ExecutionContext) extends BackendController(cc)
   with Logging {
 
   def getRecipientRelationship(transferorNino: Nino): Action[JsValue] =
@@ -97,12 +95,12 @@ class MarriageAllowanceController @Inject()(
             throw ex
         }
       }
-  }
+    }
 
   def listRelationship(transferorNino: Nino): Action[AnyContent] =
     (defaultActionBuilder andThen pertaxAuthAction andThen authAction).async { implicit request =>
       marriageAllowanceService.listRelationship(transferorNino) map { relationshipList =>
-          Ok(Json.toJson(RelationshipRecordStatusWrapper(relationship_record = relationshipList, status = ResponseStatus(status_code = "OK"))))
+        Ok(Json.toJson(RelationshipRecordStatusWrapper(relationship_record = relationshipList, status = ResponseStatus(status_code = "OK"))))
       } recover {
         case error =>
           error match {
@@ -135,7 +133,7 @@ class MarriageAllowanceController @Inject()(
               throw otherError
           }
       }
-  }
+    }
 
   def updateRelationship(transferorNino: Nino): Action[JsValue] =
     (defaultActionBuilder andThen pertaxAuthAction andThen authAction).async(parse.json) { implicit request =>
@@ -158,5 +156,5 @@ class MarriageAllowanceController @Inject()(
               }
           }
       }
-  }
+    }
 }

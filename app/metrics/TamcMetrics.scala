@@ -16,15 +16,15 @@
 
 package metrics
 
-import com.codahale.metrics.{Counter, MetricRegistry, Timer}
 import com.codahale.metrics.Timer.Context
+import com.codahale.metrics.{Counter, MetricRegistry, Timer}
 import com.google.inject.Inject
 import models.ApiType
 import models.ApiType.ApiType
 
 class TamcMetrics @Inject()(registry: MetricRegistry) {
 
-  val timers: Map[models.ApiType.Value, Timer] = Map(
+  private val timers: Map[models.ApiType.Value, Timer] = Map(
     ApiType.FindCitizen -> registry.timer("find-citizen-response-timer"),
     ApiType.FindRecipient -> registry.timer("find-recipient-response-timer"),
     ApiType.CheckRelationship -> registry.timer("check-relationship-response-timer"),
@@ -32,7 +32,7 @@ class TamcMetrics @Inject()(registry: MetricRegistry) {
     ApiType.ListRelationship -> registry.timer("list-relationship-response-timer"),
     ApiType.UpdateRelationship -> registry.timer("update-relationship-response-timer"))
 
-  val successCounters: Map[models.ApiType.Value, Counter] = Map(
+  private val successCounters: Map[models.ApiType.Value, Counter] = Map(
     ApiType.FindCitizen -> registry.counter("find-citizen-success"),
     ApiType.FindRecipient -> registry.counter("find-recipient-success"),
     ApiType.CheckRelationship -> registry.counter("check-relationship-success"),
@@ -40,7 +40,7 @@ class TamcMetrics @Inject()(registry: MetricRegistry) {
     ApiType.ListRelationship -> registry.counter("list-relationship-success"),
     ApiType.UpdateRelationship -> registry.counter("update-relationship-success"))
 
-  val totalCounters: Map[models.ApiType.Value, Counter] = Map(
+  private val totalCounters: Map[models.ApiType.Value, Counter] = Map(
     ApiType.FindCitizen -> registry.counter("find-citizen-total"),
     ApiType.FindRecipient -> registry.counter("find-recipient-total"),
     ApiType.CheckRelationship -> registry.counter("check-relationship-total"),

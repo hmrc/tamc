@@ -24,14 +24,14 @@ import uk.gov.hmrc.http.{HttpException, HttpResponse, UpstreamErrorResponse}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class PertaxAuthParser @Inject() ()(implicit executor: ExecutionContext) extends Logging {
+class PertaxAuthParser @Inject()()(implicit executor: ExecutionContext) extends Logging {
   def apply(
-    request: Future[Either[UpstreamErrorResponse, HttpResponse]]
-  ): EitherT[Future, UpstreamErrorResponse, PertaxAuthResponse] =
+             request: Future[Either[UpstreamErrorResponse, HttpResponse]]
+           ): EitherT[Future, UpstreamErrorResponse, PertaxAuthResponse] =
     EitherT(request.map {
       case Right(response) =>
         Right(response)
-      case Left(error)     =>
+      case Left(error) =>
         if (error.statusCode >= 499 || error.statusCode == TOO_MANY_REQUESTS)
           logger.error(error.message)
         else if (error.statusCode == NOT_FOUND || error.statusCode == LOCKED)
@@ -43,7 +43,7 @@ class PertaxAuthParser @Inject() ()(implicit executor: ExecutionContext) extends
       case ex: HttpException =>
         logger.error(ex.message)
         Left(UpstreamErrorResponse(ex.message, BAD_GATEWAY, BAD_GATEWAY))
-      case ex                =>
+      case ex =>
         throw ex
     }).map(_.json.as[PertaxAuthResponse])
 }
