@@ -18,11 +18,11 @@ package connectors
 
 import errors.{DataRetrievalError, ResponseValidationError}
 import metrics.TamcMetrics
-import models.*
+import models._
 import play.api.Logging
 import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.*
+import uk.gov.hmrc.http._
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,12 +43,10 @@ trait MarriageAllowanceConnector extends Logging {
   val urlHeaderEnvironment: String
   val urlHeaderAuthorization: String
   val metrics: TamcMetrics
-
   def url(path: String) = s"$serviceUrl$path"
-
   def ninoWithoutSpaces(nino: Nino): Timestamp = nino.value.replaceAll(" ", "")
 
-  def handleValidationError[A]: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])] => Either[DataRetrievalError, A] = err => {
+  def handleValidationError[A]: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])] => Either[DataRetrievalError, A] =  err => {
 
     val extractValidationErrors: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])] => String = errors => {
       errors.map {
@@ -64,10 +62,10 @@ trait MarriageAllowanceConnector extends Logging {
   def explicitHeaders(implicit hc: HeaderCarrier): List[(String, String)] =
     List(
       HeaderNames.authorisation -> urlHeaderAuthorization,
-      HeaderNames.xRequestId -> hc.requestId.fold("-")(_.value),
-      HeaderNames.xSessionId -> hc.sessionId.fold("-")(_.value),
-      "Environment" -> urlHeaderEnvironment,
-      "CorrelationId" -> UUID.randomUUID().toString)
+      HeaderNames.xRequestId    -> hc.requestId.fold("-")(_.value),
+      HeaderNames.xSessionId    -> hc.sessionId.fold("-")(_.value),
+      "Environment"             -> urlHeaderEnvironment,
+      "CorrelationId"           -> UUID.randomUUID().toString)
 
   def findCitizen(nino: Nino)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]]
@@ -78,8 +76,8 @@ trait MarriageAllowanceConnector extends Logging {
   def findRecipient(findRecipientRequest: FindRecipientRequest)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[DataRetrievalError, UserRecord]]
 
   def sendMultiYearCreateRelationshipRequest(
-                                              relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(
-                                              implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]]
+    relType: String, createRelationshipRequest: MultiYearDesCreateRelationshipRequest)(
+    implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, JsValue]]
 
   def updateAllowanceRelationship(updateRelationshipRequest: DesUpdateRelationshipRequest)(
     implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[UpstreamErrorResponse, Unit]]

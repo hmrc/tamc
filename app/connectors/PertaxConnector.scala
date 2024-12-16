@@ -29,14 +29,19 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, Upstream
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class PertaxConnector @Inject()(http: HttpClientV2,
-                                appConfig: ApplicationConfig,
-                                pertaxAuthParser: PertaxAuthParser
-                               ) extends Logging {
+class PertaxConnector @Inject() (
+  http: HttpClientV2,
+  appConfig: ApplicationConfig,
+  pertaxAuthParser: PertaxAuthParser
+) extends Logging {
 
   private val pertaxUrl = appConfig.pertaxUrl
 
-  def authorise(implicit hc: HeaderCarrier, ec: ExecutionContext): EitherT[Future, UpstreamErrorResponse, PertaxAuthResponse] =
+  def authorise(
+    implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): EitherT[Future, UpstreamErrorResponse, PertaxAuthResponse] =
     pertaxAuthParser(
       http
         .post(url"$pertaxUrl/pertax/authorise")

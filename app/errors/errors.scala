@@ -17,21 +17,14 @@
 package errors
 
 case class FindTransferorError(returnCode: Int, reasonCode: Int) extends ServiceError(returnCode, reasonCode)
-
 case class FindRecipientError(returnCode: Int, reasonCode: Int) extends ServiceError(returnCode, reasonCode)
-
 case class CheckRelationshipError(returnCode: Int, reasonCode: Int) extends ServiceError(returnCode, reasonCode)
-
 case class CreateRelationshipError(returnCode: Int, reasonCode: Int) extends ServiceError(returnCode, reasonCode)
 
 sealed abstract class ServiceError(returnCode: Int, reasonCode: Int) extends RuntimeException(s"(return_code:${returnCode},reason_code:${reasonCode})")
-
 case class TransferorDeceasedError(message: String) extends RuntimeException(s"error message :${message}")
-
 case class RecipientDeceasedError(message: String) extends RuntimeException(s"error message :${message}")
-
 case class UpdateRelationshipError(message: String) extends RuntimeException(s"error message :${message}")
-
 case class MultiYearCreateRelationshipError(message: String) extends RuntimeException(s"error message :${message}")
 
 case class RelationshipMightBeCreatedError(message: String) extends RuntimeException(s"error message :${message}")

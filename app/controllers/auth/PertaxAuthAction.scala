@@ -21,17 +21,19 @@ import connectors.PertaxConnector
 import play.api.Logging
 import play.api.http.Status.UNAUTHORIZED
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.*
+import play.api.mvc._
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class PertaxAuthAction @Inject()(
-                                  pertaxConnector: PertaxConnector,
-                                  cc: ControllerComponents
-                                ) extends ActionFilter[Request]
-  with Results with I18nSupport with Logging {
+class PertaxAuthAction @Inject() (
+  pertaxConnector: PertaxConnector,
+  cc: ControllerComponents
+) extends ActionFilter[Request]
+  with Results
+  with I18nSupport
+  with Logging {
 
   override def messagesApi: MessagesApi = cc.messagesApi
 
@@ -43,15 +45,15 @@ class PertaxAuthAction @Inject()(
       {
         case UpstreamErrorResponse(_, status, _, _) if status == UNAUTHORIZED =>
           Some(Unauthorized(""))
-        case UpstreamErrorResponse(_, status, _, _) if status >= 499 =>
+        case UpstreamErrorResponse(_, status, _, _) if status >= 499          =>
           Some(BadGateway("Dependant services failing"))
-        case _ =>
+        case _                                                                =>
           Some(InternalServerError("Unexpected response from pertax"))
       },
       {
         case PertaxAuthResponse("ACCESS_GRANTED", _) =>
           None
-        case PertaxAuthResponse(code, message) =>
+        case PertaxAuthResponse(code, message)       =>
           Some(Unauthorized(s"Unauthorized - error code: $code message $message"))
       }
     )
