@@ -58,7 +58,7 @@ class EmailAddressSpec
     }
 
     "throw an exception when the '@' is missing" in {
-      forAll { s: String =>
+      forAll { (s: String) =>
         whenever(!s.contains("@")) {
           an[IllegalArgumentException] should be thrownBy EmailAddress(s)
         }

@@ -18,15 +18,16 @@ package connectors
 
 import com.google.inject.Inject
 import config.ApplicationConfig
-import errors._
+import errors.*
 import metrics.TamcMetrics
-import models._
+import models.*
 import play.api.Logging
-import play.api.http.Status._
+import play.api.http.Status.*
 import play.api.libs.json.{JsValue, Json}
+import play.api.libs.ws.JsonBodyWritables.*
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.*
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.{ExecutionContext, Future}

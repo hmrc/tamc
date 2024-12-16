@@ -8,13 +8,15 @@ import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 
 val appName = "tamc"
 
-ThisBuild / scalaVersion := "2.13.12"
+ThisBuild / scalaVersion := "3.3.4"
 ThisBuild / majorVersion := 4
 ThisBuild / scalacOptions ++= Seq(
   "-feature",
   "-Xfatal-warnings",
   "-Wconf:src=target/.*:s", // silence warnings from compiled files
-  "-Wconf:src=*routes:s",   // silence warnings from routes files
+  "-Wconf:msg=Flag.*repeatedly:s",
+  "-Wconf:msg=.*-Wunused.*:s",
+  "-explain"
 )
 
 val scoverageSettings: Seq[Def.Setting[?]] = {
