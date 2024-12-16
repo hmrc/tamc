@@ -16,7 +16,6 @@ ThisBuild / scalacOptions ++= Seq(
   "-Wconf:src=target/.*:s", // silence warnings from compiled files
   "-Wconf:msg=Flag.*repeatedly:s",
   "-Wconf:msg=.*-Wunused.*:s",
-  "-explain"
 )
 
 val scoverageSettings: Seq[Def.Setting[?]] = {
