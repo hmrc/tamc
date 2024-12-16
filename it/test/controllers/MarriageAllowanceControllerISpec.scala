@@ -16,21 +16,19 @@
 
 package controllers
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import config.ApplicationConfig
 import errors.ErrorResponseStatus
-import errors.ErrorResponseStatus._
-import models._
+import errors.ErrorResponseStatus.*
+import models.*
 import models.emailAddress.EmailAddress
 import play.api.Application
-import play.api.http.Status.BAD_REQUEST
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsNull, Json}
 import play.api.mvc.AnyContentAsJson
-import play.api.test.Helpers.baseApplicationBuilder.injector
-import play.api.test.Helpers.{status => getStatus, _}
+import play.api.test.Helpers.{status as getStatus, *}
 import play.api.test.{FakeHeaders, FakeRequest}
-import test_utils.FileHelper._
+import test_utils.FileHelper.*
 import test_utils.{IntegrationSpec, MarriageAllowanceFixtures}
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.UpstreamErrorResponse
@@ -58,7 +56,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
   val nino: Nino = new Generator().nextNino
   val userRecordCid = 123456789
   val transferorRecordCid = 987654321
-  val appConfig: ApplicationConfig = injector().instanceOf[ApplicationConfig]
+  val appConfig: ApplicationConfig = baseApplicationBuilder.injector().instanceOf[ApplicationConfig]
   val currentYear: Int = appConfig.currentTaxYear()
 
   "getRecipientRelationship" should {
@@ -108,7 +106,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(GetRelationshipResponse(status = ResponseStatus(status_code = TRANSFERER_DECEASED)))
 
-      result.map(getStatus) shouldBe Some(BAD_REQUEST)
+      result.map(getStatus) shouldBe Some(play.api.http.Status.BAD_REQUEST)
       result.map(contentAsJson) shouldBe Some(expected)
     }
 
@@ -409,7 +407,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = ErrorResponseStatus.BAD_REQUEST)))
 
-      result.map(getStatus) shouldBe Some(BAD_REQUEST)
+      result.map(getStatus) shouldBe Some(play.api.http.Status.BAD_REQUEST)
       result.map(contentAsJson) shouldBe Some(expected)
     }
 
@@ -439,7 +437,7 @@ class MarriageAllowanceControllerISpec extends IntegrationSpec with MarriageAllo
       val result = route(fakeApplication(), request)
       val expected = Json.toJson(UpdateRelationshipResponse(status = ResponseStatus(status_code = CANNOT_UPDATE_RELATIONSHIP)))
 
-      result.map(getStatus) shouldBe Some(BAD_REQUEST)
+      result.map(getStatus) shouldBe Some(play.api.http.Status.BAD_REQUEST)
       result.map(contentAsJson) shouldBe Some(expected)
     }
 
