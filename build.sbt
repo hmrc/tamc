@@ -22,7 +22,8 @@ ThisBuild / scalacOptions ++= Seq(
 val scoverageSettings: Seq[Def.Setting[?]] = {
   import scoverage.ScoverageKeys
   Seq(
-    ScoverageKeys.coverageExcludedPackages := ";.*Routes.*;.*RoutesPrefix.*;.*Reverse.*;",
+    ScoverageKeys.coverageExcludedPackages := "<empty>;.*Reverse.*;.*Routes.*;.*errors.*;.*models.*",
+    ScoverageKeys.coverageExcludedFiles := "<empty>;.*MarriageAllowanceConnector.*", //excluding traits that are overridden
     ScoverageKeys.coverageMinimumStmtTotal := 90,
     ScoverageKeys.coverageMinimumBranchTotal := 90,
     ScoverageKeys.coverageFailOnMinimum := true,
@@ -35,13 +36,13 @@ val microservice = Project(appName, file("."))
   .settings(
     defaultSettings(),
     scalaSettings,
-//    scoverageSettings,
+    scoverageSettings,
     PlayKeys.playDefaultPort := 9909,
     retrieveManaged := true,
     libraryDependencies ++= AppDependencies.all,
     routesImport ++= Seq("binders.NinoPathBinder._", "uk.gov.hmrc.domain._")
   )
-  .settings(CodeCoverageSettings.settings *)
+//  .settings(CodeCoverageSettings.settings *)
 
 val it: Project = project.in(file("it"))
   .enablePlugins(PlayScala)

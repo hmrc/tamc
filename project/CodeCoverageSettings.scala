@@ -7,6 +7,6 @@ object CodeCoverageSettings {
     ScoverageKeys.coverageMinimumStmtTotal := 80,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true,
-    ScoverageKeys.coverageExcludedPackages:= "<empty>;.*Reverse.*;.*Routes.*",
+    ScoverageKeys.coverageExcludedPackages:= "<empty>;.*Reverse.*;.*Routes.*;.*errors.*;.*models.*",
   )
 }
