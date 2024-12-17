@@ -47,7 +47,7 @@ class FindRecipientRequestDesTest extends UnitSpec {
       FindRecipientRequestDes(findRecipientRequest) shouldBe expectedResult
     }
 
-    "parse findfindRecipientRequest" in {
+    "parse findRecipientRequest" in {
       Json.parse(jsonString).as[FindRecipientRequest] shouldBe findRecipientRequest
     }
 
