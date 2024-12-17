@@ -1,5 +1,5 @@
 import sbt.*
-import sbt.Keys.{scalacOptions, *}
+import sbt.Keys.*
 import uk.gov.hmrc.DefaultBuildSettings.*
 import uk.gov.hmrc.SbtAutoBuildPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
@@ -8,19 +8,16 @@ import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 
 val appName = "tamc"
 
-ThisBuild / scalaVersion := "3.4.2"
+ThisBuild / scalaVersion := "3.6.2"
 ThisBuild / majorVersion := 4
-//ThisBuild / scalacOptions ++= Seq(
-//  "-feature",
-//  //"-Xfatal-warnings",
-//  "-Wconf:src=target/.*:s", // silence warnings from compiled files
-//  "-Wconf:src=*.routes/.*:s", // silence warnings from compiled files
-//  "-Wconf:msg=Flag.*repeatedly:s",
-//  "-Wconf:msg=.*-Wunused.*:s",
-//  "-Wconf:msg=unused.import&src=html/.*:s",
-//  "-Wconf:msg=unused.import&src=conf/.*:s",
-//  "-Wconf:src=routes/.*:s"
-//)
+ThisBuild / scalacOptions ++= Seq(
+  "-feature",
+  "-Xfatal-warnings",
+  "-Wconf:src=target/.*:s", // silence warnings from compiled files
+  "-Wconf:src=routes/.*:s",
+  "-Wconf:msg=Flag.*repeatedly:s",
+  "-Wconf:msg=.*-Wunused.*:s"
+)
 
 val scoverageSettings: Seq[Def.Setting[?]] = {
   import scoverage.ScoverageKeys
@@ -38,22 +35,15 @@ val microservice = Project(appName, file("."))
   .settings(
     defaultSettings(),
     scalaSettings,
-    scoverageSettings,
+//    scoverageSettings,
     PlayKeys.playDefaultPort := 9909,
     retrieveManaged := true,
     libraryDependencies ++= AppDependencies.all,
-    routesImport ++= Seq("binders.NinoPathBinder._", "uk.gov.hmrc.domain._"),
-    scalacOptions += "-Wconf:src=routes/.*:s",
-    scalacOptions += "-Wconf:msg=unused.import&src=html/.*:s",
-    scalacOptions += "-Wconf:msg=Flag.*repeatedly:s"
+    routesImport ++= Seq("binders.NinoPathBinder._", "uk.gov.hmrc.domain._")
   )
+  .settings(CodeCoverageSettings.settings *)
 
 val it: Project = project.in(file("it"))
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test")
-  .settings(
-    itSettings(),
-    scalacOptions += "-Wconf:src=routes/.*:s",
-    scalacOptions += "-Wconf:msg=unused.import&src=html/.*:s",
-    scalacOptions += "-Wconf:msg=Flag.*repeatedly:s"
-  )
+  .settings(itSettings())
