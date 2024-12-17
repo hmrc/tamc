@@ -123,9 +123,9 @@ class EmailConnectorSpec
 
         when(injector.instanceOf[HttpClientV2].post(any[URL])(any[HeaderCarrier]))
           .thenReturn(requestBuilder)
-        when(requestBuilder.withBody(any)(any, any, any))
+        when(requestBuilder.withBody(any)(using any, any, any))
           .thenReturn(injector.instanceOf[RequestBuilder])
-        when(requestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](connector.reads, global))
+        when(requestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](using connector.reads, global))
           .thenReturn(Future.failed(new HttpException("broken", IM_A_TEAPOT)))
 
         val response = await(connector.sendEmail(request))

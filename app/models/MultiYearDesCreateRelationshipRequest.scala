@@ -16,23 +16,26 @@
 
 package models
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
 
 object MultiYearDesCreateRelationshipRequest {
+
   implicit val multiYearWrites: OWrites[MultiYearDesCreateRelationshipRequest] = (
     (__ \ "CID1").write[String] and
       (__ \ "CID1Timestamp").write[String] and
       (__ \ "CID2").write[String] and
       (__ \ "CID2Timestamp").write[String] and
       (__ \ "startDate").writeNullable[String] and
-      (__ \ "endDate").writeNullable[String])(unlift(MultiYearDesCreateRelationshipRequest.unapply))
+      (__ \ "endDate").writeNullable[String]
+    )(o => Tuple.fromProductTyped(o))
 }
 
 case class MultiYearDesCreateRelationshipRequest(
-  recipientCid: String,
-  recipientTimestamp: String,
-  transferorCid: String,
-  transferorTimestamp: String,
-  startDate: Option[String],
-  endDate: Option[String])
+                                                  recipientCid: String,
+                                                  recipientTimestamp: String,
+                                                  transferorCid: String,
+                                                  transferorTimestamp: String,
+                                                  startDate: Option[String],
+                                                  endDate: Option[String]
+                                                )

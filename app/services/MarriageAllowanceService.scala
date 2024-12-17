@@ -290,7 +290,8 @@ class MarriageAllowanceService @Inject()(dataConnector: MarriageAllowanceDESConn
       citizenRecord <- getTransferorRecord(nino)
       relationshipList <- listRelationshipRecord(citizenRecord)
     } yield {
-      relationshipList }
+      relationshipList 
+    }
   }
 
   private def getTransferorRecord(nino: Nino)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UserRecord] = {

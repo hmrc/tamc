@@ -31,6 +31,8 @@ import play.api.test.Helpers.stubControllerComponents
 import test_utils.UnitSpec
 import uk.gov.hmrc.http.UpstreamErrorResponse
 
+import cats.instances.future._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class PertaxAuthActionSpec

@@ -28,7 +28,7 @@ object SendEmailRequest {
       (__ \ "to").read[List[EmailAddress]] and
         (__ \ "templateId").read[String] and
         (__ \ "parameters").read[Map[String, String]] and
-        (__ \ "force").readNullable[Boolean].map(_.getOrElse(false))) (SendEmailRequest.apply _).reads(json)
+        (__ \ "force").readNullable[Boolean].map(_.getOrElse(false))) (SendEmailRequest.apply).reads(json)
 
     def writes(o: SendEmailRequest): JsValue = Json.writes[SendEmailRequest].writes(o)
   }

@@ -217,7 +217,7 @@ class MarriageAllowanceServiceSpec
 
       val mockTimerContext = mock[Timer.Context]
       when(mockTamcMetrics.startTimer(any())).thenReturn(mockTimerContext)
-      when(mockTimerContext.stop()).thenReturn(123456789)
+      when(mockTimerContext.stop()).thenReturn(123456789L)
 
       val result = await(service.getRecipientRelationship(generatedNino, findRecipientRequest))
 
@@ -267,7 +267,7 @@ class MarriageAllowanceServiceSpec
       "return unit" in {
         val mockTimerContext = mock[Timer.Context]
         when(mockTamcMetrics.startTimer(any())).thenReturn(mockTimerContext)
-        when(mockTimerContext.stop()).thenReturn(123456789)
+        when(mockTimerContext.stop()).thenReturn(123456789L)
 
         val jsVal: JsValue = Json.parse(
           """ {
@@ -281,7 +281,7 @@ class MarriageAllowanceServiceSpec
         when(mockMarriageAllowanceDESConnector.sendMultiYearCreateRelationshipRequest(any(), any())(any(), any())).
           thenReturn(resultVal)
 
-        when(mockEmailConnector.sendEmail(any())(any(), any())).thenReturn(Right(()))
+        when(mockEmailConnector.sendEmail(any())(any(), any())).thenReturn(Future.successful(Right(())))
 
         val multiYearCreateRelationshipRequest = MultiYearCreateRelationshipRequestHolderFixture.multiYearCreateRelationshipCurrentYearHolder
         val response = service.createMultiYearRelationship(multiYearCreateRelationshipRequest, "GDS")(new HeaderCarrier(), implicitly)
@@ -302,12 +302,12 @@ class MarriageAllowanceServiceSpec
       ("Divorce/Separation", "Recipient", false, false, false),
       ("Cancelled by Transferor", "Transferor", false, false, true)).foreach {
       case (reason, role, welsh, retrospective, current) =>
-        s"updating for $reason $role ${if (welsh) "Welsh" else "English"} ${if (retrospective) "retrospectively"} " +
+        s"updating for $reason $role ${if (welsh) "Welsh" else "English"} ${if (retrospective) "retrospectively" else ""} " +
             s"${if (current) "Current" else "Previous"} tax year" in {
           setAppConFigValuesInMock()
           val mockTimerContext = mock[Timer.Context]
           when(mockTamcMetrics.startTimer(any())).thenReturn(mockTimerContext)
-          when(mockTimerContext.stop()).thenReturn(123456789)
+          when(mockTimerContext.stop()).thenReturn(123456789L)
 
           val sdf = new SimpleDateFormat("yyyyMMdd")
           val theDate = Calendar.getInstance()
@@ -327,7 +327,7 @@ class MarriageAllowanceServiceSpec
           when(mockMarriageAllowanceDESConnector.updateAllowanceRelationship(any())(any(), any())).
             thenReturn(Future.successful(Right(())))
 
-          when(mockEmailConnector.sendEmail(any())(any(), any())).thenReturn(Right(()))
+          when(mockEmailConnector.sendEmail(any())(any(), any())).thenReturn(Future.successful(Right(())))
 
           val response = service.updateRelationship(updateRelationshipRequestHolder)(new HeaderCarrier(), implicitly)
           await(response) shouldBe a[Unit]
@@ -340,7 +340,7 @@ class MarriageAllowanceServiceSpec
         setAppConFigValuesInMock()
         val mockTimerContext = mock[Timer.Context]
         when(mockTamcMetrics.startTimer(any())).thenReturn(mockTimerContext)
-        when(mockTimerContext.stop()).thenReturn(123456789)
+        when(mockTimerContext.stop()).thenReturn(123456789L)
 
         val sdf = new SimpleDateFormat("yyyyMMdd")
         val theDate = Calendar.getInstance()
@@ -359,7 +359,7 @@ class MarriageAllowanceServiceSpec
         when(mockMarriageAllowanceDESConnector.updateAllowanceRelationship(any())(any(), any())).
           thenReturn(Future.successful(Right(())))
 
-        when(mockEmailConnector.sendEmail(any())(any(), any())).thenReturn(Right(()))
+        when(mockEmailConnector.sendEmail(any())(any(), any())).thenReturn(Future.successful(Right(())))
 
         val response = service.updateRelationship(updateRelationshipRequestHolder)(new HeaderCarrier(), implicitly)
 
@@ -376,7 +376,7 @@ class MarriageAllowanceServiceSpec
       "for generated NINO in " in {
         val mockTimerContext = mock[Timer.Context]
         when(mockTamcMetrics.startTimer(any())).thenReturn(mockTimerContext)
-        when(mockTimerContext.stop()).thenReturn(123456789)
+        when(mockTimerContext.stop()).thenReturn(123456789L)
 
         when(mockMarriageAllowanceDESConnector.findCitizen(meq(generatedNino))(any(), any()))
           .thenReturn(Future.successful(Right(findCitizenJson)))
