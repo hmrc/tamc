@@ -27,5 +27,5 @@ object FindRecipientResponseDES {
     (JsPath \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutWCbdParameters" \ "ReturnCode").read[Int] and
     (JsPath \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutItpr1Person" \ "InstanceIdentifier").read[Cid] and
     (JsPath \ "Jfwk1012FindCheckPerNoninocallResponse" \ "Jfwk1012FindCheckPerNoninoExport" \ "OutItpr1Person" \ "UpdateTimestamp").read[Timestamp]
-  )(FindRecipientResponseDES.apply _)
+  )(FindRecipientResponseDES.apply)
 }
