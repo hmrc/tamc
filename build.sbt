@@ -42,7 +42,6 @@ val microservice = Project(appName, file("."))
     libraryDependencies ++= AppDependencies.all,
     routesImport ++= Seq("binders.NinoPathBinder._", "uk.gov.hmrc.domain._")
   )
-//  .settings(CodeCoverageSettings.settings *)
 
 val it: Project = project.in(file("it"))
   .enablePlugins(PlayScala)
