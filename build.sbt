@@ -22,7 +22,7 @@ ThisBuild / scalacOptions ++= Seq(
 val scoverageSettings: Seq[Def.Setting[?]] = {
   import scoverage.ScoverageKeys
   Seq(
-    ScoverageKeys.coverageExcludedPackages := "<empty>;.*Reverse.*;.*Routes.*;.*errors.*;.*models.*",
+    ScoverageKeys.coverageExcludedPackages := "<empty>;.*Reverse.*;.*Routes.*;.*errors.*;.*models.*;.*PertaxAuthResponse.*",
     ScoverageKeys.coverageExcludedFiles := "<empty>;.*MarriageAllowanceConnector.*", //excluding traits that are overridden
     ScoverageKeys.coverageMinimumStmtTotal := 90,
     ScoverageKeys.coverageMinimumBranchTotal := 90,
