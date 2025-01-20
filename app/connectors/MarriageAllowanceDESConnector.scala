@@ -18,15 +18,16 @@ package connectors
 
 import com.google.inject.Inject
 import config.ApplicationConfig
-import errors._
+import errors.*
 import metrics.TamcMetrics
-import models._
+import models.*
 import play.api.Logging
-import play.api.http.Status._
+import play.api.http.Status.*
 import play.api.libs.json.{JsValue, Json}
+import play.api.libs.ws.JsonBodyWritables.*
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.*
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,7 +47,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
     val path = url"$serviceUrl/marriage-allowance/citizen/$nino"
     http
       .get(path)
-      .setHeader(explicitHeaders: _*)
+      .setHeader(explicitHeaders*)
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(response) => Right(response.json)
@@ -62,7 +63,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
     val path = url"$serviceUrl/marriage-allowance/citizen/$cid/relationships?includeHistoric=$includeHistoric"
     http
       .get(path)
-      .setHeader(explicitHeaders: _*)
+      .setHeader(explicitHeaders*)
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(response) => Right(response.json)
@@ -150,7 +151,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
     http
       .post(path)
       .withBody(Json.toJson(findRecipientRequestDes))
-      .setHeader(explicitHeaders: _*)
+      .setHeader(explicitHeaders*)
       .execute[Either[DataRetrievalError, UserRecord]]
       .map { response =>
         timer.stop()
@@ -178,7 +179,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
     http
       .post(path)
       .withBody(Json.toJson(createRelationshipRequest))
-      .setHeader(explicitHeaders: _*)
+      .setHeader(explicitHeaders*)
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(response) => Right(response.json)
@@ -195,7 +196,7 @@ class MarriageAllowanceDESConnector @Inject()(val metrics: TamcMetrics,
     http
       .put(path)
       .withBody(Json.toJson(updateRelationshipRequest))
-      .setHeader(explicitHeaders: _*)
+      .setHeader(explicitHeaders*)
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(_) => Right(())

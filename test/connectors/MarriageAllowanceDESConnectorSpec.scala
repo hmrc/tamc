@@ -324,8 +324,8 @@ class MarriageAllowanceDESConnectorSpec extends UnitSpec with GuiceOneAppPerSuit
       val connector: MarriageAllowanceDESConnector = injector.instanceOf[MarriageAllowanceDESConnector]
 
 
-      when(requestBuilder.execute[Either[DataRetrievalError, UserRecord]](connector.httpRead, global)).thenReturn(Future.failed(new RuntimeException("broken")))
-      when(requestBuilder.withBody(any)(any, any, any)).thenReturn(injector.instanceOf[RequestBuilder])
+      when(requestBuilder.execute[Either[DataRetrievalError, UserRecord]](using connector.httpRead, global)).thenReturn(Future.failed(new RuntimeException("broken")))
+      when(requestBuilder.withBody(any)(using any, any, any)).thenReturn(injector.instanceOf[RequestBuilder])
       when(requestBuilder.setHeader(any)).thenReturn(injector.instanceOf[RequestBuilder])
 
       val exception = intercept[RuntimeException] {

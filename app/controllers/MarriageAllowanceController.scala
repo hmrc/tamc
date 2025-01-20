@@ -101,8 +101,7 @@ class MarriageAllowanceController @Inject()(
 
   def listRelationship(transferorNino: Nino): Action[AnyContent] =
     (defaultActionBuilder andThen pertaxAuthAction andThen authAction).async { implicit request =>
-      marriageAllowanceService.listRelationship(transferorNino) map {
-        relationshipList: RelationshipRecordWrapper =>
+      marriageAllowanceService.listRelationship(transferorNino) map { relationshipList =>
           Ok(Json.toJson(RelationshipRecordStatusWrapper(relationship_record = relationshipList, status = ResponseStatus(status_code = "OK"))))
       } recover {
         case error =>
