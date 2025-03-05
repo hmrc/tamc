@@ -18,9 +18,9 @@ package connectors
 
 import com.google.inject.Inject
 import config.ApplicationConfig
-import errors.*
+import errors._
 import metrics.TamcMetrics
-import models.*
+import models._
 import play.api.Logging
 import play.api.http.Status.*
 import play.api.libs.json.{JsValue, Json}

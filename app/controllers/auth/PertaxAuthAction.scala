@@ -31,6 +31,7 @@ class PertaxAuthAction @Inject() (
   pertaxConnector: PertaxConnector,
   cc: ControllerComponents
 ) extends ActionFilter[Request]
+  with ActionBuilder[Request, AnyContent]
   with Results
   with I18nSupport
   with Logging {
@@ -61,5 +62,7 @@ class PertaxAuthAction @Inject() (
 
   override protected implicit val executionContext: ExecutionContext =
     cc.executionContext
+
+  override def parser: BodyParser[AnyContent] = cc.parsers.defaultBodyParser
 }
 	
