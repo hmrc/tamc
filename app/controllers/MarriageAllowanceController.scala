@@ -17,13 +17,13 @@
 package controllers
 
 import com.google.inject.Inject
-import controllers.auth.{AuthAction, PertaxAuthAction}
-import errors.ErrorResponseStatus._
-import errors._
-import models._
+import controllers.auth.PertaxAuthAction
+import errors.*
+import errors.ErrorResponseStatus.*
+import models.*
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc._
+import play.api.mvc.*
 import services.MarriageAllowanceService
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.UpstreamErrorResponse.WithStatusCode
@@ -34,9 +34,7 @@ import scala.concurrent.ExecutionContext
 
 class MarriageAllowanceController @Inject()(
   marriageAllowanceService: MarriageAllowanceService,
-  authAction: AuthAction,
   pertaxAuthAction: PertaxAuthAction,
-  defaultActionBuilder: DefaultActionBuilder,
   cc: ControllerComponents
 )(
   implicit ec: ExecutionContext
@@ -44,7 +42,7 @@ class MarriageAllowanceController @Inject()(
   with Logging {
 
   def getRecipientRelationship(transferorNino: Nino): Action[JsValue] =
-    (defaultActionBuilder andThen pertaxAuthAction andThen authAction).async(parse.json) { implicit request =>
+    pertaxAuthAction.async(parse.json) { implicit request =>
       withJsonBody[FindRecipientRequest] { findRecipientRequest =>
         marriageAllowanceService.getRecipientRelationship(transferorNino, findRecipientRequest) map {
           case Right((recipientRecord, taxYears)) =>
@@ -73,7 +71,7 @@ class MarriageAllowanceController @Inject()(
     }
 
   def createMultiYearRelationship(transferorNino: Nino, journey: String): Action[JsValue] =
-    (defaultActionBuilder andThen pertaxAuthAction andThen authAction).async(parse.json) { implicit request =>
+    pertaxAuthAction.async(parse.json) { implicit request =>
       withJsonBody[MultiYearCreateRelationshipRequestHolder] { createRelationshipRequestHolder =>
         marriageAllowanceService.createMultiYearRelationship(createRelationshipRequestHolder, journey) map {
           _ =>
@@ -100,7 +98,7 @@ class MarriageAllowanceController @Inject()(
   }
 
   def listRelationship(transferorNino: Nino): Action[AnyContent] =
-    (defaultActionBuilder andThen pertaxAuthAction andThen authAction).async { implicit request =>
+    pertaxAuthAction.async { implicit request =>
       marriageAllowanceService.listRelationship(transferorNino) map { relationshipList =>
           Ok(Json.toJson(RelationshipRecordStatusWrapper(relationship_record = relationshipList, status = ResponseStatus(status_code = "OK"))))
       } recover {
@@ -138,7 +136,7 @@ class MarriageAllowanceController @Inject()(
   }
 
   def updateRelationship(transferorNino: Nino): Action[JsValue] =
-    (defaultActionBuilder andThen pertaxAuthAction andThen authAction).async(parse.json) { implicit request =>
+    pertaxAuthAction.async(parse.json) { implicit request =>
       withJsonBody[UpdateRelationshipRequestHolder] {
         updateRelationshipRequestHolder =>
           marriageAllowanceService.updateRelationship(updateRelationshipRequestHolder) map { _ =>

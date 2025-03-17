@@ -16,15 +16,15 @@
 
 package controllers
 
-import controllers.auth.{AuthAction, PertaxAuthAction}
-import errors.ErrorResponseStatus._
-import errors._
-import models._
+import controllers.auth.PertaxAuthAction
+import errors.*
+import errors.ErrorResponseStatus.*
+import models.*
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito._
+import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.prop.TableDrivenPropertyChecks.*
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.bind
@@ -34,7 +34,7 @@ import play.api.mvc.Request
 import play.api.test.Helpers.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK, contentAsJson, contentAsString, defaultAwaitTimeout}
 import play.api.test.{FakeHeaders, FakeRequest}
 import services.MarriageAllowanceService
-import test_utils._
+import test_utils.*
 import uk.gov.hmrc.domain.{Generator, Nino}
 import uk.gov.hmrc.http.BadRequestException
 
@@ -48,7 +48,6 @@ class MarriageAllowanceControllerSpec extends UnitSpec with GuiceOneAppPerSuite 
   override def fakeApplication(): Application = GuiceApplicationBuilder()
     .overrides(
       bind[MarriageAllowanceService].toInstance(mockMarriageAllowanceService),
-      bind[AuthAction].to[FakeAuthAction],
       bind[PertaxAuthAction].to[FakePertaxAuthAction]
     ).build()
 

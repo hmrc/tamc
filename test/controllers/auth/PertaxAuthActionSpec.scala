@@ -41,20 +41,16 @@ class PertaxAuthActionSpec
 
   class Harness(
                  pertaxAuthAction: PertaxAuthAction
-               )(
-                 implicit defaultActionBuilder: DefaultActionBuilder
                )
     extends InjectedController {
     def onPageLoad(): Action[AnyContent] =
-      (defaultActionBuilder andThen pertaxAuthAction) { _ =>
+      pertaxAuthAction { _ =>
         Ok("")
       }
   }
 
   private val pertaxConnector: PertaxConnector =
     mock[PertaxConnector]
-  implicit lazy val defaultActionBuilder: DefaultActionBuilder =
-    app.injector.instanceOf[DefaultActionBuilder]
   private val cc: ControllerComponents =
     stubControllerComponents()
 
