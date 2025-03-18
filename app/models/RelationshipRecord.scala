@@ -48,7 +48,7 @@ case class RelationshipRecord(participant: String,
 object RelationshipRecord {
 
   implicit object RelationshipRecordFormat extends Format[RelationshipRecord] {
-    def reads(json: JsValue) = JsSuccess(new RelationshipRecord(
+    def reads(json: JsValue): JsResult[RelationshipRecord] = JsSuccess(new RelationshipRecord(
 
       (json \ "participant").as[Int],
       (json \ "creationTimestamp").as[String],
@@ -58,7 +58,7 @@ object RelationshipRecord {
       (json \ "otherParticipantInstanceIdentifier").as[String],
       (json \ "otherParticipantUpdateTimestamp").as[String]))
 
-    def writes(relationshipRecord: RelationshipRecord) = Json.obj(
+    def writes(relationshipRecord: RelationshipRecord): JsValue = Json.obj(
 
       "participant" -> relationshipRecord.participant,
       "creationTimestamp" -> relationshipRecord.creationTimestamp,
@@ -73,9 +73,9 @@ object RelationshipRecord {
 object RelationshipRecordWrapper {
 
   implicit object RelationshipRecordListFormat extends Format[RelationshipRecordWrapper] {
-    def reads(json: JsValue) = JsSuccess(RelationshipRecordWrapper(
+    def reads(json: JsValue): JsResult[RelationshipRecordWrapper] = JsSuccess(RelationshipRecordWrapper(
       (json \ "relationships").as[Seq[RelationshipRecord]]))
-    def writes(relatisoshipRecordWrapper: RelationshipRecordWrapper) = Json.obj("relationships" -> relatisoshipRecordWrapper.relationshipRecordList,
+    def writes(relatisoshipRecordWrapper: RelationshipRecordWrapper): JsValue = Json.obj("relationships" -> relatisoshipRecordWrapper.relationshipRecordList,
       "userRecord" -> relatisoshipRecordWrapper.userRecord)
   }
 }
